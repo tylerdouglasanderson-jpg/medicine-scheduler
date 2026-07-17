@@ -1,0 +1,76 @@
+{
+  "team": "F",
+  "month": "2026-02",
+  "anchorType": "ppc",
+  "carryIn": null,
+  "options": { "offQuota": 4, "goldenWeekend": false },
+  "residents": [
+    {
+      "name": "Intern1",
+      "role": "intern",
+      "kind": "other",
+      "serviceStart": "2026-02-01",
+      "serviceEnd": "2026-02-15",
+      "didactics": { "dow": 4, "half": "PM", "hard": true },
+      "commitments": [
+        { "date": "2026-02-04", "half": "PM", "label": "clinic" },
+        { "date": "2026-02-13", "half": "PM", "label": "clinic" }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Intern2",
+      "role": "intern",
+      "kind": "other",
+      "serviceStart": "2026-02-01",
+      "serviceEnd": "2026-02-28",
+      "didactics": { "dow": 4, "half": "PM", "hard": true },
+      "commitments": [
+        { "date": "2026-02-03", "half": "PM", "label": "clinic" },
+        { "date": "2026-02-10", "half": "PM", "label": "clinic" },
+        { "date": "2026-02-20", "half": "PM", "label": "clinic" },
+        { "date": "2026-02-25", "half": "PM", "label": "clinic" }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Senior1",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2026-02-01",
+      "serviceEnd": "2026-02-28",
+      "didactics": { "dow": 2, "half": "PM", "hard": false },
+      "commitments": [
+        { "date": "2026-02-02", "half": "PM", "label": "clinic" },
+        { "date": "2026-02-04", "half": "PM", "label": "clinic" },
+        { "date": "2026-02-09", "half": "PM", "label": "clinic" },
+        { "date": "2026-02-13", "half": "PM", "label": "clinic" },
+        { "date": "2026-02-16", "half": "PM", "label": "clinic" },
+        { "date": "2026-02-19", "half": "PM", "label": "clinic" },
+        { "date": "2026-02-26", "half": "PM", "label": "clinic" },
+        { "date": "2026-02-27", "half": "PM", "label": "clinic" }
+      ],
+      "pto": ["2026-02-20"]
+    },
+    {
+      "name": "Senior2",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2026-02-01",
+      "serviceEnd": "2026-02-28",
+      "didactics": { "dow": 2, "half": "PM", "hard": false },
+      "commitments": [
+        { "date": "2026-02-02", "half": "PM", "label": "clinic" },
+        { "date": "2026-02-04", "half": "PM", "label": "clinic" },
+        { "date": "2026-02-09", "half": "PM", "label": "clinic" },
+        { "date": "2026-02-13", "half": "PM", "label": "clinic" },
+        { "date": "2026-02-16", "half": "PM", "label": "clinic" },
+        { "date": "2026-02-25", "half": "PM", "label": "clinic" }
+      ],
+      "pto": []
+    }
+  ],
+  "pins": [],
+  "notes": [],
+  "lastSolution": null
+}

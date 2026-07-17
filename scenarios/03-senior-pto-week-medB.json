@@ -1,0 +1,49 @@
+{
+  "team": "B",
+  "month": "2026-02",
+  "anchorType": "ppc",
+  "carryIn": null,
+  "options": { "offQuota": 4, "goldenWeekend": false },
+  "residents": [
+    {
+      "name": "Delgado",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2026-02-01",
+      "serviceEnd": "2026-02-28",
+      "didactics": { "dow": 2, "half": "PM", "hard": false },
+      "commitments": [
+        { "date": "2026-02-03", "half": "PM", "label": "clinic" },
+        { "date": "2026-02-26", "half": "PM", "label": "clinic" }
+      ],
+      "pto": ["2026-02-19", "2026-02-20", "2026-02-21", "2026-02-22"]
+    },
+    {
+      "name": "Freeman",
+      "role": "intern",
+      "kind": "other",
+      "serviceStart": "2026-02-01",
+      "serviceEnd": "2026-02-28",
+      "didactics": { "dow": 4, "half": "PM", "hard": true },
+      "commitments": [
+        { "date": "2026-02-04", "half": "PM", "label": "clinic" }
+      ],
+      "pto": ["2026-02-14"]
+    },
+    {
+      "name": "Gupta",
+      "role": "intern",
+      "kind": "other",
+      "serviceStart": "2026-02-01",
+      "serviceEnd": "2026-02-28",
+      "didactics": { "dow": 4, "half": "PM", "hard": true },
+      "commitments": [
+        { "date": "2026-02-10", "half": "PM", "label": "clinic" }
+      ],
+      "pto": []
+    }
+  ],
+  "pins": [],
+  "notes": [],
+  "lastSolution": null
+}

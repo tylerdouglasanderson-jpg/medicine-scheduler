@@ -1,0 +1,21 @@
+{
+  "team": "C",
+  "month": "2026-03",
+  "anchorType": "call",
+  "residents": [
+    {
+      "name": "SeniorA",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2026-03-01",
+      "serviceEnd": "2026-03-31"
+    },
+    {
+      "name": "SeniorB",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2026-03-01",
+      "serviceEnd": "2026-03-31"
+    }
+  ]
+}

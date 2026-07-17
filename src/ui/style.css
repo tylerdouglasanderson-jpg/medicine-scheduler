@@ -1,0 +1,316 @@
+/* ============================================================
+   Medicine Team Scheduler — design tokens + shell + components
+   Restrained clinical tool. Neutral chrome + one accent. The
+   calendar is the data layer and keeps its own multi-color fills
+   (same in light/dark — see "calendar" section below).
+   ============================================================ */
+
+:root {
+  color-scheme: light dark;
+
+  --bg: oklch(0.985 0.002 255); --surface: oklch(1 0 0); --panel: oklch(0.965 0.005 255);
+  --border: oklch(0.905 0.006 255); --border-strong: oklch(0.83 0.008 255);
+  --ink: oklch(0.27 0.02 255); --ink-2: oklch(0.44 0.018 255); --muted: oklch(0.52 0.015 255);
+  --accent: oklch(0.55 0.15 253); --accent-hover: oklch(0.48 0.16 253); --accent-ink: oklch(0.99 0 0);
+  --accent-weak: oklch(0.955 0.03 253); --focus: oklch(0.6 0.16 253);
+  --danger: oklch(0.52 0.2 25); --danger-bg: oklch(0.965 0.03 25); --danger-border: oklch(0.85 0.09 25);
+  --warn: oklch(0.5 0.09 70); --warn-bg: oklch(0.97 0.04 80); --warn-border: oklch(0.86 0.09 80);
+  --ok: oklch(0.55 0.12 150);
+  --shadow: 0 1px 2px oklch(0.4 0.03 255 / 0.06), 0 2px 8px oklch(0.4 0.03 255 / 0.06);
+
+  /* calendar "paper" — deliberately NOT overridden in dark mode; the grid stays a light
+     sheet matching the printed/xlsx colors in both themes. */
+  --cal-surface: #ffffff;
+  --cal-ink: oklch(0.22 0.01 255);
+  --cal-border: oklch(0.78 0.006 255);
+  --cal-header-bg: oklch(0.93 0.006 255);
+  --cal-type: #9DC3E6;
+  --cal-call: #FF9999;
+  --cal-rounders: #D6E7F5;
+  --cal-pager: #C6E0B4;
+  --cal-clinic: #FFE699;
+  --cal-didactics: #F8CBAD;
+  --cal-pto: #FFC000;
+  --cal-off: #F4B8C1;
+  --cal-blank: #595959;
+
+  --fs-h1: 1.375rem; --fs-h2: 1.05rem; --fs-h3: 0.9rem;
+  --fs-body: 0.875rem; --fs-small: 0.78rem; --fs-micro: 0.72rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: oklch(0.205 0.012 255); --surface: oklch(0.245 0.013 255); --panel: oklch(0.225 0.013 255);
+    --border: oklch(0.34 0.013 255); --border-strong: oklch(0.42 0.014 255);
+    --ink: oklch(0.94 0.006 255); --ink-2: oklch(0.78 0.01 255); --muted: oklch(0.67 0.012 255);
+    --accent: oklch(0.65 0.14 253); --accent-hover: oklch(0.72 0.14 253); --accent-ink: oklch(0.18 0.02 255);
+    --accent-weak: oklch(0.3 0.05 253); --focus: oklch(0.7 0.14 253);
+    --danger: oklch(0.68 0.17 25); --danger-bg: oklch(0.3 0.06 25); --danger-border: oklch(0.45 0.1 25);
+    --warn: oklch(0.8 0.12 80); --warn-bg: oklch(0.32 0.05 80); --warn-border: oklch(0.5 0.08 80);
+    --ok: oklch(0.72 0.13 150);
+    --shadow: 0 1px 2px oklch(0 0 0 / 0.3), 0 4px 14px oklch(0 0 0 / 0.35);
+  }
+}
+
+/* ---- base ---- */
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: var(--fs-body); line-height: 1.45;
+}
+h1, h2, h3 { text-wrap: balance; }
+button { font: inherit; }
+
+button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--focus); outline-offset: 2px;
+}
+
+/* ---- app bar ---- */
+.app-bar {
+  position: sticky; top: 0; z-index: 20;
+  background: var(--panel); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+  padding: 0.65rem 1.25rem;
+}
+.app-bar-left { display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap; }
+.app-bar-left h1 { margin: 0; font-size: var(--fs-h1); font-weight: 600; letter-spacing: -0.01em; }
+.version-chip {
+  font-size: var(--fs-micro); color: var(--muted); background: var(--panel);
+  border: 1px solid var(--border); border-radius: 999px; padding: 0.1rem 0.55rem;
+}
+.app-bar-right { display: flex; gap: 0.6rem; align-items: center; }
+
+/* ---- main / panels ---- */
+.main { max-width: 1100px; margin: 0 auto; padding: 1.25rem 1.25rem 2rem; }
+.panel {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: var(--shadow); padding: 1rem 1.15rem; margin-bottom: 1.25rem;
+}
+.panel h2 { margin: 0 0 0.3rem; font-size: var(--fs-h2); font-weight: 600; letter-spacing: -0.01em; }
+.panel-help { margin: 0 0 0.85rem; color: var(--muted); font-size: var(--fs-small); }
+.empty-state { color: var(--muted); margin: 0.35rem 0; }
+
+.onboarding-hint {
+  background: var(--accent-weak); border: 1px solid var(--border); border-radius: 10px;
+  padding: 1rem 1.15rem; margin-bottom: 1.25rem;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 0.6rem;
+}
+.onboarding-hint p { margin: 0; color: var(--ink-2); max-width: 62ch; }
+
+.storage-notice {
+  background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--ink);
+  padding: 0.6rem 0.85rem; border-radius: 8px; margin-bottom: 1.25rem; font-size: var(--fs-small);
+}
+
+/* ---- form layout ---- */
+.row { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; margin-bottom: 0.5rem; }
+.field { display: flex; flex-direction: column; font-size: var(--fs-small); gap: 0.25rem; color: var(--ink-2); }
+.carry-in { margin-top: 0.85rem; padding-top: 0.85rem; border-top: 1px dashed var(--border); width: 100%; }
+
+input, select {
+  font: inherit; font-size: var(--fs-body); color: var(--ink); background: var(--surface);
+  border: 1px solid var(--border); border-radius: 6px; padding: 0.35rem 0.5rem; min-height: 2rem;
+  transition: border-color 150ms ease-out;
+}
+input:hover, select:hover { border-color: var(--border-strong); }
+input:disabled, select:disabled { opacity: 0.5; cursor: not-allowed; }
+input[type="checkbox"] { accent-color: var(--accent); min-height: auto; width: auto; padding: 0; }
+
+/* ---- buttons ---- */
+.btn-primary, .btn-secondary, .btn-ghost {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  border-radius: 8px; padding: 0.4rem 0.75rem; font-size: var(--fs-body); font-weight: 500;
+  border: 1px solid transparent; cursor: pointer;
+  transition: background-color 150ms ease-out, border-color 150ms ease-out, color 150ms ease-out;
+}
+.btn-primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn-primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
+.btn-secondary { background: var(--surface); color: var(--ink); border-color: var(--border); }
+.btn-secondary:hover:not(:disabled) { border-color: var(--border-strong); }
+.btn-ghost { background: transparent; color: var(--ink-2); }
+.btn-ghost:hover:not(:disabled) { color: var(--ink); background: var(--panel); }
+.btn-primary:disabled, .btn-secondary:disabled, .btn-ghost:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ---- roster / totals tables ---- */
+.roster-table, .totals-table {
+  border-collapse: collapse; width: 100%; font-size: var(--fs-body); margin-bottom: 0.75rem;
+}
+.roster-table th, .roster-table td, .totals-table th, .totals-table td {
+  padding: 0.4rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left;
+}
+.roster-table thead th, .totals-table thead th {
+  background: var(--panel); color: var(--muted); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.02em; font-size: var(--fs-micro);
+}
+.totals-table th, .totals-table td { text-align: right; font-variant-numeric: tabular-nums; }
+.totals-table th:first-child, .totals-table td:first-child { text-align: left; }
+.roster-table tbody tr:nth-child(even), .totals-table tbody tr:nth-child(even) {
+  background: color-mix(in oklch, var(--panel) 45%, transparent);
+}
+
+/* ---- chip mode picker: segmented pills ---- */
+.chip-mode-picker { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.85rem; }
+.chip-mode-picker input[type="radio"] { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.chip-mode-picker label {
+  display: inline-flex; align-items: center; padding: 0.3rem 0.65rem; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--ink-2);
+  font-size: var(--fs-small); cursor: pointer;
+  transition: background-color 150ms ease-out, border-color 150ms ease-out, color 150ms ease-out;
+}
+.chip-mode-picker input[type="radio"]:checked + label {
+  background: var(--accent-weak); border-color: var(--accent); color: var(--ink);
+}
+.chip-mode-picker input[type="radio"]:focus-visible + label {
+  outline: 2px solid var(--focus); outline-offset: 2px;
+}
+
+/* ---- chip day grid ---- */
+.chip-calendar { margin-bottom: 1.25rem; }
+.chip-calendar h3 { font-size: var(--fs-h3); margin: 0 0 0.4rem; }
+.chip-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.chip-grid-header { font-size: var(--fs-small); font-weight: 600; text-align: center; color: var(--muted); margin-bottom: 3px; }
+.chip-day {
+  min-height: 4.5rem; border: 1px solid var(--border); border-radius: 6px; padding: 3px;
+  font-size: var(--fs-micro); background: var(--surface);
+  display: flex; flex-direction: column; gap: 2px; cursor: pointer;
+  transition: border-color 150ms ease-out;
+}
+.chip-day:hover { border-color: var(--accent); }
+.chip-day.blank { background: var(--panel); cursor: default; border-color: transparent; }
+.day-num { font-weight: 600; color: var(--muted); }
+
+/* ---- chips ---- */
+.chip {
+  display: inline-flex; align-items: center; gap: 3px; padding: 1px 6px 1px 8px;
+  border-radius: 999px; font-size: var(--fs-micro); background: var(--panel); color: var(--ink);
+}
+.chip-commitment { background: color-mix(in oklch, var(--cal-clinic) 55%, var(--surface)); }
+.chip-pto { background: color-mix(in oklch, var(--cal-pto) 45%, var(--surface)); }
+.chip-pin { background: var(--accent-weak); }
+.chip-remove {
+  border: none; background: none; cursor: pointer; font-size: 0.8rem; line-height: 1; padding: 0;
+  color: var(--ink-2); opacity: 0.55; transition: opacity 150ms ease-out, color 150ms ease-out;
+}
+.chip:hover .chip-remove, .chip-remove:focus-visible { opacity: 1; color: var(--danger); }
+
+/* ---- errors panel ---- */
+.quiet-ok { margin: 0; color: var(--ok); font-size: var(--fs-small); }
+.panel-danger { background: var(--danger-bg); border-color: var(--danger-border); }
+.panel-danger h2 { color: var(--danger); }
+.panel-danger li.error { color: var(--danger); }
+.panel-danger ul { margin: 0; padding-left: 1.1rem; }
+
+/* ---- solve / infeasible boxes ---- */
+.solve-error, .infeasible-box {
+  border: 1px solid var(--danger-border); background: var(--danger-bg); color: var(--danger);
+  padding: 0.75rem 1rem; border-radius: 10px; margin-bottom: 1rem;
+}
+.infeasible-box h2 { margin: 0 0 0.35rem; font-size: var(--fs-h2); color: var(--danger); }
+.infeasible-box ul { margin: 0.35rem 0 0; padding-left: 1.1rem; }
+
+/* ---- pin popover ---- */
+.pin-popover {
+  background: var(--surface); color: var(--ink); border: 1px solid var(--border);
+  border-radius: 10px; padding: 0.6rem; box-shadow: var(--shadow);
+  display: flex; flex-direction: column; gap: 0.4rem; min-width: 190px;
+}
+.pin-popover-title { font-weight: 600; font-size: var(--fs-small); }
+
+/* ---- sticky bottom action bar ---- */
+.action-bar {
+  position: sticky; bottom: 0; z-index: 10;
+  background: var(--panel); border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; padding: 0.65rem 1.25rem;
+}
+.action-bar-solve { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.freeze-label { display: flex; align-items: center; gap: 0.4rem; font-size: var(--fs-small); color: var(--ink-2); }
+.action-bar-divider { width: 1px; align-self: stretch; background: var(--border); margin: 0 0.25rem; }
+.action-bar-io { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-left: auto; }
+.io-buttons, .export-buttons { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.load-scenario-label { display: flex; align-items: center; gap: 0.4rem; font-size: var(--fs-small); color: var(--ink-2); }
+.load-scenario-label input[type="file"] { font-size: var(--fs-small); max-width: 12rem; }
+@media (max-width: 640px) {
+  .action-bar-divider { display: none; }
+  .action-bar-io { margin-left: 0; }
+}
+
+/* ---- guide dialog ---- */
+dialog#guide-dialog {
+  border: none; border-radius: 12px; padding: 0; max-width: min(920px, 94vw); width: 100%;
+  background: var(--surface); color: var(--ink); box-shadow: var(--shadow);
+  animation: guide-in 180ms ease-out;
+}
+dialog#guide-dialog::backdrop { background: oklch(0.2 0.02 255 / 0.5); }
+.guide-dialog-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.75rem 1rem; border-bottom: 1px solid var(--border);
+}
+.guide-dialog-header h2 { margin: 0; font-size: var(--fs-h2); font-weight: 600; }
+.guide-dialog-frame { display: block; width: 100%; height: 80vh; border: 0; }
+@keyframes guide-in {
+  from { opacity: 0; transform: scale(0.97) translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---- legend ---- */
+.legend { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; margin: 0.75rem 0 1rem; font-size: var(--fs-small); }
+.legend-item { display: inline-flex; align-items: center; gap: 0.35rem; color: var(--ink-2); }
+.legend-swatch { display: inline-block; width: 0.85rem; height: 0.85rem; border-radius: 3px; border: 1px solid var(--cal-border); }
+.legend-swatch.type { background: var(--cal-type); }
+.legend-swatch.type-call { background: var(--cal-call); }
+.legend-swatch.rounders { background: var(--cal-rounders); }
+.legend-swatch.pager { background: var(--cal-pager); }
+.legend-swatch.clinic { background: var(--cal-clinic); }
+.legend-swatch.didactics { background: var(--cal-didactics); }
+.legend-swatch.pto { background: var(--cal-pto); }
+.legend-swatch.off { background: var(--cal-off); }
+
+/* ---- calendar: paper panel, same colors in both themes (Task 8 DOM, frozen) ---- */
+.calendar {
+  overflow-x: auto; background: var(--cal-surface); color: var(--cal-ink);
+  border: 1px solid var(--border); border-radius: 10px; padding: 1rem;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+.calendar h2 { font-size: var(--fs-h2); margin: 0 0 0.5rem; color: var(--cal-ink); }
+.calendar table.week {
+  border-collapse: collapse; width: 100%; margin-bottom: 1rem; table-layout: fixed;
+}
+.calendar table.week th, .calendar table.week td {
+  border: 1px solid var(--cal-border); padding: 0.25rem 0.35rem; font-size: 0.72rem;
+  vertical-align: top; text-align: left; color: var(--cal-ink); word-break: break-word;
+}
+.calendar table.week th { background: var(--cal-header-bg); font-weight: 600; width: 5.5rem; }
+.calendar td.blank { background: var(--cal-blank); color: #fff; }
+.calendar td.type { background: var(--cal-type); }
+.calendar td.type-call { background: var(--cal-call); font-weight: 700; }
+.calendar td.rounders { background: var(--cal-rounders); }
+.calendar td.pager { background: var(--cal-pager); }
+.calendar td.pager.attending-pager { font-style: italic; }
+.calendar td.clinic { background: var(--cal-clinic); }
+.calendar td.didactics { background: var(--cal-didactics); }
+.calendar td.pto { background: var(--cal-pto); }
+.calendar td.off { background: var(--cal-off); }
+
+/* ---- totals + warnings (Task 8, frozen DOM — style via CSS only) ---- */
+.warnings-panel {
+  background: var(--warn-bg); border: 1px solid var(--warn-border); border-radius: 10px;
+  padding: 1rem 1.15rem; margin-bottom: 1rem;
+}
+.warnings-panel h2 { font-size: var(--fs-h2); margin: 0 0 0.4rem; }
+.warnings-panel li.warning { color: var(--warn); margin-bottom: 0.25rem; }
+.warnings-panel ul { margin: 0; padding-left: 1.1rem; }
+.warnings-panel ul:empty { padding-left: 0; }
+.warnings-panel ul:empty::after { content: 'No issues flagged.'; color: var(--ok); font-size: var(--fs-small); }
+
+/* ---- motion ---- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.001ms !important; animation-duration: 0.001ms !important; }
+}
+
+/* ---- print (calendar + totals only) ---- */
+@media print {
+  .app-bar, .action-bar, .onboarding-hint, .storage-notice,
+  #setup-section, #roster-section, #chips-section, #errors-panel { display: none; }
+  .calendar table.week { page-break-inside: avoid; }
+}

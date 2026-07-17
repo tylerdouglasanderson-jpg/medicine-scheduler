@@ -1,0 +1,51 @@
+{
+  "team": "A",
+  "month": "2026-04",
+  "anchorType": "precall",
+  "carryIn": null,
+  "options": { "offQuota": 4, "goldenWeekend": false },
+  "residents": [
+    {
+      "name": "Torres",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2026-04-01",
+      "serviceEnd": "2026-04-30",
+      "didactics": { "dow": 2, "half": "PM", "hard": false },
+      "commitments": [
+        { "date": "2026-04-06", "half": "PM", "label": "clinic" },
+        { "date": "2026-04-13", "half": "PM", "label": "clinic" }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Ueda",
+      "role": "intern",
+      "kind": "other",
+      "serviceStart": "2026-04-01",
+      "serviceEnd": "2026-04-30",
+      "didactics": { "dow": 4, "half": "PM", "hard": true },
+      "commitments": [
+        { "date": "2026-04-07", "half": "PM", "label": "clinic" },
+        { "date": "2026-04-17", "half": "PM", "label": "clinic" }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Vance",
+      "role": "intern",
+      "kind": "other",
+      "serviceStart": "2026-04-01",
+      "serviceEnd": "2026-04-30",
+      "didactics": { "dow": 4, "half": "PM", "hard": true },
+      "commitments": [
+        { "date": "2026-04-10", "half": "PM", "label": "clinic" },
+        { "date": "2026-04-24", "half": "PM", "label": "clinic" }
+      ],
+      "pto": []
+    }
+  ],
+  "pins": [],
+  "notes": [],
+  "lastSolution": null
+}

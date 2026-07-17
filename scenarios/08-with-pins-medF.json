@@ -1,0 +1,53 @@
+{
+  "team": "F",
+  "month": "2026-02",
+  "anchorType": "ppc",
+  "carryIn": null,
+  "options": { "offQuota": 4, "goldenWeekend": false },
+  "residents": [
+    {
+      "name": "Quinn",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2026-02-01",
+      "serviceEnd": "2026-02-28",
+      "didactics": { "dow": 2, "half": "PM", "hard": false },
+      "commitments": [
+        { "date": "2026-02-03", "half": "PM", "label": "clinic" }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Rossi",
+      "role": "intern",
+      "kind": "other",
+      "serviceStart": "2026-02-01",
+      "serviceEnd": "2026-02-28",
+      "didactics": { "dow": 4, "half": "PM", "hard": true },
+      "commitments": [
+        { "date": "2026-02-16", "half": "PM", "label": "clinic" }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Sato",
+      "role": "intern",
+      "kind": "other",
+      "serviceStart": "2026-02-01",
+      "serviceEnd": "2026-02-28",
+      "didactics": { "dow": 4, "half": "PM", "hard": true },
+      "commitments": [
+        { "date": "2026-02-26", "half": "PM", "label": "clinic" }
+      ],
+      "pto": []
+    }
+  ],
+  "pins": [
+    { "person": "Rossi", "date": "2026-02-05", "type": "nightCall" },
+    { "person": "Sato", "date": "2026-02-05", "type": "dayCall" },
+    { "person": "Quinn", "date": "2026-02-13", "type": "offCounted" },
+    { "person": "Sato", "date": "2026-02-21", "type": "offFree" }
+  ],
+  "notes": [],
+  "lastSolution": null
+}

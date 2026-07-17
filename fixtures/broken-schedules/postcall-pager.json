@@ -1,0 +1,284 @@
+{
+  "expect": "A_POSTCALL_PAGER",
+  "scenario": {
+    "team": "F",
+    "month": "2026-02",
+    "anchorType": "ppc",
+    "carryIn": null,
+    "options": {
+      "offQuota": 4,
+      "goldenWeekend": false
+    },
+    "residents": [
+      {
+        "name": "Intern1",
+        "role": "intern",
+        "kind": "other",
+        "serviceStart": "2026-02-01",
+        "serviceEnd": "2026-02-12",
+        "didactics": null,
+        "commitments": [],
+        "pto": []
+      },
+      {
+        "name": "Intern2",
+        "role": "intern",
+        "kind": "other",
+        "serviceStart": "2026-02-01",
+        "serviceEnd": "2026-02-12",
+        "didactics": null,
+        "commitments": [],
+        "pto": []
+      },
+      {
+        "name": "Senior1",
+        "role": "senior",
+        "kind": "categorical",
+        "serviceStart": "2026-02-01",
+        "serviceEnd": "2026-02-12",
+        "didactics": null,
+        "commitments": [],
+        "pto": []
+      },
+      {
+        "name": "Senior2",
+        "role": "senior",
+        "kind": "categorical",
+        "serviceStart": "2026-02-01",
+        "serviceEnd": "2026-02-12",
+        "didactics": null,
+        "commitments": [],
+        "pto": []
+      }
+    ],
+    "pins": [],
+    "notes": [],
+    "lastSolution": null
+  },
+  "schedule": {
+    "days": {
+      "2026-02-01": {
+        "type": "ppc",
+        "working": [
+          "Senior1",
+          "Intern1",
+          "Intern2"
+        ],
+        "off": [
+          "Senior2"
+        ],
+        "sleeper": null,
+        "pager": "Senior1",
+        "dayCall": null,
+        "night": null
+      },
+      "2026-02-02": {
+        "type": "sc1",
+        "working": [
+          "Senior1",
+          "Senior2",
+          "Intern2"
+        ],
+        "off": [
+          "Intern1"
+        ],
+        "sleeper": null,
+        "pager": "Intern2",
+        "dayCall": null,
+        "night": null
+      },
+      "2026-02-03": {
+        "type": "sc2",
+        "working": [
+          "Senior1",
+          "Senior2",
+          "Intern1"
+        ],
+        "off": [
+          "Intern2"
+        ],
+        "sleeper": null,
+        "pager": "Intern1",
+        "dayCall": null,
+        "night": null
+      },
+      "2026-02-04": {
+        "type": "precall",
+        "working": [
+          "Senior2",
+          "Intern1",
+          "Intern2"
+        ],
+        "off": [
+          "Senior1"
+        ],
+        "sleeper": null,
+        "pager": "Intern1",
+        "dayCall": null,
+        "night": null
+      },
+      "2026-02-05": {
+        "type": "call",
+        "working": [
+          "Senior1",
+          "Senior2",
+          "Intern1",
+          "Intern2"
+        ],
+        "off": [],
+        "sleeper": null,
+        "pager": null,
+        "dayCall": {
+          "senior": "Senior1",
+          "intern": "Intern2"
+        },
+        "night": "Intern1"
+      },
+      "2026-02-06": {
+        "type": "postcall",
+        "working": [
+          "Senior1",
+          "Senior2",
+          "Intern2"
+        ],
+        "off": [],
+        "sleeper": "Intern1",
+        "pager": "Senior1",
+        "dayCall": null,
+        "night": null
+      },
+      "2026-02-07": {
+        "type": "ppc",
+        "working": [
+          "Senior1",
+          "Intern1",
+          "Intern2"
+        ],
+        "off": [
+          "Senior2"
+        ],
+        "sleeper": null,
+        "pager": "Senior1",
+        "dayCall": null,
+        "night": null
+      },
+      "2026-02-08": {
+        "type": "sc1",
+        "working": [
+          "Senior1",
+          "Senior2",
+          "Intern2"
+        ],
+        "off": [
+          "Intern1"
+        ],
+        "sleeper": null,
+        "pager": "Intern2",
+        "dayCall": null,
+        "night": null
+      },
+      "2026-02-09": {
+        "type": "sc2",
+        "working": [
+          "Senior1",
+          "Senior2",
+          "Intern1"
+        ],
+        "off": [
+          "Intern2"
+        ],
+        "sleeper": null,
+        "pager": "Intern1",
+        "dayCall": null,
+        "night": null
+      },
+      "2026-02-10": {
+        "type": "precall",
+        "working": [
+          "Senior2",
+          "Intern1",
+          "Intern2"
+        ],
+        "off": [
+          "Senior1"
+        ],
+        "sleeper": null,
+        "pager": "Intern1",
+        "dayCall": null,
+        "night": null
+      },
+      "2026-02-11": {
+        "type": "call",
+        "working": [
+          "Senior1",
+          "Senior2",
+          "Intern1",
+          "Intern2"
+        ],
+        "off": [],
+        "sleeper": null,
+        "pager": null,
+        "dayCall": {
+          "senior": "Senior2",
+          "intern": "Intern1"
+        },
+        "night": "Intern2"
+      },
+      "2026-02-12": {
+        "type": "postcall",
+        "working": [
+          "Senior1",
+          "Senior2",
+          "Intern1"
+        ],
+        "off": [],
+        "sleeper": "Intern2",
+        "pager": "Intern1",
+        "dayCall": null,
+        "night": null
+      }
+    },
+    "totals": {
+      "Intern1": {
+        "shifts": 9,
+        "pager": 5,
+        "clinic": 0,
+        "didactics": 0,
+        "off": 2,
+        "pto": 0,
+        "bonus": 0,
+        "perks": 0
+      },
+      "Intern2": {
+        "shifts": 9,
+        "pager": 3,
+        "clinic": 0,
+        "didactics": 0,
+        "off": 2,
+        "pto": 0,
+        "bonus": 0,
+        "perks": 0
+      },
+      "Senior1": {
+        "shifts": 10,
+        "pager": 2,
+        "clinic": 0,
+        "didactics": 0,
+        "off": 2,
+        "pto": 0,
+        "bonus": 0,
+        "perks": 0
+      },
+      "Senior2": {
+        "shifts": 10,
+        "pager": 0,
+        "clinic": 0,
+        "didactics": 0,
+        "off": 2,
+        "pto": 0,
+        "bonus": 0,
+        "perks": 0
+      }
+    }
+  }
+}

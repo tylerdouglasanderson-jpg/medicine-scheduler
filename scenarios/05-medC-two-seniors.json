@@ -1,0 +1,38 @@
+{
+  "team": "C",
+  "month": "2026-03",
+  "anchorType": "call",
+  "carryIn": null,
+  "options": { "offQuota": 4, "goldenWeekend": false },
+  "residents": [
+    {
+      "name": "Lombardi",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2026-03-01",
+      "serviceEnd": "2026-03-31",
+      "didactics": { "dow": 2, "half": "PM", "hard": false },
+      "commitments": [
+        { "date": "2026-03-04", "half": "PM", "label": "clinic" },
+        { "date": "2026-03-18", "half": "PM", "label": "clinic" }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Mahoney",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2026-03-01",
+      "serviceEnd": "2026-03-31",
+      "didactics": { "dow": 2, "half": "PM", "hard": false },
+      "commitments": [
+        { "date": "2026-03-11", "half": "PM", "label": "clinic" },
+        { "date": "2026-03-24", "half": "PM", "label": "clinic" }
+      ],
+      "pto": []
+    }
+  ],
+  "pins": [],
+  "notes": [],
+  "lastSolution": null
+}

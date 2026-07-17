@@ -1,0 +1,35 @@
+{
+  "team": "F",
+  "month": "2026-02",
+  "anchorType": "ppc",
+  "residents": [
+    {
+      "name": "SeniorA",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2026-02-01",
+      "serviceEnd": "2026-02-28"
+    },
+    {
+      "name": "InternA",
+      "role": "intern",
+      "kind": "other",
+      "serviceStart": "2026-02-01",
+      "serviceEnd": "2026-02-28"
+    },
+    {
+      "name": "InternB",
+      "role": "intern",
+      "kind": "other",
+      "serviceStart": "2026-02-01",
+      "serviceEnd": "2026-02-28"
+    },
+    {
+      "name": "InternC",
+      "role": "intern",
+      "kind": "other",
+      "serviceStart": "2026-02-01",
+      "serviceEnd": "2026-02-28"
+    }
+  ]
+}

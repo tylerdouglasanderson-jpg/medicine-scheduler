@@ -1,0 +1,764 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Medicine Team Scheduler — User Guide</title>
+<style>
+  :root{
+    --bg:#ffffff;
+    --bg-alt:#f6f8fa;
+    --text:#1a2027;
+    --text-dim:#4b5563;
+    --border:#d7dce2;
+    --border-strong:#b6bec8;
+    --accent:#2563a8;
+    --accent-bg:#eaf2fb;
+    --code-bg:#eef1f4;
+    --toc-bg:#f6f8fa;
+    --err-bg:#fdecec;
+    --err-border:#c94c4c;
+    --warn-bg:#fff8e6;
+    --warn-border:#b8860b;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#14181d;
+      --bg-alt:#1b2027;
+      --text:#e8ecf1;
+      --text-dim:#a9b3bf;
+      --border:#333b44;
+      --border-strong:#4a5560;
+      --accent:#7bb3ec;
+      --accent-bg:#1d2c3b;
+      --code-bg:#232a32;
+      --toc-bg:#1b2027;
+      --err-bg:#33201f;
+      --err-border:#d97878;
+      --warn-bg:#332b16;
+      --warn-border:#d9ad4c;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#14181d; --bg-alt:#1b2027; --text:#e8ecf1; --text-dim:#a9b3bf;
+    --border:#333b44; --border-strong:#4a5560; --accent:#7bb3ec; --accent-bg:#1d2c3b;
+    --code-bg:#232a32; --toc-bg:#1b2027; --err-bg:#33201f; --err-border:#d97878;
+    --warn-bg:#332b16; --warn-border:#d9ad4c;
+  }
+  :root[data-theme="light"]{
+    --bg:#ffffff; --bg-alt:#f6f8fa; --text:#1a2027; --text-dim:#4b5563;
+    --border:#d7dce2; --border-strong:#b6bec8; --accent:#2563a8; --accent-bg:#eaf2fb;
+    --code-bg:#eef1f4; --toc-bg:#f6f8fa; --err-bg:#fdecec; --err-border:#c94c4c;
+    --warn-bg:#fff8e6; --warn-border:#b8860b;
+  }
+
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system, "Segoe UI", system-ui, Roboto, Helvetica, Arial, sans-serif;
+    font-size:16px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .num{ font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1; }
+
+  /* ---------- page header ---------- */
+  .masthead{
+    padding:1.5rem 1.75rem 1.25rem;
+    border-bottom:1px solid var(--border);
+    background:var(--bg-alt);
+  }
+  .masthead h1{
+    margin:0 0 .15rem;
+    font-size:1.5rem;
+    font-weight:700;
+    letter-spacing:-.01em;
+  }
+  .masthead p{
+    margin:0;
+    color:var(--text-dim);
+    font-size:.95rem;
+  }
+
+  /* ---------- layout: sticky TOC + content ---------- */
+  .layout{
+    display:grid;
+    grid-template-columns:15.5rem minmax(0,1fr);
+    gap:2rem;
+    align-items:start;
+    max-width:70rem;
+    margin:0 auto;
+    padding:1.75rem;
+  }
+  nav.toc{
+    position:sticky;
+    top:1rem;
+    align-self:start;
+    background:var(--toc-bg);
+    border:1px solid var(--border);
+    border-radius:.5rem;
+    padding:1rem 1.1rem;
+    max-height:calc(100vh - 2rem);
+    overflow-y:auto;
+  }
+  nav.toc h2{
+    margin:0 0 .6rem;
+    font-size:.72rem;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--text-dim);
+    font-weight:700;
+  }
+  nav.toc ol{
+    list-style:none;
+    margin:0;
+    padding:0;
+    counter-reset:toc;
+  }
+  nav.toc li{ margin:0; }
+  nav.toc a{
+    display:block;
+    padding:.28rem 0;
+    color:var(--text);
+    text-decoration:none;
+    font-size:.88rem;
+    border-bottom:1px solid transparent;
+  }
+  nav.toc a:hover{ color:var(--accent); text-decoration:underline; }
+  nav.toc a:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:2px; }
+
+  main{ min-width:0; }
+
+  /* ---------- prose measure ---------- */
+  section{ margin:0 0 2.5rem; }
+  section > *{ max-width:68ch; }
+  section table, section .legend-grid, section .full-width{ max-width:none; }
+
+  h2{
+    scroll-margin-top:1.25rem;
+    font-size:1.3rem;
+    font-weight:700;
+    letter-spacing:-.005em;
+    margin:0 0 .9rem;
+    padding-bottom:.5rem;
+    border-bottom:2px solid var(--border);
+  }
+  h2 .num-badge{
+    display:inline-block;
+    color:var(--accent);
+    margin-right:.4rem;
+  }
+  h3{
+    scroll-margin-top:1.25rem;
+    font-size:1.02rem;
+    font-weight:700;
+    margin:1.4rem 0 .5rem;
+  }
+  p{ margin:.6rem 0; }
+  ul, ol{ margin:.5rem 0; padding-left:1.3rem; }
+  li{ margin:.3rem 0; }
+  strong{ font-weight:700; }
+  code{
+    font-family:ui-monospace, "Cascadia Code", Consolas, monospace;
+    background:var(--code-bg);
+    padding:.1em .35em;
+    border-radius:.3em;
+    font-size:.9em;
+  }
+
+  /* ---------- callouts: full border, never a stripe ---------- */
+  .callout{
+    border:1px solid var(--border-strong);
+    border-radius:.5rem;
+    padding:.85rem 1rem;
+    margin:.9rem 0;
+    background:var(--bg-alt);
+    max-width:68ch;
+  }
+  .callout p:first-child{ margin-top:0; }
+  .callout p:last-child{ margin-bottom:0; }
+  .callout.tip::before{ content:"Tip"; }
+  .callout.warn{ background:var(--warn-bg); border-color:var(--warn-border); }
+  .callout.err{ background:var(--err-bg); border-color:var(--err-border); }
+  .callout .label{
+    display:block;
+    font-size:.72rem;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    font-weight:700;
+    color:var(--text-dim);
+    margin-bottom:.35rem;
+  }
+  .callout.warn .label{ color:var(--warn-border); }
+  .callout.err .label{ color:var(--err-border); }
+
+  /* ---------- steps ---------- */
+  .steps{
+    display:grid;
+    gap:.6rem;
+    margin:1rem 0;
+    padding:0;
+    list-style:none;
+    max-width:68ch;
+  }
+  .steps li{
+    display:flex;
+    gap:.75rem;
+    align-items:baseline;
+    border:1px solid var(--border);
+    border-radius:.5rem;
+    padding:.6rem .85rem;
+    margin:0;
+  }
+  .steps .n{
+    flex:0 0 auto;
+    font-weight:700;
+    color:var(--accent);
+    font-size:.85rem;
+    min-width:1.2rem;
+  }
+
+  /* ---------- tables ---------- */
+  .table-wrap{ overflow-x:auto; margin:.9rem 0; }
+  table{
+    border-collapse:collapse;
+    width:100%;
+    font-size:.88rem;
+  }
+  th, td{
+    border:1px solid var(--border);
+    padding:.5rem .65rem;
+    text-align:left;
+    vertical-align:top;
+  }
+  th{
+    background:var(--bg-alt);
+    font-weight:700;
+    font-size:.78rem;
+    text-transform:uppercase;
+    letter-spacing:.03em;
+    color:var(--text-dim);
+  }
+  td.code-cell{ font-family:ui-monospace, "Cascadia Code", Consolas, monospace; font-size:.83rem; white-space:nowrap; }
+  tr:nth-child(even) td{ background:color-mix(in srgb, var(--bg-alt) 55%, transparent); }
+
+  /* ---------- color legend / chips (exact app hex values) ---------- */
+  .swatch{
+    display:inline-block;
+    width:1rem; height:1rem;
+    border-radius:.2rem;
+    border:1px solid rgba(0,0,0,.35);
+    vertical-align:-.2rem;
+    margin-right:.5rem;
+  }
+  .chip{
+    display:inline-flex;
+    align-items:center;
+    gap:.4rem;
+    padding:.2rem .55rem .2rem .4rem;
+    border-radius:.35rem;
+    border:1px solid rgba(0,0,0,.25);
+    font-size:.85rem;
+    font-weight:600;
+    color:#1a1a1a;
+    white-space:nowrap;
+  }
+  .legend-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(15rem, 1fr));
+    gap:.6rem;
+    margin:1rem 0;
+  }
+  .legend-grid .chip{ width:100%; }
+
+  /* ---------- pin badges ---------- */
+  .pin-name{ font-weight:700; }
+
+  hr.rule{
+    border:none;
+    border-top:1px solid var(--border);
+    margin:1.75rem 0;
+    max-width:68ch;
+  }
+
+  footer{
+    max-width:68ch;
+    margin:2rem 0 0;
+    padding-top:1rem;
+    border-top:1px solid var(--border);
+    color:var(--text-dim);
+    font-size:.85rem;
+  }
+
+  /* ---------- responsive: TOC collapses above content ---------- */
+  @media (max-width: 860px){
+    .layout{ display:block; padding:1.25rem; }
+    nav.toc{
+      position:static;
+      max-height:none;
+      margin-bottom:1.5rem;
+    }
+    nav.toc ol{
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(9rem, 1fr));
+      gap:.1rem .8rem;
+    }
+  }
+
+  /* ---------- print ---------- */
+  @media print{
+    nav.toc{ display:none; }
+    .layout{ display:block; padding:0; max-width:none; }
+    .masthead{ background:transparent; border-bottom:2px solid #000; }
+    body{ color:#000; background:#fff; }
+    a{ color:#000; text-decoration:none; }
+    section{ page-break-inside:avoid; }
+    .callout{ border-color:#000; background:#fff; }
+    th{ background:#eee !important; }
+    tr:nth-child(even) td{ background:#fff !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <h1>Medicine Team Scheduler</h1>
+  <p>User Guide — everything you need to build, trust, and ship a month of call in five minutes.</p>
+</div>
+
+<div class="layout">
+
+  <nav class="toc" aria-label="Table of contents">
+    <h2>Contents</h2>
+    <ol>
+      <li><a href="#overview">1. What this tool does</a></li>
+      <li><a href="#cycle">2. The 6-day call cycle</a></li>
+      <li><a href="#setup">3. Setup panel</a></li>
+      <li><a href="#roster">4. Roster panel</a></li>
+      <li><a href="#chips">5. Commitments · PTO · Pins</a></li>
+      <li><a href="#solve">6. Solve</a></li>
+      <li><a href="#iterate">7. Iterating: pins + freeze</a></li>
+      <li><a href="#reading">8. Calendar, legend, totals</a></li>
+      <li><a href="#export">9. Exporting &amp; sharing</a></li>
+      <li><a href="#errors">10. Errors glossary</a></li>
+      <li><a href="#warnings">11. Potential Issues glossary</a></li>
+      <li><a href="#tips">12. Tips &amp; troubleshooting</a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+    <section id="overview">
+      <h2><span class="num-badge">1</span>What this tool does</h2>
+      <p>
+        This app builds an optimal monthly inpatient-medicine call schedule using an exact
+        solver — not a heuristic, not a greedy fill. It runs entirely in your browser: nothing
+        you type is uploaded anywhere, and once the page is open it keeps working with no
+        internet connection at all. When you're happy with a month, you export a colored
+        spreadsheet that looks exactly like what's on your screen, ready to print or hand to
+        the team.
+      </p>
+      <ol class="steps">
+        <li><span class="n">1</span> <strong>Set up</strong> — team, month, roster, commitments.</li>
+        <li><span class="n">2</span> <strong>Solve</strong> — one button, one optimal schedule.</li>
+        <li><span class="n">3</span> <strong>Iterate</strong> — pin a cell, freeze a date, re-solve.</li>
+        <li><span class="n">4</span> <strong>Export</strong> — styled xlsx or print to PDF.</li>
+      </ol>
+    </section>
+
+    <section id="cycle">
+      <h2><span class="num-badge">2</span>The 6-day call cycle</h2>
+      <p>
+        Everything the solver does is built around one repeating six-day pattern. Understanding
+        it makes every other panel in this app make sense — read this section even if you skip
+        the rest.
+      </p>
+      <ol class="steps">
+        <li><span class="n">1</span> <strong>Pre-call</strong></li>
+        <li><span class="n">2</span> <strong>Call</strong></li>
+        <li><span class="n">3</span> <strong>Post-call</strong></li>
+        <li><span class="n">4</span> <strong>Post-post-call (PPC)</strong></li>
+        <li><span class="n">5</span> <strong>Short Call 1 (SC1)</strong></li>
+        <li><span class="n">6</span> <strong>Short Call 2 (SC2)</strong> — then the cycle repeats.</li>
+      </ol>
+      <h3>Call day</h3>
+      <p>
+        The whole on-service team works. Exactly one person takes <strong>night call</strong> —
+        an intern, when two or more interns are on service; a team senior instead, for
+        Medicine&nbsp;C teams with no interns on. Everyone else takes <strong>day call</strong>.
+        No one is "off" on a call day, and there is <strong>no pager holder</strong> on call days
+        — the whole team is present, so the pager doesn't need a dedicated owner.
+      </p>
+      <h3>Post-call</h3>
+      <p>
+        The person who took night call is the <strong>sleeper</strong>: they round in the
+        morning, then leave. That rest does not count against their off quota — it's compensation
+        for the night, not a vacation day. The <strong>post-call pager</strong> goes to the prior
+        day's day-call <strong>intern</strong>; if there wasn't a day-call intern that day, a
+        working senior holds it instead.
+      </p>
+      <div class="callout tip">
+        <span class="label">Good to know</span>
+        <p>A pre-call day that lands on a Tuesday or Thursday is a morning-report day.</p>
+      </div>
+      <div class="callout warn">
+        <span class="label">Get this right first</span>
+        <p>
+          The <strong>anchor type</strong> in Setup tells the app which of these six phases the
+          1st of the month is, so it can lay the cycle across the whole calendar. Set it wrong
+          and every call day in the month shifts.
+        </p>
+      </div>
+    </section>
+
+    <section id="setup">
+      <h2><span class="num-badge">3</span>Setup panel — every field</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Field</th><th>What it is &amp; why it matters</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>Team (A–F)</strong></td>
+              <td>Which inpatient team you're scheduling. Medicine&nbsp;C carries a special
+                senior-only call rule: a team senior can take night call when no interns are on
+                that service.</td>
+            </tr>
+            <tr>
+              <td><strong>Month</strong></td>
+              <td>The calendar month. This drives the entire grid — set it first, before
+                anything else.</td>
+            </tr>
+            <tr>
+              <td><strong>Anchor type</strong></td>
+              <td>The cycle phase (see §2) that day&nbsp;1 of the month falls on. If the month
+                starts <strong>post-call</strong>, you must also fill in <strong>carry-in</strong>
+                below.</td>
+            </tr>
+            <tr>
+              <td><strong>Off quota</strong></td>
+              <td>The target number of counted days off for a resident on service the <em>full</em>
+                month. The app pro-rates this for each resident by their actual service days
+                (rounded half up). Typical value: 4.</td>
+            </tr>
+            <tr>
+              <td><strong>Attempt golden weekend</strong></td>
+              <td>A soft goal: give each resident a full Saturday+Sunday off together when the
+                schedule can afford it. Never overrides a hard rule.</td>
+            </tr>
+            <tr>
+              <td><strong>Carry-in</strong></td>
+              <td>Appears only when the anchor is post-call. Records who was <strong>night</strong>,
+                <strong>day-call intern</strong>, and <strong>day-call senior</strong> on the last
+                call day of the <em>previous</em> month, so this month's cycle continues correctly
+                from where the last one left off.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="roster">
+      <h2><span class="num-badge">4</span>Roster panel</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Column</th><th>What it is &amp; why it matters</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>Name</strong></td>
+              <td>The resident's identifier on the grid.</td>
+            </tr>
+            <tr>
+              <td><strong>Role</strong></td>
+              <td>Intern or senior — this drives call composition and who is eligible to take
+                night call.</td>
+            </tr>
+            <tr>
+              <td><strong>Kind</strong></td>
+              <td>Training background: categorical, TY, psych, OB/GYN, or other. Informational —
+                useful context when reviewing the schedule.</td>
+            </tr>
+            <tr>
+              <td><strong>Start / End</strong></td>
+              <td>The service window — the dates this resident is actually on the team. A
+                resident leaving mid-month gets a shorter window and an automatically pro-rated
+                off quota.</td>
+            </tr>
+            <tr>
+              <td><strong>Didactics: day / half / hard</strong></td>
+              <td>Pick a weekday and AM/PM half for this resident's protected teaching block.
+                Marking it <strong>hard</strong> makes it protected: the solver only puts them on
+                the pager over hard didactics when there is truly no other option, and it raises
+                a warning when it does.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p><strong>Add resident</strong> and <strong>Remove</strong> do what they say.</p>
+      <h3>Split seat</h3>
+      <p>
+        The mid-month handoff helper. Use it when one service line needs to be covered by two
+        different people during the month — it duplicates a seat with a <strong>replacement</strong>
+        resident whose service starts the day after the original resident's ends, and runs
+        through month-end. After splitting, adjust the replacement's dates and didactics to match
+        the real handoff.
+      </p>
+    </section>
+
+    <section id="chips">
+      <h2><span class="num-badge">5</span>Commitments · PTO · Pins</h2>
+      <p>
+        This panel is a chip editor: choose a <strong>mode</strong>, then click days directly on
+        a resident's month strip to toggle that mark on or off. Click a chip's <strong>×</strong>
+        to remove it.
+      </p>
+      <h3>Commitments</h3>
+      <p>
+        <strong>Commitment (AM)</strong> and <strong>Commitment (PM)</strong> mark a recurring
+        half-day obligation — clinic, a procedure block, admin time. You'll be prompted for a
+        label. The solver keeps the resident working around it, but a commitment that lands on a
+        call or post-call day is a <strong>hard error</strong> — fix it with your program admin,
+        since call and post-call can't be split around an outside obligation.
+      </p>
+      <h3>PTO</h3>
+      <p>
+        Marks a vacation or leave day. Like commitments, <strong>PTO on a call or post-call day
+        is a hard error</strong> — move the PTO to a day that isn't call-adjacent.
+      </p>
+      <h3>The 7 pin types</h3>
+      <p>Pins are your manual override: force a specific assignment for a specific person on a specific day.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Pin</th><th>Forces</th></tr></thead>
+          <tbody>
+            <tr><td class="pin-name">Off (counted)</td><td>A day off that counts toward the resident's quota.</td></tr>
+            <tr><td class="pin-name">Off (free / bonus)</td><td>An extra day off that does <strong>not</strong> count against quota — shown as "bonus".</td></tr>
+            <tr><td class="pin-name">Must work</td><td>The resident is working that day.</td></tr>
+            <tr><td class="pin-name">Pager</td><td>The resident holds the pager that day.</td></tr>
+            <tr><td class="pin-name">Day call</td><td>The resident works the call day as day-call, not night.</td></tr>
+            <tr><td class="pin-name">Night call</td><td>The resident is the night-call person that day.</td></tr>
+            <tr><td class="pin-name">Half off (AM) / Half off (PM)</td><td>A half day off — counts as 0.5 off, shown as "½ off" on rounders.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout tip">
+        <span class="label">Shortcut</span>
+        <p>You don't have to come back to this panel for every pin — clicking a solved calendar
+          cell creates pins too (see §7).</p>
+      </div>
+    </section>
+
+    <section id="solve">
+      <h2><span class="num-badge">6</span>Solve</h2>
+      <p>
+        Press <strong>Solve</strong> to build the optimal schedule for the month. The button is
+        disabled while there are unresolved <strong>hard errors</strong> — fix those first (see
+        §10). While it runs you'll see a brief "Solving…" state.
+      </p>
+      <div class="callout err">
+        <span class="label">No feasible schedule</span>
+        <p>
+          If the constraints as entered can't be satisfied by any schedule, you'll get a plain-language
+          diagnosis naming the likely culprit pins or constraints. Relax a pin or fix the roster,
+          then re-solve.
+        </p>
+      </div>
+      <p>
+        After a successful solve you get the full calendar, the totals table, and
+        <strong>Potential Issues</strong> — soft warnings from an independent auditor that
+        double-checks the solver's work from scratch (see §11).
+      </p>
+    </section>
+
+    <section id="iterate">
+      <h2><span class="num-badge">7</span>Iterating: pins + freeze-through-date</h2>
+      <p>This is the heart of daily use. A first solve is rarely your last — this is how you shape it into the schedule you'll actually ship.</p>
+      <h3>Click a solved cell</h3>
+      <p>
+        Click any <strong>OFF</strong>, <strong>PAGER</strong>, or <strong>ROUNDERS</strong> cell
+        in the solved calendar and a small popover lets you pin that person to an assignment (or
+        clear an existing pin there), then re-solve immediately.
+      </p>
+      <h3>Freeze through</h3>
+      <p>
+        The date box next to Solve locks every assignment <strong>on or before</strong> that date
+        to the current solution, then re-solves only the remaining days. Use it once the first
+        week or two look right, so tweaking later weeks doesn't reshuffle work you've already
+        approved. Clear the date to free the whole month again.
+      </p>
+      <div class="callout tip">
+        <span class="label">The loop</span>
+        <p>Solve → eyeball → freeze the part that's right → pin a fix → re-solve → repeat.</p>
+      </div>
+    </section>
+
+    <section id="reading">
+      <h2><span class="num-badge">8</span>Reading the calendar, legend, and totals</h2>
+      <p>
+        The calendar lays out in Sun–Sat week blocks. Each day has rows for
+        <strong>DATE</strong>/<strong>TYPE</strong> (the cycle phase — CALL is highlighted),
+        <strong>ROUNDERS</strong> (the day team — call days show "Day - X" / "Night - Y", post-call
+        days are tagged "(postcall)", half-off shows "X - ½ off"), <strong>PAGER</strong>,
+        <strong>CLINIC</strong>, <strong>DIDACTICS</strong>, <strong>PTO</strong>, and <strong>OFF</strong>.
+      </p>
+      <h3>Color legend</h3>
+      <p>These are the exact fills used on screen, in the exported xlsx, and when you print — one color language throughout.</p>
+      <div class="legend-grid">
+        <span class="chip" style="background:#9DC3E6;"><span class="swatch" style="background:#9DC3E6;"></span>Cycle-type row</span>
+        <span class="chip" style="background:#FF9999;"><span class="swatch" style="background:#FF9999;"></span>CALL day</span>
+        <span class="chip" style="background:#D6E7F5;"><span class="swatch" style="background:#D6E7F5;"></span>Rounders</span>
+        <span class="chip" style="background:#C6E0B4;"><span class="swatch" style="background:#C6E0B4;"></span>Pager</span>
+        <span class="chip" style="background:#FFE699;"><span class="swatch" style="background:#FFE699;"></span>Clinic</span>
+        <span class="chip" style="background:#F8CBAD;"><span class="swatch" style="background:#F8CBAD;"></span>Didactics</span>
+        <span class="chip" style="background:#FFC000;"><span class="swatch" style="background:#FFC000;"></span>PTO</span>
+        <span class="chip" style="background:#F4B8C1;"><span class="swatch" style="background:#F4B8C1;"></span>Off</span>
+        <span class="chip" style="background:#595959; color:#f2f2f2;"><span class="swatch" style="background:#595959;"></span>Out-of-month</span>
+      </div>
+      <h3>Totals table</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Column</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td><strong class="num">Shifts</strong></td><td>Days worked; a half-off day counts as 0.5.</td></tr>
+            <tr><td><strong class="num">Pager</strong></td><td>Days holding the pager.</td></tr>
+            <tr><td><strong class="num">Clinic</strong></td><td>Committed half-days actually worked.</td></tr>
+            <tr><td><strong class="num">Didactics</strong></td><td>Sessions attended — in-window and not lost to call, pager, off, or PTO.</td></tr>
+            <tr><td><strong class="num">Off</strong></td><td>Counted days off.</td></tr>
+            <tr><td><strong class="num">PTO</strong></td><td>Leave days.</td></tr>
+            <tr><td><strong class="num">Bonus</strong></td><td>Free/bonus offs that don't count against quota.</td></tr>
+            <tr><td><strong class="num">Perks</strong></td><td>Half-off count.</td></tr>
+            <tr><td><strong class="num">Off + Bonus</strong></td><td>Total rest days off.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Scan these across residents to check fairness at a glance.</p>
+    </section>
+
+    <section id="export">
+      <h2><span class="num-badge">9</span>Exporting &amp; sharing</h2>
+      <h3>Export xlsx</h3>
+      <p>
+        A styled spreadsheet whose colors match this grid exactly — drop it into Google Sheets or
+        Excel and hand it to the team. Available once you've solved.
+      </p>
+      <h3>Print</h3>
+      <p>
+        Browser print (→ Save as PDF) of the calendar and totals only — the setup controls are
+        hidden automatically.
+      </p>
+      <h3>Save / Load Scenario (JSON)</h3>
+      <p>
+        <strong>Save Scenario</strong> downloads the full setup — team, roster, commitments, PTO,
+        pins, and the last solution — as a <code>.json</code> file. <strong>Load Scenario</strong>
+        reads one back. This is how you carry work between sessions, keep a reusable team
+        template, or share a scenario with a co-chief: send them the JSON, they Load it.
+      </p>
+      <div class="callout tip">
+        <span class="label">Autosave</span>
+        <p>The app also autosaves to the browser automatically. The JSON file is your durable,
+          portable copy — the one that survives a new machine or a cleared browser.</p>
+      </div>
+    </section>
+
+    <section id="errors">
+      <h2><span class="num-badge">10</span>Errors glossary <span style="font-weight:400; font-size:.8em; color:var(--text-dim);">— hard, block Solve</span></h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Code</th><th>What it means</th><th>How to fix</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="code-cell">COMMITMENT_ON_CALL</td>
+              <td>A commitment or clinic half-day lands on a call or post-call day.</td>
+              <td>Move the commitment, or clear it with your program admin.</td>
+            </tr>
+            <tr>
+              <td class="code-cell">PTO_ON_CALL</td>
+              <td>PTO lands on a call or post-call day.</td>
+              <td>Move the PTO to a non-call-adjacent day.</td>
+            </tr>
+            <tr>
+              <td class="code-cell">PIN_OUTSIDE_WINDOW</td>
+              <td>A pin targets someone outside their service window.</td>
+              <td>Remove or fix the pin, or correct their start/end dates.</td>
+            </tr>
+            <tr>
+              <td class="code-cell">NIGHT_PIN_PM_COMMITMENT</td>
+              <td>Someone is pinned to night call but also has a PM commitment that day.</td>
+              <td>Remove one of the two conflicting marks.</td>
+            </tr>
+            <tr>
+              <td class="code-cell">CONTRADICTORY_PINS</td>
+              <td>Two pins conflict — e.g. off + must-work the same day, two people both pinned
+                night or pager the same day, an off pin on a call/post-call day, or a day/night
+                pin on a non-call day.</td>
+              <td>Remove one of the conflicting pins.</td>
+            </tr>
+            <tr>
+              <td class="code-cell">CARRYIN_REQUIRED</td>
+              <td>The anchor is post-call but carry-in wasn't filled in.</td>
+              <td>Fill in carry-in (see §3).</td>
+            </tr>
+            <tr>
+              <td class="code-cell">DEGENERATE_COMPOSITION</td>
+              <td>A call day's on-service roster can't staff call — e.g. no senior on that day, or fewer than two people.</td>
+              <td>Adjust service windows or the roster.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="warnings">
+      <h2><span class="num-badge">11</span>Potential Issues glossary <span style="font-weight:400; font-size:.8em; color:var(--text-dim);">— soft, schedule stays valid</span></h2>
+      <p>
+        Each of these means: the schedule is still valid, but check whether it's acceptable for
+        your team, and pin to override if it isn't.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td class="code-cell">W_ATTENDING_PAGER</td><td>An attending had to hold the pager that day.</td></tr>
+            <tr><td class="code-cell">W_DIDACTICS_MISS</td><td>Pager duty makes someone miss hard didactics.</td></tr>
+            <tr><td class="code-cell">W_MULTI_OFF</td><td>More than one person is off the same day.</td></tr>
+            <tr><td class="code-cell">W_SENIOR_OFF_SC</td><td>A senior is off on a short-call day.</td></tr>
+            <tr><td class="code-cell">W_QUOTA_SHORT</td><td>Someone got one fewer off than their quota.</td></tr>
+            <tr><td class="code-cell">W_DUTY_HOUR</td><td>Fewer than one rest day in seven across their service.</td></tr>
+            <tr><td class="code-cell">W_LONG_STRETCH</td><td>More than six consecutive worked days.</td></tr>
+            <tr><td class="code-cell">W_CONSEC_NIGHT</td><td>Night call on back-to-back call days.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout warn">
+        <span class="label">If you ever see this</span>
+        <p>
+          The app also folds any independent-audit hard-rule violation into this same panel. If
+          you ever see a code starting with <code>A_</code> here, the solver and the auditor
+          disagree with each other — treat it as a bug and report it.
+        </p>
+      </div>
+    </section>
+
+    <section id="tips">
+      <h2><span class="num-badge">12</span>Tips &amp; troubleshooting</h2>
+      <ul>
+        <li>Set <strong>Month</strong> and <strong>Anchor</strong> first — a wrong anchor shifts every call day in the month.</li>
+        <li>Fix all <strong>Errors</strong> before Solve will do anything.</li>
+        <li>Use <strong>Load example</strong> to see a complete, working month before building your own.</li>
+        <li>Iterate with <strong>freeze</strong> so approved weeks stay put while you tweak the rest.</li>
+        <li>Colors on screen = colors in the xlsx = colors when you print. One language, everywhere.</li>
+        <li>Everything is local: no data leaves your machine. The JSON scenario file is your save file.</li>
+      </ul>
+    </section>
+
+    <footer>
+      Medicine Team Scheduler — User Guide. Runs entirely in your browser; nothing on this page is uploaded anywhere.
+    </footer>
+
+  </main>
+</div>
+
+</body>
+</html>
