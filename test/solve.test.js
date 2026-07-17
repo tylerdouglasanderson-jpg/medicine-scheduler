@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { solve } from '../src/solve.js';
 import { audit } from '../src/audit.js';
+import { validate } from '../src/validate.js';
 import { parseScenario, deriveCycle, quotaFor } from '../src/model.js';
 import feb from '../fixtures/feb-2026.json';
 
@@ -145,6 +146,37 @@ describe('variants', () => {
       changed += a.off.filter(n => !b.off.includes(n)).length + b.off.filter(n => !a.off.includes(n)).length;
     }
     expect(changed).toBeLessThanOrEqual(8);
+  });
+
+  it('no resident is off on a day they have a commitment (clinic)', async () => {
+    const s = parseScenario(feb);
+    const { schedule } = await solve(s);
+    for (const r of s.residents)
+      for (const c of r.commitments)
+        expect(schedule.days[c.date]?.off ?? []).not.toContain(r.name);
+  });
+
+  it('validate rejects an off pin on a commitment day', () => {
+    const r = feb.residents.find(x => (x.commitments ?? []).length);
+    const s = parseScenario({ ...feb, pins: [{ person: r.name, date: r.commitments[0].date, type: 'offCounted' }] });
+    expect(validate(s).map(e => e.code)).toContain('OFF_ON_COMMITMENT');
+  });
+
+  it('auditor independently flags an off on a commitment day', async () => {
+    const s = parseScenario(feb);
+    const { schedule } = await solve(s);
+    const r = s.residents.find(x => x.commitments.length);
+    const d = r.commitments[0].date;
+    const bad = structuredClone(schedule);
+    bad.days[d].off = [...bad.days[d].off.filter(n => n !== r.name), r.name];
+    expect(audit(s, bad).violations.map(v => v.code)).toContain('A_OFF_ON_COMMITMENT');
+  });
+
+  it('seniors are not off on the first day of the month', async () => {
+    const s = parseScenario(feb);
+    const { schedule } = await solve(s);
+    for (const name of s.residents.filter(r => r.role === 'senior').map(r => r.name))
+      expect(schedule.days[s.month + '-01'].off).not.toContain(name);
   });
 
   it('contradictory pins produce a staged diagnosis naming culprits', async () => {

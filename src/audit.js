@@ -53,6 +53,13 @@ export function audit(scenario, schedule) {
       for (const name of dd.off)
         V('A_OFF_ON_CALL', `${name} is off on a ${t} day (${d})`, name, d);
 
+    // A_OFF_ON_COMMITMENT: an off day must be free of clinics/commitments
+    for (const name of dd.off) {
+      const r = byName[name];
+      if (r && (r.commitments ?? []).some(c => c.date === d))
+        V('A_OFF_ON_COMMITMENT', `${name} is off on ${d} but has a commitment (clinic) that day`, name, d);
+    }
+
     if (t === 'call') {
       // A_PAGER_ON_CALL
       if (dd.pager != null)

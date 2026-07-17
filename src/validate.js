@@ -33,6 +33,8 @@ export function validate(scenario) {
       err('CONTRADICTORY_PINS', p.person, p.date, `No pager holder exists on call days (${p.date})`);
     if (OFFISH.includes(p.type) && ['call', 'postcall'].includes(t))
       err('CONTRADICTORY_PINS', p.person, p.date, `Off pin on a ${t} day (${p.date})`);
+    if (['offCounted', 'offFree'].includes(p.type) && r.commitments.some(c => c.date === p.date))
+      err('OFF_ON_COMMITMENT', p.person, p.date, `${p.person} is pinned off on ${p.date} but has a commitment (clinic) that day — an off day must be free`);
     if (['dayCall', 'nightCall'].includes(p.type) && t !== 'call')
       err('CONTRADICTORY_PINS', p.person, p.date, `${p.type} pin on a non-call day (${p.date})`);
   }

@@ -188,6 +188,7 @@ input[type="checkbox"] { accent-color: var(--accent); min-height: auto; width: a
 .chip-commitment { background: color-mix(in oklch, var(--cal-clinic) 55%, var(--surface)); }
 .chip-pto { background: color-mix(in oklch, var(--cal-pto) 45%, var(--surface)); }
 .chip-pin { background: var(--accent-weak); }
+.chip-didactics { background: transparent; border: 1px dashed var(--border); color: var(--muted); }
 .chip-remove {
   border: none; background: none; cursor: pointer; font-size: 0.8rem; line-height: 1; padding: 0;
   color: var(--ink-2); opacity: 0.55; transition: opacity 150ms ease-out, color 150ms ease-out;

@@ -14,6 +14,7 @@ export const WEIGHTS = {
   dayCallSplit: 2,         // S3b per pp of intern day-call-rate deviation
   offSpread: 10,           // S4 per unit of |weekOffs - 1| per person-week
   seniorOffSC: 25,         // S5 per senior off on sc1/sc2
+  seniorOffFirstDay: 30,   // S11 per senior off on the first day of the month (soft: try not to)
   pagerSenior: 3,          // S6 per senior-pager day
   pagerInternDev: 1,       // S6 per pp of intern pager-rate deviation
   seniorDidactics: 6,      // S7 per senior pager on own didactics dow
@@ -89,6 +90,7 @@ export function buildModel(scenario, freezeDate = null) {
   people.forEach((p, pi) => dates.forEach(d => {
     if (!onService(p, d) || isPto(p, d)) return;
     if (['call', 'postcall'].includes(types.get(d))) return;
+    if (p.commitments.some(c => c.date === d)) return; // an off day can't fall on a clinic/commitment day
     offName.set(p.name + '|' + d, bin(`off_${pi}_${di.get(d)}`, { kind: 'off', person: p.name, date: d }));
   }));
 
@@ -364,6 +366,13 @@ export function buildModel(scenario, freezeDate = null) {
     const v = offName.get(p.name + '|' + d);
     if (v) addObj(WEIGHTS.morningReport, v);
   }));
+
+  // S11 seniors preferably not off on the first day of the month
+  people.forEach(p => {
+    if (p.role !== 'senior') return;
+    const v = offName.get(p.name + '|' + dates[0]);
+    if (v) addObj(WEIGHTS.seniorOffFirstDay, v);
+  });
 
   // S9 >1 off per day
   dates.forEach(d => {

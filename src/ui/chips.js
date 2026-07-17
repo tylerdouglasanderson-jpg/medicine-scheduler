@@ -16,6 +16,8 @@ const MODES = [
 
 const DOW_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+const dowOf = date => { const [y, m, d] = date.split('-').map(Number); return new Date(y, m - 1, d).getDay(); };
+
 let currentMode = 'pto';   // ephemeral UI state — not scenario data, doesn't need to persist across reloads
 
 function patchResident(scenario, i, patch) {
@@ -52,6 +54,15 @@ function applyMode(scenario, onChange, i, date) {
     ? scenario.pins.filter(p => p !== existing)
     : [...scenario.pins, { person: r.name, date, type, half, note: '' }];
   onChange({ ...scenario, pins });
+}
+
+// A derived, non-removable marker (didactics is a weekly roster rule, not per-date data).
+function staticTag(text, cls, title) {
+  const span = document.createElement('span');
+  span.className = `chip ${cls}`;
+  span.textContent = text;
+  if (title) span.title = title;
+  return span;
 }
 
 function chip(text, cls, onRemove) {
@@ -149,6 +160,11 @@ export function render(container, scenario, onChange) {
       for (const p of scenario.pins.filter(p => p.person === r.name && p.date === date))
         cell.appendChild(chip(`pin:${p.type}${p.half ? ' ' + p.half : ''}`, 'pin', () =>
           onChange({ ...scenario, pins: scenario.pins.filter(x => x !== p) })));
+
+      if (r.didactics && dowOf(date) === r.didactics.dow)
+        cell.appendChild(staticTag(`didactics ${r.didactics.half}`, 'chip-didactics',
+          `Weekly didactics: ${DOW_LABELS[r.didactics.dow]} ${r.didactics.half}` +
+          `${r.didactics.hard ? ' — protected (they skip pager here when free)' : ' — soft preference'}`));
 
       cell.addEventListener('click', () => applyMode(scenario, onChange, i, date));
       grid.appendChild(cell);

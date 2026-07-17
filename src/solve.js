@@ -172,6 +172,12 @@ function extract(scenario, vars, cols) {
     if (pr?.didactics?.hard && pr.didactics.dow === dow(d))
       W('W_DIDACTICS_MISS', `${holder} holds the pager on ${d} and will miss didactics`, holder, d);
   }
+  for (const d of dates) {                       // seniors are only softly discouraged from SC-day offs — surface it
+    if (!['sc1', 'sc2'].includes(types.get(d))) continue;
+    for (const name of days[d].off)
+      if (people.find(p => p.name === name)?.role === 'senior')
+        W('W_SENIOR_OFF_SC', `${name} (senior) is off on a short-call day (${d})`, name, d);
+  }
   const lastD = dates[dates.length - 1];
   if (types.get(lastD) === 'call' && nightOf[lastD])
     W('W_CARRYOUT', `${nightOf[lastD]} is post-call/asleep on the 1st of next month`, nightOf[lastD], lastD);
