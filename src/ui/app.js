@@ -103,6 +103,15 @@ function topBar() {
   guideBtn.title = 'Open the full user guide.';
   guideBtn.addEventListener('click', () => dialogEl.showModal());
   right.appendChild(guideBtn);
+
+  const dlBtn = document.createElement('button');
+  dlBtn.type = 'button';
+  dlBtn.className = 'btn-secondary';
+  dlBtn.textContent = 'Run it yourself';
+  dlBtn.title = 'Download the app to run it offline on your own machine.';
+  dlBtn.addEventListener('click', () => document.getElementById('dl-modal').showModal());
+  right.appendChild(dlBtn);
+
   bar.appendChild(right);
 
   return bar;
