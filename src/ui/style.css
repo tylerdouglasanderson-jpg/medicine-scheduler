@@ -262,6 +262,36 @@ dialog#guide-dialog::backdrop { background: oklch(0.2 0.02 255 / 0.5); }
   to { opacity: 1; transform: none; }
 }
 
+/* ---- feedback dialog: report a problem or idea ---- */
+dialog#feedback-dialog {
+  border: none; border-radius: 12px; padding: 0; width: min(30rem, 92vw);
+  background: var(--surface); color: var(--ink); box-shadow: var(--shadow);
+  animation: guide-in 180ms ease-out;
+}
+dialog#feedback-dialog::backdrop { background: oklch(0.2 0.02 255 / 0.5); }
+.feedback-dialog-inner { padding: 1.1rem 1.25rem 1.25rem; }
+.feedback-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem;
+}
+.feedback-header h2 { margin: 0; font-size: var(--fs-h2); font-weight: 600; }
+#feedback-dialog form { display: flex; flex-direction: column; gap: 0.7rem; }
+#feedback-dialog label {
+  display: flex; flex-direction: column; gap: 0.25rem;
+  font-size: var(--fs-small); font-weight: 600;
+}
+#feedback-dialog input[type="text"], #feedback-dialog textarea {
+  border: 1px solid var(--border); border-radius: 6px; padding: 0.4rem 0.5rem;
+  font: inherit; background: var(--surface); color: var(--ink);
+}
+#feedback-dialog textarea { min-height: 6.5rem; resize: vertical; }
+.feedback-type { display: flex; gap: 1rem; border: 0; padding: 0; margin: 0; }
+.feedback-type label { flex-direction: row; align-items: center; gap: 0.35rem; font-weight: 500; }
+.feedback-attach { flex-direction: row; align-items: center; gap: 0.45rem; font-weight: 500; }
+.feedback-actions { display: flex; gap: 0.5rem; margin-top: 0.15rem; }
+.feedback-status { margin: 0; min-height: 1.1rem; font-size: var(--fs-small); color: var(--muted); }
+.feedback-status.error { color: oklch(0.55 0.19 25); }
+.feedback-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
 /* ---- legend ---- */
 .legend { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; margin: 0.75rem 0 1rem; font-size: var(--fs-small); }
 .legend-item { display: inline-flex; align-items: center; gap: 0.35rem; color: var(--ink-2); }

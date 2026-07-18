@@ -10,6 +10,7 @@ import { renderCalendar, renderTotals, renderWarnings } from './calendar.js';
 import * as setup from './setup.js';
 import * as roster from './roster.js';
 import * as chips from './chips.js';
+import { initFeedback, openFeedback } from './feedback.js';
 import guideRaw from './guide.html?raw';
 import feb from '../../fixtures/feb-2026.json';
 
@@ -28,6 +29,7 @@ export function mount(container) {
   root = container;
   scenario = loadScenario();
   ensureGuideDialog();
+  initFeedback({ getScenarioJSON: () => exportScenarioJSON(scenario) });
   initHighs().catch(() => {});   // warm the wasm at page load so the first Solve is fast
   render();
 }
@@ -111,6 +113,14 @@ function topBar() {
   dlBtn.title = 'Download the app to run it offline on your own machine.';
   dlBtn.addEventListener('click', () => document.getElementById('dl-modal').showModal());
   right.appendChild(dlBtn);
+
+  const fbBtn = document.createElement('button');
+  fbBtn.type = 'button';
+  fbBtn.className = 'btn-secondary';
+  fbBtn.textContent = 'Feedback';
+  fbBtn.title = 'Report a problem or share an idea.';
+  fbBtn.addEventListener('click', openFeedback);
+  right.appendChild(fbBtn);
 
   bar.appendChild(right);
 
