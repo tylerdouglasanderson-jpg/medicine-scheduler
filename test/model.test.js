@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CYCLE, deriveCycle, onService, serviceDaysIn, quotaFor, parseScenario } from '../src/model.js';
+import { CYCLE, deriveCycle, onService, serviceDaysIn, quotaFor, parseScenario, defaultDidactics } from '../src/model.js';
 import fixture from '../fixtures/feb-2026.json';
 
 const NEXT = { precall: 'call', call: 'postcall', postcall: 'ppc', ppc: 'sc1', sc1: 'sc2', sc2: 'precall' };
@@ -34,6 +34,22 @@ describe('feb-2026 fixture derivation', () => {
     expect(c.postCallDays).toEqual(['2026-02-06', '2026-02-12', '2026-02-18', '2026-02-24']));
   it('Morning Report Feb 10 only (pre-call on Tue/Thu)', () =>
     expect(c.morningReportDays).toEqual(['2026-02-10']));
+});
+
+describe('defaultDidactics — type-based defaults (Tue=2, Wed=3, Thu=4; PM)', () => {
+  it('seniors → Tue PM regardless of kind', () => {
+    expect(defaultDidactics('senior', 'categorical')).toEqual({ dow: 2, half: 'PM', hard: false });
+    expect(defaultDidactics('senior', 'other')).toEqual({ dow: 2, half: 'PM', hard: false });
+  });
+  it('interns default by kind: psych Tue, TY Wed, categorical Thu', () => {
+    expect(defaultDidactics('intern', 'psych')).toEqual({ dow: 2, half: 'PM', hard: false });
+    expect(defaultDidactics('intern', 'TY')).toEqual({ dow: 3, half: 'PM', hard: false });
+    expect(defaultDidactics('intern', 'categorical')).toEqual({ dow: 4, half: 'PM', hard: false });
+  });
+  it('OB/GYN & other interns have no fixed default', () => {
+    expect(defaultDidactics('intern', 'OBGYN')).toBeNull();
+    expect(defaultDidactics('intern', 'other')).toBeNull();
+  });
 });
 
 describe('quotas — proportional round-half-up', () => {

@@ -1,4 +1,4 @@
-import { monthDates } from '../model.js';
+import { monthDates, defaultDidactics } from '../model.js';
 
 const ROLES = ['intern', 'senior'];
 const KINDS = ['categorical', 'TY', 'psych', 'OBGYN', 'other'];
@@ -13,6 +13,15 @@ function nextDay(dateStr) {
 function patchResident(scenario, i, patch) {
   const residents = scenario.residents.map((r, idx) => (idx === i ? { ...r, ...patch } : r));
   return { ...scenario, residents };
+}
+
+// Changing Role or Kind re-fills that type's default didactics day (keeping any `hard` flag).
+// The day/half stay editable per resident afterward.
+function patchType(scenario, i, patch) {
+  const r = scenario.residents[i];
+  const def = defaultDidactics(patch.role ?? r.role, patch.kind ?? r.kind);
+  const didactics = def ? { ...def, hard: r.didactics?.hard ?? false } : null;
+  return patchResident(scenario, i, { ...patch, didactics });
 }
 
 function td(el) {
@@ -43,7 +52,8 @@ export function render(container, scenario, onChange) {
   container.appendChild(h);
   const help = document.createElement('p');
   help.className = 'panel-help';
-  help.textContent = 'Who is on the team this month — role, service window, and weekly didactics.';
+  help.textContent = 'Who is on the team this month — role, service window, and weekly didactics. ' +
+    'The didactics day is filled in automatically from each resident’s role/kind; change it per resident if needed.';
   container.appendChild(help);
 
   if (scenario.residents.length === 0) {
@@ -73,10 +83,10 @@ export function render(container, scenario, onChange) {
       nameInput.addEventListener('change', () => onChange(patchResident(scenario, i, { name: nameInput.value })));
       tr.appendChild(td(nameInput));
 
-      tr.appendChild(selectCell(ROLES, r.role, null, v => onChange(patchResident(scenario, i, { role: v })),
-        false, 'Intern vs senior — drives call composition.'));
-      tr.appendChild(selectCell(KINDS, r.kind, null, v => onChange(patchResident(scenario, i, { kind: v })),
-        false, 'Training background (categorical, TY, psych, OB/GYN, other).'));
+      tr.appendChild(selectCell(ROLES, r.role, null, v => onChange(patchType(scenario, i, { role: v })),
+        false, 'Intern vs senior — drives call composition. Seniors default to Tue PM didactics.'));
+      tr.appendChild(selectCell(KINDS, r.kind, null, v => onChange(patchType(scenario, i, { kind: v })),
+        false, 'Training background. Sets the default didactics day: psych → Tue PM, TY → Wed PM, categorical → Thu PM. Override the day per resident if needed.'));
 
       const start = document.createElement('input');
       start.type = 'date';
@@ -97,7 +107,7 @@ export function render(container, scenario, onChange) {
       tr.appendChild(selectCell(dowOptions, dowValue, o => (o === 'none' ? 'None' : DOW_LABELS[Number(o)]), v => {
         const didactics = v === 'none' ? null : { dow: Number(v), half: r.didactics?.half ?? 'PM', hard: r.didactics?.hard ?? false };
         onChange(patchResident(scenario, i, { didactics }));
-      }, false, 'Weekly didactics day of week.'));
+      }, false, 'Weekly didactics day — defaulted from role/kind; override here per resident.'));
 
       tr.appendChild(selectCell(['AM', 'PM'], r.didactics?.half ?? 'PM', null, v => {
         if (!r.didactics) return;

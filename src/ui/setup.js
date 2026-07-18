@@ -12,13 +12,19 @@ const CARRY_TITLES = {
   dayCallSenior: 'Who was the day-call senior at the end of last month — needed to continue the cycle when the month starts post-call.',
 };
 
-function labeled(labelText, input) {
+function labeled(labelText, input, hint) {
   const wrap = document.createElement('label');
   wrap.className = 'field';
   const span = document.createElement('span');
   span.textContent = labelText;
   wrap.appendChild(span);
   wrap.appendChild(input);
+  if (hint) {
+    const h = document.createElement('span');
+    h.className = 'field-hint';
+    h.textContent = hint;
+    wrap.appendChild(h);
+  }
   return wrap;
 }
 
@@ -72,7 +78,8 @@ export function render(container, scenario, onChange) {
 
   row.appendChild(labeled('Anchor type', selectEl('anchorType', CYCLE, scenario.anchorType,
     o => CYCLE_LABELS[o], v => onChange({ ...scenario, anchorType: v }),
-    'What point in the 6-day call cycle the 1st of the month falls on.')));
+    'What point in the 6-day call cycle the 1st of the month falls on.'),
+    'The day the month starts on within the 6-day call cycle.'));
 
   const quota = document.createElement('input');
   quota.type = 'number';
@@ -83,7 +90,8 @@ export function render(container, scenario, onChange) {
   quota.addEventListener('change', () => onChange({
     ...scenario, options: { ...scenario.options, offQuota: Number(quota.value) },
   }));
-  row.appendChild(labeled('Off quota', quota));
+  row.appendChild(labeled('Off quota', quota,
+    'Days off per person the model solves for (pro-rated by days on service).'));
 
   const golden = document.createElement('input');
   golden.type = 'checkbox';

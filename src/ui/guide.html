@@ -477,8 +477,8 @@
             </tr>
             <tr>
               <td><strong>Kind</strong></td>
-              <td>Training background: categorical, TY, psych, OB/GYN, or other. Informational —
-                useful context when reviewing the schedule.</td>
+              <td>Training background: categorical, TY, psych, OB/GYN, or other. Together with
+                <strong>Role</strong> it sets each resident's default didactics day (see below).</td>
             </tr>
             <tr>
               <td><strong>Start / End</strong></td>
@@ -488,10 +488,13 @@
             </tr>
             <tr>
               <td><strong>Didactics: day / half / hard</strong></td>
-              <td>Pick a weekday and AM/PM half for this resident's protected teaching block.
-                Marking it <strong>hard</strong> makes it protected: the solver only puts them on
-                the pager over hard didactics when there is truly no other option, and it raises
-                a warning when it does.</td>
+              <td>The weekly teaching half-day. It's filled in automatically from
+                <strong>Role</strong> and <strong>Kind</strong> — seniors and psych interns
+                <strong>Tue PM</strong>, TY interns <strong>Wed PM</strong>, categorical interns
+                <strong>Thu PM</strong> — and you can change the day, half, or protection for any
+                resident. Marking it <strong>hard</strong> makes it protected: the solver only puts
+                them on the pager over hard didactics when there is truly no other option, and it
+                raises a warning when it does.</td>
             </tr>
           </tbody>
         </table>
