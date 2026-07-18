@@ -101,7 +101,7 @@ function topBar() {
   guideBtn.className = 'btn-secondary';
   guideBtn.textContent = 'Guide';
   guideBtn.title = 'Open the full user guide.';
-  guideBtn.addEventListener('click', () => dialogEl.showModal());
+  guideBtn.addEventListener('click', () => { if (!dialogEl.open) dialogEl.showModal(); });
   right.appendChild(guideBtn);
 
   const dlBtn = document.createElement('button');
@@ -376,7 +376,7 @@ function resultsEmptyState() {
   btn.className = 'btn-ghost';
   btn.textContent = 'Open the Guide';
   btn.title = 'Open the full user guide.';
-  btn.addEventListener('click', () => dialogEl.showModal());
+  btn.addEventListener('click', () => { if (!dialogEl.open) dialogEl.showModal(); });
   box.appendChild(btn);
   return box;
 }

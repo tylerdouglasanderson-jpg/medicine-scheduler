@@ -85,8 +85,9 @@ export function render(container, scenario, onChange) {
 
       tr.appendChild(selectCell(ROLES, r.role, null, v => onChange(patchType(scenario, i, { role: v })),
         false, 'Intern vs senior — drives call composition. Seniors default to Tue PM didactics.'));
-      tr.appendChild(selectCell(KINDS, r.kind, null, v => onChange(patchType(scenario, i, { kind: v })),
-        false, 'Training background. Sets the default didactics day: psych → Tue PM, TY → Wed PM, categorical → Thu PM. Override the day per resident if needed.'));
+      tr.appendChild(selectCell(KINDS, r.kind, k => (k === 'categorical' ? 'Family Medicine' : k),
+        v => onChange(patchType(scenario, i, { kind: v })),
+        false, 'Training background. Sets the default didactics day: psych → Tue PM, TY → Wed PM, Family Medicine → Thu PM. Override the day per resident if needed.'));
 
       const start = document.createElement('input');
       start.type = 'date';
