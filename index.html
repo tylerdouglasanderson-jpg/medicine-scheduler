@@ -8,6 +8,32 @@
   </head>
   <body>
     <div id="app"></div>
+    <footer style="text-align:center;padding:1.5rem 1rem 2rem;font:13px/1.5 system-ui,-apple-system,sans-serif;color:var(--muted,#888)">
+      Runs entirely in your browser — nothing leaves this page.
+      <button type="button" id="dl-open" style="margin-left:.4rem;font:inherit;font-weight:600;color:var(--accent,#2563eb);background:none;border:1px solid currentColor;border-radius:6px;padding:.25rem .6rem;cursor:pointer">Run it yourself&nbsp;↗</button>
+    </footer>
+    <dialog id="dl-modal" style="max-width:24rem;border:1px solid var(--border,#ccc);border-radius:12px;padding:0;background:var(--panel,Canvas);color:var(--text,CanvasText);box-shadow:0 10px 40px rgba(0,0,0,.35)">
+      <div style="padding:1.25rem 1.4rem;font:14px/1.55 system-ui,-apple-system,sans-serif">
+        <h2 style="margin:0 0 .5rem;font-size:1.05rem">Run it on your own machine</h2>
+        <p style="margin:0 0 1rem;color:var(--muted,#888)">
+          <strong>Medicine-Scheduler.zip</strong> (~1.8&nbsp;MB) — the whole app as one self-contained HTML file plus a one-click launcher. Unzip, double-click, it opens in your browser. No install, no internet needed, nothing is uploaded.
+        </p>
+        <div style="display:flex;flex-direction:column;gap:.55rem">
+          <a href="https://github.com/tylerdouglasanderson-jpg/medicine-scheduler/releases/latest/download/Medicine-Scheduler.zip" style="display:block;text-align:center;font-weight:600;text-decoration:none;padding:.6rem;border-radius:8px;background:var(--accent,#2563eb);color:#fff">Download the zip</a>
+          <a href="https://github.com/tylerdouglasanderson-jpg/medicine-scheduler" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;padding:.6rem;border-radius:8px;border:1px solid var(--border,#ccc);color:inherit">View the project on GitHub</a>
+        </div>
+        <button type="button" id="dl-close" style="margin-top:1rem;width:100%;font:inherit;background:none;border:none;color:var(--muted,#888);cursor:pointer">Close</button>
+      </div>
+    </dialog>
+    <style>#dl-modal::backdrop{background:rgba(0,0,0,.55)}</style>
+    <script>
+      (function () {
+        var m = document.getElementById('dl-modal');
+        document.getElementById('dl-open').addEventListener('click', function () { m.showModal(); });
+        document.getElementById('dl-close').addEventListener('click', function () { m.close(); });
+        m.addEventListener('click', function (e) { if (e.target === m) m.close(); }); // click scrim closes
+      })();
+    </script>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
