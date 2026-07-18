@@ -82,7 +82,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focu
 .app-bar-right { display: flex; gap: 0.6rem; align-items: center; }
 
 /* ---- main / panels ---- */
-.main { max-width: 1100px; margin: 0 auto; padding: 1.25rem 1.25rem 2rem; }
+.main { max-width: 1240px; margin: 0 auto; padding: 1.25rem 1.25rem 2rem; }
 .panel {
   background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
   box-shadow: var(--shadow); padding: 1rem 1.15rem; margin-bottom: 1.25rem;
@@ -149,8 +149,9 @@ input[type="checkbox"] { accent-color: var(--accent); min-height: auto; width: a
 .roster-table tbody tr:nth-child(even), .totals-table tbody tr:nth-child(even) {
   background: color-mix(in oklch, var(--panel) 45%, transparent);
 }
-/* Roster has many columns (2 date pickers, 3 selects, actions) — let it scroll
-   horizontally instead of clipping/overflowing the panel on narrower screens. */
+/* Roster has many columns (2 date pickers, 3 selects, actions). The 1240px shell
+   fits them all on normal screens; this wrapper is a fallback so a very narrow
+   window scrolls horizontally instead of clipping (no scrollbar shows when it fits). */
 .roster-scroll { overflow-x: auto; margin-bottom: 0.75rem; }
 .roster-scroll .roster-table { margin-bottom: 0; }
 .roster-table th, .roster-table td { padding-left: 0.45rem; padding-right: 0.45rem; }
