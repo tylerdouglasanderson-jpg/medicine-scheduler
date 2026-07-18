@@ -149,6 +149,12 @@ input[type="checkbox"] { accent-color: var(--accent); min-height: auto; width: a
 .roster-table tbody tr:nth-child(even), .totals-table tbody tr:nth-child(even) {
   background: color-mix(in oklch, var(--panel) 45%, transparent);
 }
+/* Roster has many columns (2 date pickers, 3 selects, actions) — let it scroll
+   horizontally instead of clipping/overflowing the panel on narrower screens. */
+.roster-scroll { overflow-x: auto; margin-bottom: 0.75rem; }
+.roster-scroll .roster-table { margin-bottom: 0; }
+.roster-table th, .roster-table td { padding-left: 0.45rem; padding-right: 0.45rem; }
+.roster-table td .btn-ghost, .roster-table td .btn-secondary { white-space: nowrap; }
 
 /* ---- chip mode picker: segmented pills ---- */
 .chip-mode-picker { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.85rem; }

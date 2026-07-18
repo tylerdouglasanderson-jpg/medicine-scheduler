@@ -71,7 +71,10 @@ export function render(container, scenario, onChange) {
 
     const tbody = document.createElement('tbody');
     table.appendChild(tbody);
-    container.appendChild(table);
+    const scroll = document.createElement('div');
+    scroll.className = 'roster-scroll';
+    scroll.appendChild(table);
+    container.appendChild(scroll);
 
     scenario.residents.forEach((r, i) => {
       const tr = document.createElement('tr');
