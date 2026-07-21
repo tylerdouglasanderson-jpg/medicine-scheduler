@@ -30,9 +30,15 @@ describe('buildModel(feb-2026) structure', () => {
     expect(nights.filter(([, m]) => m.date === '2026-02-17').length).toBe(3);
   });
 
-  it('Intern1 quota row = 2 with zero slack headroom (floor max(q-1,2) = 2)', () => {
+  it('Intern1 quota row = 2 (half window) and is a hard equality — no slack var at all', () => {
     expect(lp).toMatch(/q_0:.* = 2/);
-    expect(lp).toMatch(/0 <= short_0 <= 0/);
+    expect(lp).not.toMatch(/short_/);
+  });
+
+  it('opts.elasticQuota re-adds the slack (diagnosis path only)', () => {
+    const el = buildModel(parseScenario(feb), null, { elasticQuota: true });
+    expect(el.lp).toMatch(/short_0/);
+    expect(el.lp).toMatch(/q_0:.*short_0.* = 2/);
   });
 
   it('consecutive-night slack vars exist; no 2S+1I alternation rows (partial window)', () => {

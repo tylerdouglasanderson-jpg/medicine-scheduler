@@ -63,13 +63,11 @@ function inputHonored(s, schedule, warnings) {
     if (check && !check(dd, p)) problems.push(`pin not honored: ${p.person} ${p.type} on ${p.date}`);
   }
 
-  // Off quota: each resident hits quota, or quota-1 WITH a W_QUOTA_SHORT warning naming them.
+  // Off quota is a hard line: every resident hits their pro-rated number exactly, no exceptions.
   for (const r of s.residents) {
     const q = quotaFor(r, s);
     const off = schedule.totals[r.name]?.off ?? 0;
-    if (off === q) continue;
-    if (off === q - 1 && warnings.some(w => w.code === 'W_QUOTA_SHORT' && w.person === r.name)) continue;
-    problems.push(`off quota: ${r.name} has ${off} off, expected ${q}`);
+    if (off !== q) problems.push(`off quota: ${r.name} has ${off} off, expected ${q}`);
   }
   return problems;
 }

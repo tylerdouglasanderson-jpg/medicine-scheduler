@@ -19,14 +19,10 @@ describe('feb-2026 golden solve (Node)', () => {
 
   it('zero audit violations', () => expect(audit(s, schedule).violations).toEqual([]));
 
-  it('off counts = quota (or quota-1 + warning); Intern1 exactly 2', () => {
-    for (const r of s.residents) {
-      const q = quotaFor(r, s);
-      expect([q, q - 1]).toContain(schedule.totals[r.name].off);
-      if (schedule.totals[r.name].off === q - 1)
-        expect(warnings.some(w => w.code === 'W_QUOTA_SHORT' && w.person === r.name)).toBe(true);
-    }
-    expect(schedule.totals.Intern1.off).toBe(2);
+  it('off counts = quota EXACTLY for everyone (hard line); Intern1 2 on a half window', () => {
+    for (const r of s.residents) expect(schedule.totals[r.name].off).toBe(quotaFor(r, s));
+    expect(schedule.totals.Intern1.off).toBe(2);   // Feb 1-15 = 15/28 days -> 4 * 15/28 rounds to 2
+    expect(warnings.some(w => w.code === 'W_QUOTA_SHORT')).toBe(false);
   });
 
   it('no offs on call/post-call; night workers sleep next day', () => {
@@ -188,5 +184,19 @@ describe('variants', () => {
     const r = await solve(s);
     expect(r.infeasible.diagnosis).toMatch(/pin/i);
     expect(r.infeasible.culprits.length).toBeGreaterThan(0);
+  });
+
+  it('an unreachable off quota is named as the culprit, not "over-constrained inputs"', async () => {
+    // Two residents on team F: the day team needs 2, so nobody can ever take a day off, yet each
+    // is owed 4. Eligible days exist (validate passes) — only the solve can find this.
+    const s = parseScenario({
+      ...feb,
+      residents: feb.residents.filter(r => ['Intern2', 'Senior1'].includes(r.name))
+        .map(r => ({ ...r, pto: [], commitments: [], serviceStart: '2026-02-01', serviceEnd: '2026-02-28' })),
+    });
+    expect(validate(s)).toEqual([]);
+    const r = await solve(s);
+    expect(r.infeasible.diagnosis).toMatch(/off quota/i);
+    expect(r.infeasible.culprits.map(c => c.person).sort()).toEqual(['Intern2', 'Senior1']);
   });
 });

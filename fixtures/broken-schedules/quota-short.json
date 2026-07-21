@@ -1,5 +1,5 @@
 {
-  "expect": "A_QUOTA_FLOOR",
+  "expect": "A_QUOTA_SHORT",
   "scenario": {
     "team": "F",
     "month": "2026-02",

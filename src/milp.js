@@ -5,7 +5,8 @@ import { deriveCycle, monthDates, onService, serviceDaysIn, quotaFor } from './m
 
 export const WEIGHTS = {
   consecSlack: 1000000,    // P1 per consecutive-nights slack use
-  quotaShort: 200000,      // P2 per whole off short
+  quotaShort: 200000,      // P2 per whole off short — DIAGNOSTIC ONLY (opts.elasticQuota; the
+                           //    real model makes quota a hard equality, see hard row (1))
   didacticsEscape: 100000, // P3 post-call pager holder has hard didactics that dow
   attendingPager: 100000,  // P4 attending holds pager, per day
   stability: 3000,         // S1 per changed binary vs lastSolution
@@ -22,9 +23,16 @@ export const WEIGHTS = {
   morningReport: 4,        // S8 per off on a Morning-Report pre-call day
   multiOff: 2,             // S9 per excess off above 1 on a date
   goldenWeekend: 15,       // S10 reward (applied negative) per Sat+Sun off pair
+  offPrecall: 6,           // S12 reward per off on a non-Morning-Report pre-call day (lightest day)
+  offSc2: 3,               // S12 reward per off on a short-call-2 day (next lightest)
+  mrThin: 60,              // S13 fewer than 2 people present on a Morning-Report day
+  mrNoSenior: 30,          // S13 no senior present on a Morning-Report day
+  mrNoIntern: 20,          // S13 no intern present on a Morning-Report day
 };
 
-export function buildModel(scenario, freezeDate = null) {
+// opts.elasticQuota re-adds the per-person quota slack. Used ONLY by solve.js's diagnose() to tell
+// "the off quota is what's unsatisfiable" apart from every other cause of infeasibility.
+export function buildModel(scenario, freezeDate = null, { elasticQuota = false } = {}) {
   const { types, callDays, morningReportDays } = deriveCycle(scenario.anchorType, scenario.month);
   const dates = monthDates(scenario.month);
   const di = new Map(dates.map((d, i) => [d, i]));
@@ -126,10 +134,9 @@ export function buildModel(scenario, freezeDate = null) {
     addObj(WEIGHTS.attendingPager, `att_${di.get(d)}`);
   });
 
-  people.forEach((p, pi) => {   // quota slack
+  if (elasticQuota) people.forEach((p, pi) => {   // diagnostic-only quota slack
     const q = quotaFor(p, scenario);
-    const floor = Math.max(q - 1, Math.min(q, 2));
-    cont(`short_${pi}`, { kind: 'short', person: p.name }, 0, Math.max(0, q - floor));
+    cont(`short_${pi}`, { kind: 'short', person: p.name }, 0, q);
     addObj(WEIGHTS.quotaShort, `short_${pi}`);
   });
 
@@ -150,7 +157,9 @@ export function buildModel(scenario, freezeDate = null) {
   }
 
   // ---- hard rows ----
-  // (1) elastic quota: counted offs + short = quota (offFree excluded; halfOff pins are 0.5 constants)
+  // (1) HARD quota: counted offs = quota, no slack (offFree excluded; halfOff pins are 0.5 constants).
+  // Everyone gets their full pro-rated quota or the month is infeasible — a short month is never a
+  // valid answer. The slack only comes back under opts.elasticQuota, for diagnosis.
   people.forEach((p, pi) => {
     const terms = [];
     dates.forEach(d => {
@@ -158,7 +167,8 @@ export function buildModel(scenario, freezeDate = null) {
       if (v && !hasPin(p, d, 'offFree')) terms.push(T(1, v));
     });
     const halfCount = scenario.pins.filter(x => x.person === p.name && x.type === 'halfOff').length;
-    cons.push(`q_${pi}: ` + lin([...terms, T(1, `short_${pi}`)]) + ' = ' + (quotaFor(p, scenario) - 0.5 * halfCount));
+    const slack = elasticQuota ? [T(1, `short_${pi}`)] : [];
+    cons.push(`q_${pi}: ` + lin([...terms, ...slack]) + ' = ' + (quotaFor(p, scenario) - 0.5 * halfCount));
   });
 
   // (3) exactly one night per call day
@@ -366,6 +376,37 @@ export function buildModel(scenario, freezeDate = null) {
     const v = offName.get(p.name + '|' + d);
     if (v) addObj(WEIGHTS.morningReport, v);
   }));
+
+  // S12 steer offs onto the lightest days: pre-call first (but not a Morning-Report pre-call),
+  // then sc2. Rewards are below offSpread (10) so weekly spacing still wins the argument.
+  const mrSet = new Set(morningReportDays);
+  dates.forEach(d => {
+    const t = types.get(d);
+    const reward = t === 'precall' && !mrSet.has(d) ? WEIGHTS.offPrecall
+      : t === 'sc2' ? WEIGHTS.offSc2 : 0;
+    if (!reward) return;
+    people.forEach(p => {
+      const v = offName.get(p.name + '|' + d);
+      if (v) addObj(-reward, v);
+    });
+  });
+
+  // S13 Morning-Report staffing: keep at least 2 people on, ideally one senior AND one intern.
+  // Soft — a day where nothing else works may still go thin, and the auditor will say so.
+  morningReportDays.forEach((d, k) => {
+    const avail = people.filter(p => onService(p, d) && !isPto(p, d));
+    const offVars = ps => ps.map(p => offName.get(p.name + '|' + d)).filter(Boolean).map(v => T(1, v));
+    const softMin = (group, minPresent, slack, weight) => {
+      const terms = offVars(group);
+      if (!terms.length || group.length < minPresent) return;   // structurally impossible: no penalty
+      cont(slack, { kind: 'mr', date: d });
+      cons.push(`${slack}_r: ` + lin([...terms, T(-1, slack)]) + ' <= ' + (group.length - minPresent));
+      addObj(weight, slack);
+    };
+    softMin(avail, 2, `mrthin_${k}`, WEIGHTS.mrThin);
+    softMin(avail.filter(p => p.role === 'senior'), 1, `mrsen_${k}`, WEIGHTS.mrNoSenior);
+    softMin(avail.filter(p => p.role === 'intern'), 1, `mrint_${k}`, WEIGHTS.mrNoIntern);
+  });
 
   // S11 seniors preferably not off on the first day of the month
   people.forEach(p => {

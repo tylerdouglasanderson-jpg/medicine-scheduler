@@ -439,9 +439,12 @@
             </tr>
             <tr>
               <td><strong>Off quota</strong></td>
-              <td>The target number of counted days off for a resident on service the <em>full</em>
-                month. The app pro-rates this for each resident by their actual service days
-                (rounded half up). Typical value: 4.</td>
+              <td>The number of counted days off for a resident on service the <em>full</em> month.
+                The app pro-rates this for each resident by their actual service days (rounded half
+                up), so a half-month seat gets half. Typical value: 4 — so 4 in a full month, 2 on a
+                two-week window. This is a <strong>hard line</strong>: the solver gives everyone
+                their full number or reports the month as infeasible. It will never quietly hand
+                someone a day less.</td>
             </tr>
             <tr>
               <td><strong>Attempt golden weekend</strong></td>
@@ -611,8 +614,23 @@
         Any <strong>pre-call</strong> day that falls on a <strong>Tuesday or Thursday</strong> is a
         Morning Report day — your team presents. Those TYPE cells are outlined in purple and tagged
         <strong>MORNING REPORT</strong> on screen, in the exported xlsx, and in print, so the team
-        can see at a glance which mornings are theirs. The solver already steers days off away from
-        these days; the tag is there so nobody is surprised the night before.
+        can see at a glance which mornings are theirs.
+      </p>
+      <p>
+        The solver also protects the coverage on those days: it keeps <strong>at least two people
+        on</strong>, and prefers <strong>a senior and an intern</strong> over any other pairing. Two
+        interns is acceptable; one person alone is a last resort. These are strong preferences, not
+        hard rules — a day where nothing else works can still go thin, and you'll see
+        <code>W_MR_THIN</code>, <code>W_MR_NO_SENIOR</code>, or <code>W_MR_NO_INTERN</code> in
+        Potential Issues when it does.
+      </p>
+      <h3>Which days become days off</h3>
+      <p>
+        Pre-call is the lightest day of the cycle and short-call 2 is next, so the solver prefers to
+        place days off there — a pre-call day is the natural one to run with one fewer person. That
+        preference is deliberately weaker than the rule spacing days off across the weeks, so it
+        won't bunch two of someone's days off into the same week just to land on a pre-call. Morning
+        Report pre-calls are excluded from the preference.
       </p>
       <h3>Color legend</h3>
       <p>These are the exact fills used on screen, in the exported xlsx, and when you print — one color language throughout.</p>
@@ -724,6 +742,11 @@
               <td>A call day's on-service roster can't staff call — e.g. no senior on that day, or fewer than two people.</td>
               <td>Adjust service windows or the roster.</td>
             </tr>
+            <tr>
+              <td class="code-cell">QUOTA_IMPOSSIBLE</td>
+              <td>Someone has fewer eligible days than their off quota — every other day is call, post-call, PTO, or a commitment. Days off are a hard requirement, so this can never be solved around.</td>
+              <td>Free up a day (move a clinic), or lower the off quota.</td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -743,7 +766,9 @@
             <tr><td class="code-cell">W_DIDACTICS_MISS</td><td>Pager duty makes someone miss hard didactics.</td></tr>
             <tr><td class="code-cell">W_MULTI_OFF</td><td>More than one person is off the same day.</td></tr>
             <tr><td class="code-cell">W_SENIOR_OFF_SC</td><td>A senior is off on a short-call day.</td></tr>
-            <tr><td class="code-cell">W_QUOTA_SHORT</td><td>Someone got one fewer off than their quota.</td></tr>
+            <tr><td class="code-cell">W_MR_THIN</td><td>Fewer than two people on for Morning Report.</td></tr>
+            <tr><td class="code-cell">W_MR_NO_SENIOR</td><td>No senior on for Morning Report.</td></tr>
+            <tr><td class="code-cell">W_MR_NO_INTERN</td><td>No intern on for Morning Report.</td></tr>
             <tr><td class="code-cell">W_DUTY_HOUR</td><td>Fewer than one rest day in seven across their service.</td></tr>
             <tr><td class="code-cell">W_LONG_STRETCH</td><td>More than six consecutive worked days.</td></tr>
             <tr><td class="code-cell">W_CONSEC_NIGHT</td><td>Night call on back-to-back call days.</td></tr>

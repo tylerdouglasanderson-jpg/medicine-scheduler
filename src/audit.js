@@ -116,6 +116,18 @@ export function audit(scenario, schedule) {
     if (dayTeam.length < Math.min(medCstaff ? 1 : 2, effAvail))
       V('A_STAFFING', `Only ${dayTeam.length} working the day team on ${d} (floor ${Math.min(medCstaff ? 1 : 2, effAvail)})`, null, d);
 
+    // W_MR_THIN / W_MR_NO_SENIOR / W_MR_NO_INTERN — Morning Report = pre-call on Tue/Thu, this
+    // team presents: want 2+ on, ideally a senior and an intern. Soft, so these are warnings.
+    if (t === 'precall' && (dow(d) === 2 || dow(d) === 4)) {
+      const present = avail.filter(r => !dd.off.includes(r.name));
+      if (present.length < 2)
+        W('W_MR_THIN', `Only ${present.length} on for Morning Report (${d}) — the team presents that day`, null, d);
+      else if (!present.some(r => r.role === 'senior'))
+        W('W_MR_NO_SENIOR', `No senior on for Morning Report (${d})`, null, d);
+      else if (!present.some(r => r.role === 'intern') && avail.some(r => r.role === 'intern'))
+        W('W_MR_NO_INTERN', `No intern on for Morning Report (${d})`, null, d);
+    }
+
     // W_MULTI_OFF / W_SENIOR_OFF_SC
     if (dd.off.length > 1)
       W('W_MULTI_OFF', `${dd.off.length} people off on ${d} (${dd.off.join(', ')})`, null, d);
@@ -151,7 +163,7 @@ export function audit(scenario, schedule) {
     }
   });
 
-  // ---------- per-person: A_QUOTA_FLOOR / W_QUOTA_SHORT / W_DUTY_HOUR / W_LONG_STRETCH ----------
+  // ---------- per-person: A_QUOTA_SHORT / W_DUTY_HOUR / W_LONG_STRETCH ----------
   for (const r of scenario.residents) {
     const svc = allDates.filter(d => onSvc(r, d));
     if (svc.length === 0) continue;
@@ -160,11 +172,9 @@ export function audit(scenario, schedule) {
     const freeDates = new Set(pins.filter(p => p.person === r.name && p.type === 'offFree').map(p => p.date));
     let counted = svc.filter(d => day(d)?.off.includes(r.name) && !freeDates.has(d)).length;
     counted += 0.5 * pins.filter(p => p.person === r.name && p.type === 'halfOff').length;
-    const floor = Math.max(quota - 1, Math.min(quota, 2));
-    if (counted < floor)
-      V('A_QUOTA_FLOOR', `${r.name} has ${counted} counted offs; floor is ${floor} (quota ${quota})`, r.name);
-    else if (counted < quota)
-      W('W_QUOTA_SHORT', `${r.name} received quota-1 offs (${counted}/${quota})`, r.name);
+    // Quota is a hard line: the full pro-rated number of offs, every person, every month.
+    if (counted < quota)
+      V('A_QUOTA_SHORT', `${r.name} has ${counted} counted offs; the quota is ${quota} (${svc.length} service days)`, r.name);
 
     // duty-hour: (offs incl. free + PTO) / serviceDays < 1/7
     const ptoDays = (r.pto ?? []).filter(d => svc.includes(d)).length;

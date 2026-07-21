@@ -55,6 +55,21 @@ export function validate(scenario) {
   if (scenario.anchorType === 'postcall' && !scenario.carryIn)
     err('CARRYIN_REQUIRED', null, dates[0], 'Anchor is post-call: carry-in (night person + day-call intern/senior) is required');
 
+  // The off quota is hard, so an impossible one is an input error, not an infeasible solve.
+  // Eligible off day = on service, no PTO, not call/post-call, no commitment that day.
+  for (const r of scenario.residents) {
+    const svc = dates.filter(d => onService(r, d));
+    if (!svc.length) continue;
+    const quota = Math.floor(scenario.options.offQuota * svc.length / dates.length + 0.5);
+    const halfCredit = 0.5 * scenario.pins.filter(p => p.person === r.name && p.type === 'halfOff').length;
+    const eligible = svc.filter(d =>
+      !r.pto.includes(d) && !['call', 'postcall'].includes(types.get(d))
+      && !r.commitments.some(c => c.date === d)).length;
+    if (eligible < quota - halfCredit)
+      err('QUOTA_IMPOSSIBLE', r.name, null,
+        `${r.name} needs ${quota} days off but only has ${eligible} eligible day(s) — every other day is call, post-call, PTO, or a commitment. Free up a day or lower the off quota.`);
+  }
+
   for (const c of callDays) {
     const on = scenario.residents.filter(r => onService(r, c));
     const seniors = on.filter(r => r.role === 'senior').length;

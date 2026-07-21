@@ -369,7 +369,7 @@ function renderResults() {
       const ul = document.createElement('ul');
       for (const c of diagnosis.culprits) {
         const li = document.createElement('li');
-        li.textContent = `${c.type} — ${c.person} ${c.date}`;
+        li.textContent = [c.type, '—', c.person, c.date].filter(Boolean).join(' ');
         ul.appendChild(li);
       }
       box.appendChild(ul);

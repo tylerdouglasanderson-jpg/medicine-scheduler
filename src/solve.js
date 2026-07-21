@@ -1,7 +1,7 @@
 // HiGHS wrapper + column-primal extraction to the Schedule shape + staged pin diagnosis.
 // solve() is pure (no DOM, no storage). It does NOT import audit.js — the UI composes them.
 import { buildModel } from './milp.js';
-import { deriveCycle, onService, quotaFor } from './model.js';
+import { deriveCycle, onService } from './model.js';
 import { validate } from './validate.js';
 
 // Detect Node the same way highs.js's own Emscripten runtime does (globalThis.process.versions.node) —
@@ -52,6 +52,26 @@ function diagnose(scenario, freezeDate, highs) {
       return { infeasible: { diagnosis: `Infeasible until dropping these pins: ${list}`, culprits } };
     }
   }
+
+  // Quota is a hard equality. If the month solves once that equality is allowed to fall short,
+  // the quota is the binding problem — say so, and name who can't be paid their days off.
+  const el = buildModel(scenario, freezeDate, { elasticQuota: true });
+  const r = highs.solve(el.lp, SOLVE_OPTS);
+  if (r.Status === 'Optimal') {
+    const short = [];
+    for (const [name, m] of el.vars)
+      if (m.kind === 'short' && (r.Columns[name]?.Primal ?? 0) > 1e-6)
+        short.push({ type: 'quota', person: m.person, date: null });
+    const who = short.map(s => s.person).join(', ') || 'someone';
+    return {
+      infeasible: {
+        diagnosis: `Everyone must get their full off quota, and there is no way to give ${who} `
+          + 'theirs this month. Free up eligible days (fewer clinics/PTO on non-call days), '
+          + 'lower the off quota, or add a resident.',
+        culprits: short,
+      },
+    };
+  }
   return { infeasible: { diagnosis: 'over-constrained inputs (check PTO/commitment density)', culprits: [] } };
 }
 
@@ -66,7 +86,7 @@ function extract(scenario, vars, cols) {
   const prim = n => cols[n]?.Primal ?? 0;
 
   // read primals grouped by kind
-  const nightOf = {}, offOf = {}, pagerOf = {}, attOf = {}, shortOf = {};
+  const nightOf = {}, offOf = {}, pagerOf = {}, attOf = {};
   const consecList = [];
   for (const [name, m] of vars) {
     const v = prim(name);
@@ -74,7 +94,6 @@ function extract(scenario, vars, cols) {
     else if (m.kind === 'night') { if (v > 0.5) nightOf[m.date] = m.person; }
     else if (m.kind === 'pager') { if (v > 0.5) pagerOf[m.date] = m.person; }
     else if (m.kind === 'att') { if (v > 0.5) attOf[m.date] = true; }
-    else if (m.kind === 'short') shortOf[m.person] = v;
     else if (m.kind === 'consec') { if (v > 0.5) consecList.push(m); }
   }
 
@@ -157,9 +176,6 @@ function extract(scenario, vars, cols) {
   // ---- warnings from slack primals + derived didactics/carry-out ----
   const warnings = [];
   const W = (code, message, person, date) => warnings.push({ code, message, person, date });
-  for (const p of people)
-    if ((shortOf[p.name] ?? 0) > 1e-6)
-      W('W_QUOTA_SHORT', `${p.name} received quota-1 offs (${totals[p.name].off}/${quotaFor(p, scenario)})`, p.name);
   for (const m of consecList)
     W('W_CONSEC_NIGHT_SLACK', `${m.person} takes night on consecutive call days ending ${m.date}`, m.person, m.date);
   for (const d of dates) {
