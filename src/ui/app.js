@@ -315,7 +315,8 @@ async function runSolve() {
 
 // ---- calendar color legend: swatches reuse the exact calendar fills ----
 const LEGEND = [
-  ['type-call', 'Call'], ['type', 'Cycle type'], ['rounders', 'Rounders'], ['pager', 'Pager'],
+  ['type-call', 'Call'], ['type', 'Cycle type'], ['type-mr', 'Morning Report (we present)'],
+  ['rounders', 'Rounders'], ['pager', 'Pager'],
   ['clinic', 'Clinic'], ['didactics', 'Didactics'], ['pto', 'PTO'], ['off', 'Off'],
 ];
 

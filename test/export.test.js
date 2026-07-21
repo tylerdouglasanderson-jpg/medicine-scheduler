@@ -32,6 +32,14 @@ describe('xlsx export (feb-2026, week of Feb 1-7)', () => {
     expect(String(ws.getCell(5, 6).value)).toContain('—');
   });
 
+  it('Feb 10 (pre-call Tue) TYPE cell carries the MORNING REPORT tag; Feb 5 does not', () => {
+    const mrCell = ws.getCell(11, 4);        // week-2 TYPE row, col 4 = Tue Feb 10
+    expect(String(mrCell.value)).toBe('PRECALL\nMORNING REPORT');
+    expect(mrCell.font.color.argb).toBe('FF7030A0');
+    expect(String(ws.getCell(3, 6).value)).not.toContain('MORNING REPORT');
+    expect(JSON.stringify(ws.getSheetValues())).toContain('MORNING REPORT = this team presents');
+  });
+
   it('totals block lists all four residents with 0.5-increment offs', () => {
     const text = JSON.stringify(ws.getSheetValues());
     for (const n of ['Intern1', 'Intern2', 'Senior1', 'Senior2']) expect(text).toContain(n);

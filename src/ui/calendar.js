@@ -64,7 +64,7 @@ function renderRounders(td, date, type, dd, scenario) {
   }
 }
 
-function buildCell(row, date, scenario, schedule, types) {
+function buildCell(row, date, scenario, schedule, types, mrDays) {
   const td = document.createElement('td');
   if (date == null) {
     td.className = 'blank';
@@ -84,6 +84,16 @@ function buildCell(row, date, scenario, schedule, types) {
     case 'TYPE':
       td.textContent = TYPE_LABEL[type];
       if (type === 'call') td.classList.add('type-call');
+      // Morning Report: this team presents (pre-call team, Tue/Thu) — flag it on the calendar.
+      if (mrDays.has(date)) {
+        td.classList.add('type-mr');
+        td.dataset.morningReport = 'true';
+        td.title = 'Morning Report — this team presents today.';
+        const tag = document.createElement('div');
+        tag.className = 'mr-tag';
+        tag.textContent = 'MORNING REPORT';
+        td.appendChild(tag);
+      }
       break;
     case 'ROUNDERS':
       renderRounders(td, date, type, dd, scenario);
@@ -116,7 +126,7 @@ function buildWeeks(dates, firstDow) {
   return weeks;
 }
 
-function renderWeek(week, scenario, schedule, types) {
+function renderWeek(week, scenario, schedule, types, mrDays) {
   const table = document.createElement('table');
   table.className = 'week';
   for (const row of ROWS) {
@@ -124,14 +134,15 @@ function renderWeek(week, scenario, schedule, types) {
     const th = document.createElement('th');
     th.textContent = row;
     tr.appendChild(th);
-    for (const date of week) tr.appendChild(buildCell(row, date, scenario, schedule, types));
+    for (const date of week) tr.appendChild(buildCell(row, date, scenario, schedule, types, mrDays));
     table.appendChild(tr);
   }
   return table;
 }
 
 export function renderCalendar(scenario, schedule) {
-  const { types } = deriveCycle(scenario.anchorType, scenario.month);
+  const { types, morningReportDays } = deriveCycle(scenario.anchorType, scenario.month);
+  const mrDays = new Set(morningReportDays);
   const dates = monthDates(scenario.month);
   const [Y, M] = scenario.month.split('-').map(Number);
   const firstDow = new Date(Y, M - 1, 1).getDay();
@@ -146,7 +157,7 @@ export function renderCalendar(scenario, schedule) {
   const weeksWrap = document.createElement('div');
   weeksWrap.className = 'weeks';
   for (const week of buildWeeks(dates, firstDow))
-    weeksWrap.appendChild(renderWeek(week, scenario, schedule, types));
+    weeksWrap.appendChild(renderWeek(week, scenario, schedule, types, mrDays));
   container.appendChild(weeksWrap);
 
   return container;

@@ -20,6 +20,7 @@ const TOTALS_COLS = [
   ['Perks', 'perks'], ['Off + Bonus', 'offBonus'],
 ];
 const TOTALS_START_COL = 10; // column J
+const MR_FONT = 'FF7030A0';  // Morning-Report label — matches the app's --cal-mr
 
 const dowOf = date => { const [y, m, d] = date.split('-').map(Number); return new Date(y, m - 1, d).getDay(); };
 
@@ -88,7 +89,7 @@ function buildWeeks(dates, firstDow) {
   return weeks;
 }
 
-function writeCalendar(ws, scenario, schedule, types, dates, firstDow) {
+function writeCalendar(ws, scenario, schedule, types, dates, firstDow, mrDays) {
   let row = 2;
   for (const week of buildWeeks(dates, firstDow)) {
     for (const label of ROWS) {
@@ -102,6 +103,11 @@ function writeCalendar(ws, scenario, schedule, types, dates, firstDow) {
         cell.value = cellText(label, date, type, dd, scenario, schedule);
         const fillKey = label === 'TYPE' && type === 'call' ? 'CALL' : label;
         if (FILLS[fillKey]) fill(cell, FILLS[fillKey]);
+        // Morning Report: this team presents (pre-call team on Tue/Thu).
+        if (label === 'TYPE' && mrDays.has(date)) {
+          cell.value = `${cell.value}\nMORNING REPORT`;
+          cell.font = { bold: true, color: { argb: MR_FONT } };
+        }
       });
     }
   }
@@ -121,6 +127,7 @@ function writeTotals(ws, schedule) {
 function writeNotes(ws, scenario, auditResult, startRow) {
   let row = startRow + 1;
   ws.getCell(row++, 1).value = 'Notes';
+  ws.getCell(row++, 1).value = 'MORNING REPORT = this team presents (pre-call team, Tue & Thu).';
   for (const r of scenario.residents) {
     if (!r.didactics) continue;
     const stop = r.didactics.hard ? 'hard stop' : 'soft stop';
@@ -133,7 +140,7 @@ function writeNotes(ws, scenario, auditResult, startRow) {
 }
 
 export async function buildWorkbook(scenario, schedule, auditResult, version) {
-  const { types } = deriveCycle(scenario.anchorType, scenario.month);
+  const { types, morningReportDays } = deriveCycle(scenario.anchorType, scenario.month);
   const dates = monthDates(scenario.month);
   const [Y, M] = scenario.month.split('-').map(Number);
   const firstDow = new Date(Y, M - 1, 1).getDay();
@@ -143,7 +150,8 @@ export async function buildWorkbook(scenario, schedule, auditResult, version) {
 
   ws.getCell(1, 1).value = `${MONTH_NAMES[M - 1]} ${Y}  ${DOW_NAMES[firstDow].toUpperCase()}  —  built ${version}`;
 
-  const afterCalendar = writeCalendar(ws, scenario, schedule, types, dates, firstDow);
+  const afterCalendar = writeCalendar(ws, scenario, schedule, types, dates, firstDow,
+    new Set(morningReportDays));
   writeTotals(ws, schedule);
   writeNotes(ws, scenario, auditResult, afterCalendar);
 

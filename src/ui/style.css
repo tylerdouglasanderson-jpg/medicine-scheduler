@@ -33,6 +33,7 @@
   --cal-pto: #FFC000;
   --cal-off: #F4B8C1;
   --cal-blank: #595959;
+  --cal-mr: #7030A0;          /* Morning-Report outline/tag — reads on the blue TYPE fill, prints fine */
 
   --fs-h1: 1.375rem; --fs-h2: 1.05rem; --fs-h3: 0.9rem;
   --fs-body: 0.875rem; --fs-small: 0.78rem; --fs-micro: 0.72rem;
@@ -300,6 +301,7 @@ dialog#feedback-dialog::backdrop { background: oklch(0.2 0.02 255 / 0.5); }
 .legend-swatch { display: inline-block; width: 0.85rem; height: 0.85rem; border-radius: 3px; border: 1px solid var(--cal-border); }
 .legend-swatch.type { background: var(--cal-type); }
 .legend-swatch.type-call { background: var(--cal-call); }
+.legend-swatch.type-mr { background: var(--cal-type); box-shadow: inset 0 0 0 2px var(--cal-mr); }
 .legend-swatch.rounders { background: var(--cal-rounders); }
 .legend-swatch.pager { background: var(--cal-pager); }
 .legend-swatch.clinic { background: var(--cal-clinic); }
@@ -325,6 +327,12 @@ dialog#feedback-dialog::backdrop { background: oklch(0.2 0.02 255 / 0.5); }
 .calendar td.blank { background: var(--cal-blank); color: #fff; }
 .calendar td.type { background: var(--cal-type); }
 .calendar td.type-call { background: var(--cal-call); font-weight: 700; }
+/* Morning Report (pre-call team presents, Tue/Thu): outlined TYPE cell + a tag under the label. */
+.calendar td.type-mr { box-shadow: inset 0 0 0 2px var(--cal-mr); font-weight: 700; }
+.calendar td.type-mr .mr-tag {
+  margin-top: 0.15rem; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.02em;
+  color: var(--cal-mr); white-space: nowrap;
+}
 .calendar td.rounders { background: var(--cal-rounders); }
 .calendar td.pager { background: var(--cal-pager); }
 .calendar td.pager.attending-pager { font-style: italic; }

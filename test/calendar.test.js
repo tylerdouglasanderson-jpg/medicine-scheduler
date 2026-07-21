@@ -46,6 +46,15 @@ describe('calendar render (feb-2026 solved)', () => {
     expect(el.querySelectorAll('td.blank').length).toBe(0);  // Feb 2026 = exactly 4 Sun-Sat weeks (blanks exercised by any 31-day month via a quick extra render assert)
   });
 
+  it('Feb 10 (pre-call Tue) is tagged MORNING REPORT; other days are not', () => {
+    const mr = el.querySelector('[data-date="2026-02-10"][data-row="TYPE"]');
+    expect(mr.classList.contains('type-mr')).toBe(true);
+    expect(mr.textContent).toContain('MORNING REPORT');
+    expect(el.querySelectorAll('td[data-morning-report]').length).toBe(1);  // Feb 2026 has exactly one
+    expect(el.querySelector('[data-date="2026-02-05"][data-row="TYPE"]').textContent)
+      .not.toContain('MORNING REPORT');
+  });
+
   it('totals table: columns + 0.5-increment formatting + audit-consistent off counts', () => {
     const t = renderTotals(schedule);
     expect(t.querySelectorAll('thead th').length).toBe(10);
