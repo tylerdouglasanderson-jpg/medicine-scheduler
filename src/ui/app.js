@@ -1,6 +1,6 @@
 /* global __BUILD_VERSION__ */
 import './style.css';
-import { loadScenario, saveScenario, exportScenarioJSON, importScenarioJSON, storage } from './state.js';
+import { loadScenario, saveScenario, blankScenario, exportScenarioJSON, importScenarioJSON, storage } from './state.js';
 import { validate } from '../validate.js';
 import { audit } from '../audit.js';
 import { downloadXlsx } from '../export.js';
@@ -232,9 +232,31 @@ function actionBar(errors) {
   ioGroup.className = 'action-bar-io';
   ioGroup.appendChild(ioButtons());
   ioGroup.appendChild(exportButtons());
+  ioGroup.appendChild(clearButton());
   bar.appendChild(ioGroup);
 
   return bar;
+}
+
+function clearButton() {
+  const btn = document.createElement('button');
+  btn.id = 'clear-button';
+  btn.type = 'button';
+  btn.className = 'btn-ghost btn-danger';
+  btn.textContent = 'Clear scenario';
+  btn.title = 'Wipe the setup, roster, chips, pins, and solved schedule — start fresh.';
+  btn.disabled = solving;
+  // ponytail: native confirm() — no styled dialog until someone asks for one.
+  btn.addEventListener('click', () => {
+    if (!confirm('Are you sure you want to clear this scenario?')) return;
+    freezeDate = '';
+    diagnosis = null;
+    solveError = null;
+    scenario = blankScenario();
+    saveScenario(scenario);
+    render();
+  });
+  return btn;
 }
 
 function solveButton(errors) {

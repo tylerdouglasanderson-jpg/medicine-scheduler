@@ -2,6 +2,10 @@ import { monthDates, defaultDidactics } from '../model.js';
 
 const ROLES = ['intern', 'senior'];
 const KINDS = ['categorical', 'TY', 'psych', 'OBGYN', 'other'];
+// Display labels only — stored values stay as-is so saved scenarios need no migration.
+const KIND_LABELS = {
+  categorical: 'Family', TY: 'Transitional', psych: 'Psych', OBGYN: 'OB/GYN', other: 'Other',
+};
 const DOW_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 function nextDay(dateStr) {
@@ -88,9 +92,9 @@ export function render(container, scenario, onChange) {
 
       tr.appendChild(selectCell(ROLES, r.role, null, v => onChange(patchType(scenario, i, { role: v })),
         false, 'Intern vs senior — drives call composition. Seniors default to Tue PM didactics.'));
-      tr.appendChild(selectCell(KINDS, r.kind, k => (k === 'categorical' ? 'Family Medicine' : k),
+      tr.appendChild(selectCell(KINDS, r.kind, k => KIND_LABELS[k] ?? k,
         v => onChange(patchType(scenario, i, { kind: v })),
-        false, 'Training background. Sets the default didactics day: psych → Tue PM, TY → Wed PM, Family Medicine → Thu PM. Override the day per resident if needed.'));
+        false, 'Training background. Sets the default didactics day: Psych → Tue PM, Transitional → Wed PM, Family → Thu PM. Override the day per resident if needed.'));
 
       const start = document.createElement('input');
       start.type = 'date';

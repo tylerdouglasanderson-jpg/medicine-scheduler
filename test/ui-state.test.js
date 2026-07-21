@@ -44,4 +44,21 @@ describe('app smoke (jsdom)', () => {
 
     expect(document.querySelectorAll('.carry-in select').length).toBe(3);
   });
+
+  it('Clear scenario: cancel keeps the scenario, confirm empties it and autosave', () => {
+    saveScenario(feb);
+    document.body.innerHTML = '<div id="app"></div>';
+    mount(document.getElementById('app'));
+    expect(document.querySelectorAll('#roster-section tbody tr').length).toBe(4);
+
+    window.confirm = () => false;
+    document.querySelector('#clear-button').click();
+    expect(document.querySelectorAll('#roster-section tbody tr').length).toBe(4);
+
+    window.confirm = () => true;
+    document.querySelector('#clear-button').click();
+    expect(document.querySelectorAll('#roster-section tbody tr').length).toBe(0);
+    expect(loadScenario().residents).toEqual([]);
+    expect(loadScenario().month).toBe('');
+  });
 });

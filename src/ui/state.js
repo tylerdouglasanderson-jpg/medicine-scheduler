@@ -20,6 +20,11 @@ export function loadScenario() {
   return parseScenario(storage.get(KEY) ?? BLANK_SCENARIO);
 }
 
+// Fresh empty scenario — same shape loadScenario() gives on a first-ever visit.
+export function blankScenario() {
+  return parseScenario(BLANK_SCENARIO);
+}
+
 export function saveScenario(scenario) {
   storage.set(KEY, scenario);
 }

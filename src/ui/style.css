@@ -132,6 +132,8 @@ input[type="checkbox"] { accent-color: var(--accent); min-height: auto; width: a
 .btn-ghost { background: transparent; color: var(--ink-2); }
 .btn-ghost:hover:not(:disabled) { color: var(--ink); background: var(--panel); }
 .btn-primary:disabled, .btn-secondary:disabled, .btn-ghost:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-danger { color: var(--danger, #b91c1c); }
+.btn-danger:hover:not(:disabled) { color: var(--danger, #b91c1c); background: var(--panel); }
 
 /* ---- roster / totals tables ---- */
 .roster-table, .totals-table {
