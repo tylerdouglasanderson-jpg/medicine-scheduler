@@ -1,0 +1,622 @@
+{
+  "team": "B",
+  "month": "2026-10",
+  "anchorType": "ppc",
+  "carryIn": null,
+  "pins": [],
+  "notes": [],
+  "attendingPagerDays": [],
+  "lastSolution": {
+    "days": {
+      "2026-10-01": {
+        "type": "ppc",
+        "working": [
+          "Alvarez",
+          "Brooks",
+          "Chen"
+        ],
+        "off": [],
+        "sleeper": null,
+        "pager": "Chen",
+        "night": null,
+        "dayCall": null
+      },
+      "2026-10-02": {
+        "type": "sc1",
+        "working": [
+          "Alvarez",
+          "Brooks",
+          "Chen"
+        ],
+        "off": [],
+        "sleeper": null,
+        "pager": "Alvarez",
+        "night": null,
+        "dayCall": null
+      },
+      "2026-10-03": {
+        "type": "sc2",
+        "working": [
+          "Brooks",
+          "Chen"
+        ],
+        "off": [
+          "Alvarez"
+        ],
+        "sleeper": null,
+        "pager": "Chen",
+        "night": null,
+        "dayCall": null
+      },
+      "2026-10-04": {
+        "type": "precall",
+        "working": [
+          "Alvarez",
+          "Brooks"
+        ],
+        "off": [
+          "Chen"
+        ],
+        "sleeper": null,
+        "pager": "Brooks",
+        "night": null,
+        "dayCall": null
+      },
+      "2026-10-05": {
+        "type": "call",
+        "working": [
+          "Alvarez",
+          "Brooks",
+          "Chen"
+        ],
+        "off": [],
+        "sleeper": null,
+        "pager": null,
+        "night": "Brooks",
+        "dayCall": {
+          "senior": "Alvarez",
+          "intern": "Chen"
+        }
+      },
+      "2026-10-06": {
+        "type": "postcall",
+        "working": [
+          "Alvarez",
+          "Chen"
+        ],
+        "off": [],
+        "sleeper": "Brooks",
+        "pager": "Chen",
+        "night": null,
+        "dayCall": null
+      },
+      "2026-10-07": {
+        "type": "ppc",
+        "working": [
+          "Alvarez",
+          "Brooks",
+          "Chen"
+        ],
+        "off": [],
+        "sleeper": null,
+        "pager": "Alvarez",
+        "night": null,
+        "dayCall": null
+      },
+      "2026-10-08": {
+        "type": "sc1",
+        "working": [
+          "Alvarez",
+          "Chen"
+        ],
+        "off": [
+          "Brooks"
+        ],
+        "sleeper": null,
+        "pager": "Chen",
+        "night": null,
+        "dayCall": null
+      },
+      "2026-10-09": {
+        "type": "sc2",
+        "working": [
+          "Alvarez",
+          "Brooks",
+          "Chen"
+        ],
+        "off": [],
+        "sleeper": null,
+        "pager": "Brooks",
+        "night": null,
+        "dayCall": null
+      },
+      "2026-10-10": {
+        "type": "precall",
+        "working": [
+          "Brooks",
+          "Chen"
+        ],
+        "off": [
+          "Alvarez"
+        ],
+        "sleeper": null,
+        "pager": "Brooks",
+        "night": null,
+        "dayCall": null
+      },
+      "2026-10-11": {
+        "type": "call",
+        "working": [
+          "Alvarez",
+          "Brooks",
+          "Chen"
+        ],
+        "off": [],
+        "sleeper": null,
+        "pager": null,
+        "night": "Chen",
+        "dayCall": {
+          "senior": "Alvarez",
+          "intern": "Brooks"
+        }
+      },
+      "2026-10-12": {
+        "type": "postcall",
+        "working": [
+          "Alvarez",
+          "Brooks"
+        ],
+        "off": [],
+        "sleeper": "Chen",
+        "pager": "Brooks",
+        "night": null,
+        "dayCall": null
+      },
+      "2026-10-13": {
+        "type": "ppc",
+        "working": [
+          "Brooks",
+          "Chen"
+        ],
+        "off": [
+          "Alvarez"
+        ],
+        "sleeper": null,
+        "pager": "Brooks",
+        "night": null,
+        "dayCall": null
+      },
+      "2026-10-14": {
+        "type": "sc1",
+        "working": [
+          "Alvarez",
+          "Brooks"
+        ],
+        "off": [
+          "Chen"
+        ],
+        "sleeper": null,
+        "pager": "Brooks",
+        "night": null,
+        "dayCall": null
+      },
+      "2026-10-15": {
+        "type": "sc2",
+        "working": [
+          "Alvarez",
+          "Chen"
+        ],
+        "off": [
+          "Brooks"
+        ],
+        "sleeper": null,
+        "pager": "Chen",
+        "night": null,
+        "dayCall": null
+      },
+      "2026-10-16": {
+        "type": "precall",
+        "working": [
+          "Alvarez",
+          "Brooks",
+          "Chen"
+        ],
+        "off": [],
+        "sleeper": null,
+        "pager": "Chen",
+        "night": null,
+        "dayCall": null
+      },
+      "2026-10-17": {
+        "type": "call",
+        "working": [
+          "Alvarez",
+          "Brooks",
+          "Chen"
+        ],
+        "off": [],
+        "sleeper": null,
+        "pager": null,
+        "night": "Brooks",
+        "dayCall": {
+          "senior": "Alvarez",
+          "intern": "Chen"
+        }
+      },
+      "2026-10-18": {
+        "type": "postcall",
+        "working": [
+          "Alvarez",
+          "Chen"
+        ],
+        "off": [],
+        "sleeper": "Brooks",
+        "pager": "Chen",
+        "night": null,
+        "dayCall": null
+      },
+      "2026-10-19": {
+        "type": "ppc",
+        "working": [
+          "Alvarez",
+          "Brooks",
+          "Chen"
+        ],
+        "off": [],
+        "sleeper": null,
+        "pager": "Chen",
+        "night": null,
+        "dayCall": null
+      },
+      "2026-10-20": {
+        "type": "sc1",
+        "working": [
+          "Alvarez",
+          "Brooks",
+          "Chen"
+        ],
+        "off": [],
+        "sleeper": null,
+        "pager": "Brooks",
+        "night": null,
+        "dayCall": null
+      },
+      "2026-10-21": {
+        "type": "sc2",
+        "working": [
+          "Alvarez",
+          "Brooks"
+        ],
+        "off": [
+          "Chen"
+        ],
+        "sleeper": null,
+        "pager": "Alvarez",
+        "night": null,
+        "dayCall": null
+      },
+      "2026-10-22": {
+        "type": "precall",
+        "working": [
+          "Alvarez",
+          "Chen"
+        ],
+        "off": [
+          "Brooks"
+        ],
+        "sleeper": null,
+        "pager": "Chen",
+        "night": null,
+        "dayCall": null
+      },
+      "2026-10-23": {
+        "type": "call",
+        "working": [
+          "Alvarez",
+          "Brooks",
+          "Chen"
+        ],
+        "off": [],
+        "sleeper": null,
+        "pager": null,
+        "night": "Chen",
+        "dayCall": {
+          "senior": "Alvarez",
+          "intern": "Brooks"
+        }
+      },
+      "2026-10-24": {
+        "type": "postcall",
+        "working": [
+          "Alvarez",
+          "Brooks"
+        ],
+        "off": [],
+        "sleeper": "Chen",
+        "pager": "Brooks",
+        "night": null,
+        "dayCall": null
+      },
+      "2026-10-25": {
+        "type": "ppc",
+        "working": [
+          "Alvarez",
+          "Brooks"
+        ],
+        "off": [
+          "Chen"
+        ],
+        "sleeper": null,
+        "pager": "Brooks",
+        "night": null,
+        "dayCall": null
+      },
+      "2026-10-26": {
+        "type": "sc1",
+        "working": [
+          "Alvarez",
+          "Chen"
+        ],
+        "off": [
+          "Brooks"
+        ],
+        "sleeper": null,
+        "pager": "Chen",
+        "night": null,
+        "dayCall": null
+      },
+      "2026-10-27": {
+        "type": "sc2",
+        "working": [
+          "Brooks",
+          "Chen"
+        ],
+        "off": [
+          "Alvarez"
+        ],
+        "sleeper": null,
+        "pager": "Brooks",
+        "night": null,
+        "dayCall": null
+      },
+      "2026-10-28": {
+        "type": "precall",
+        "working": [
+          "Alvarez",
+          "Brooks",
+          "Chen"
+        ],
+        "off": [],
+        "sleeper": null,
+        "pager": "Chen",
+        "night": null,
+        "dayCall": null
+      },
+      "2026-10-29": {
+        "type": "call",
+        "working": [
+          "Alvarez",
+          "Brooks",
+          "Chen"
+        ],
+        "off": [],
+        "sleeper": null,
+        "pager": null,
+        "night": "Brooks",
+        "dayCall": {
+          "senior": "Alvarez",
+          "intern": "Chen"
+        }
+      },
+      "2026-10-30": {
+        "type": "postcall",
+        "working": [
+          "Alvarez",
+          "Chen"
+        ],
+        "off": [],
+        "sleeper": "Brooks",
+        "pager": "Chen",
+        "night": null,
+        "dayCall": null
+      },
+      "2026-10-31": {
+        "type": "ppc",
+        "working": [
+          "Alvarez",
+          "Brooks"
+        ],
+        "off": [],
+        "sleeper": null,
+        "pager": "Brooks",
+        "night": null,
+        "dayCall": null
+      }
+    },
+    "totals": {
+      "Alvarez": {
+        "shifts": 27,
+        "pager": 3,
+        "clinic": 9,
+        "didactics": 2,
+        "off": 4,
+        "pto": 0,
+        "bonus": 0,
+        "perks": 0
+      },
+      "Brooks": {
+        "shifts": 24,
+        "pager": 11,
+        "clinic": 6,
+        "didactics": 1,
+        "off": 4,
+        "pto": 0,
+        "bonus": 0,
+        "perks": 0
+      },
+      "Chen": {
+        "shifts": 24,
+        "pager": 12,
+        "clinic": 5,
+        "didactics": 1,
+        "off": 4,
+        "pto": 1,
+        "bonus": 0,
+        "perks": 0
+      }
+    }
+  },
+  "options": {
+    "offQuota": 4,
+    "goldenWeekend": false
+  },
+  "residents": [
+    {
+      "name": "Alvarez",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2026-10-01",
+      "serviceEnd": "2026-10-31",
+      "didactics": {
+        "dow": 2,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2026-10-01",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-10-08",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-10-09",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-10-15",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-10-16",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-10-19",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-10-22",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-10-26",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-10-28",
+          "half": "PM",
+          "label": "ITE"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Brooks",
+      "role": "intern",
+      "kind": "categorical",
+      "serviceStart": "2026-10-01",
+      "serviceEnd": "2026-10-31",
+      "didactics": {
+        "dow": 4,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2026-10-02",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-10-07",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-10-16",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-10-19",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-10-28",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-10-21",
+          "half": "PM",
+          "label": "ITE"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Chen",
+      "role": "intern",
+      "kind": "TY",
+      "serviceStart": "2026-10-01",
+      "serviceEnd": "2026-10-31",
+      "didactics": {
+        "dow": 3,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2026-10-02",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-10-09",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-10-13",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-10-20",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-10-27",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": [
+        "2026-10-31"
+      ]
+    }
+  ]
+}

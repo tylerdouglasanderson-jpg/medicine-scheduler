@@ -60,3 +60,29 @@ it('weight-ladder invariants (trade-off regression guard)', () => {
   expect(WEIGHTS.quotaShort).toBeGreaterThan(WEIGHTS.didacticsEscape);
   expect(WEIGHTS.didacticsEscape).toBeGreaterThanOrEqual(WEIGHTS.attendingPager);
 });
+
+// Didactics tiering (program rule, 2026-08). The ordering is load-bearing, not cosmetic: when the pager
+// penalty is raised above the sleep/off ones the solver starts trading an ATTENDED-but-tethered
+// afternoon for an outright miss, which is strictly worse for the resident.
+describe('didactics + afternoon-load weights', () => {
+  it('tiers run pager < sleep < off — attending tethered always beats not attending', () => {
+    expect(WEIGHTS.didacticsPager).toBeLessThan(WEIGHTS.didacticsSleep);
+    expect(WEIGHTS.didacticsSleep).toBeLessThan(WEIGHTS.didacticsOff);
+  });
+
+  it('no off-placement reward can buy a teaching afternoon', () =>
+    expect(WEIGHTS.didacticsOff)
+      .toBeGreaterThan(WEIGHTS.offPrecall + WEIGHTS.offSc2 + WEIGHTS.offSpread));
+
+  it('interns’ teaching time outranks the senior’s', () =>
+    expect(WEIGHTS.didacticsIntern).toBeGreaterThan(1));
+
+  it('a chief-chosen attending day is forced and costs nothing; other days stay near-forbidden', () => {
+    const s = parseScenario({ ...feb, attendingPagerDays: ['2026-02-02'] });
+    const { lp } = buildModel(s);
+    const [obj] = lp.split('Subject To');
+    expect(lp).toContain('attfix_1: 1 att_1 = 1');
+    expect(obj).not.toContain(' att_1 ');            // forced, so no attending penalty for that day
+    expect(obj).toContain(` ${WEIGHTS.attendingPager} att_2`);   // every other day still priced
+  });
+});

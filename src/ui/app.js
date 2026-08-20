@@ -5,7 +5,7 @@ import { validate } from '../validate.js';
 import { audit } from '../audit.js';
 import { downloadXlsx } from '../export.js';
 import { solve, initHighs } from '../solve.js';
-import { onService, monthDates, parseScenario } from '../model.js';
+import { onService, monthDates, parseScenario, solutionIsCurrent } from '../model.js';
 import { renderCalendar, renderTotals, renderWarnings } from './calendar.js';
 import * as setup from './setup.js';
 import * as roster from './roster.js';
@@ -313,6 +313,16 @@ async function runSolve() {
   }
 }
 
+// Hand one afternoon's pager to the attending, then solve again. Same shape as the pin-and-resolve
+// loop: the stability term keeps the rest of the month where it is.
+function onAttendingCover(date, undo = false) {
+  if (solving) return;
+  const days = scenario.attendingPagerDays ?? [];
+  const next = undo ? days.filter(d => d !== date) : days.includes(date) ? days : [...days, date];
+  onChange({ ...scenario, attendingPagerDays: next });
+  runSolve();
+}
+
 // ---- calendar color legend: swatches reuse the exact calendar fills ----
 const LEGEND = [
   ['type-call', 'Call'], ['type', 'Cycle type'], ['type-mr', 'Morning Report (we present)'],
@@ -377,6 +387,15 @@ function renderResults() {
     wrap.appendChild(box);
   }
 
+  if (solveError == null && scenario.lastSolution && !solutionIsCurrent(scenario)) {
+    const note = document.createElement('div');
+    note.className = 'stale-rules';
+    note.id = 'stale-rules-note';
+    note.textContent = 'This schedule was built under older scheduling rules. It is shown as saved — '
+      + 'press Solve to rebuild it under the current rules. Your roster, clinics, PTO and pins are kept.';
+    wrap.appendChild(note);
+  }
+
   const sched = scenario.lastSolution;
   const monthStart = monthDates(scenario.month)[0];
   // guard: a lastSolution from a since-changed month would key by stale dates and crash the renderer
@@ -390,7 +409,7 @@ function renderResults() {
     const a = audit(scenario, sched);
     // ponytail: fold independent-audit VIOLATIONS into the same panel — the auditor's whole
     // point is catching a solver hard-rule miss; silently dropping them would defeat it.
-    wrap.appendChild(renderWarnings({ warnings: [...a.violations, ...a.warnings] }));
+    wrap.appendChild(renderWarnings({ warnings: [...a.violations, ...a.warnings] }, onAttendingCover));
   } else if (!solveError && !diagnosis) {
     wrap.appendChild(resultsEmptyState());
   }

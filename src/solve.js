@@ -1,7 +1,7 @@
 // HiGHS wrapper + column-primal extraction to the Schedule shape + staged pin diagnosis.
 // solve() is pure (no DOM, no storage). It does NOT import audit.js — the UI composes them.
 import { buildModel } from './milp.js';
-import { deriveCycle, onService } from './model.js';
+import { deriveCycle, onService, RULES_VERSION } from './model.js';
 import { validate } from './validate.js';
 
 // Detect Node the same way highs.js's own Emscripten runtime does (globalThis.process.versions.node) —
@@ -148,7 +148,7 @@ function extract(scenario, vars, cols) {
     const halfPins = pins.filter(x => x.type === 'halfOff');
     const halfDates = new Set(halfPins.map(x => x.date));
 
-    let shifts = 0, pager = 0, off = 0, didactics = 0;
+    let shifts = 0, pager = 0, off = 0, didactics = 0, didacticsOf = 0, didacticsPager = 0;
     for (const d of svc) {
       const dd = days[d];
       if (dd.working.includes(name)) shifts += halfDates.has(d) ? 0.5 : 1;
@@ -159,14 +159,17 @@ function extract(scenario, vars, cols) {
     const clinic = p.commitments.filter(c => days[c.date]?.working.includes(name)).length;
     if (p.didactics) {
       for (const d of svc) {
-        if (dow(d) !== p.didactics.dow || types.get(d) === 'call') continue;
+        if (dow(d) !== p.didactics.dow) continue;
+        if (types.get(d) === 'call' || p.pto.includes(d)) continue;      // structurally unattendable
+        didacticsOf++;                                                   // the denominator a chief can act on
         const dd = days[d];
-        if (dd.pager === name || dd.off.includes(name) || dd.sleeper === name || p.pto.includes(d)) continue;
-        didactics++;                                       // attended: in window, not lost to call/pager/off
+        if (dd.off.includes(name) || dd.sleeper === name) continue;      // lost the half-day
+        didactics++;
+        if (dd.pager === name) didacticsPager++;   // they go, but tethered to the pager (program rule, 2026-08)
       }
     }
     totals[name] = {
-      shifts, pager, clinic, didactics, off,
+      shifts, pager, clinic, didactics, didacticsOf, didacticsPager, off,
       pto: p.pto.filter(d => svc.includes(d)).length,
       bonus: freeDates.size,
       perks: halfPins.length,
@@ -198,5 +201,7 @@ function extract(scenario, vars, cols) {
   if (types.get(lastD) === 'call' && nightOf[lastD])
     W('W_CARRYOUT', `${nightOf[lastD]} is post-call/asleep on the 1st of next month`, nightOf[lastD], lastD);
 
-  return { schedule: { days, totals }, warnings };
+  // The stamp rides ON the schedule, so every caller that feeds a solve result back into a scenario
+  // carries it automatically — see solutionIsCurrent() in model.js.
+  return { schedule: { rulesVersion: RULES_VERSION, days, totals }, warnings };
 }

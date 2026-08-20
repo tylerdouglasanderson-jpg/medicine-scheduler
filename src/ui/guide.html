@@ -497,7 +497,11 @@
                 <strong>Thu PM</strong> — and you can change the day, half, or protection for any
                 resident. Marking it <strong>hard</strong> makes it protected: the solver only puts
                 them on the pager over hard didactics when there is truly no other option, and it
-                raises a warning when it does.</td>
+                raises a warning when it does.
+                <br><br>Teaching time is protected for <strong>everyone</strong>, interns first. The
+                solver will not park a day off on someone's own didactics day, will not leave them
+                post-call asleep through it, and prefers to keep them off the pager that afternoon —
+                in that order, because an off day spent on a teaching afternoon wastes both.</td>
             </tr>
           </tbody>
         </table>
@@ -654,7 +658,7 @@
             <tr><td><strong class="num">Shifts</strong></td><td>Days worked; a half-off day counts as 0.5.</td></tr>
             <tr><td><strong class="num">Pager</strong></td><td>Days holding the pager.</td></tr>
             <tr><td><strong class="num">Clinic</strong></td><td>Committed half-days actually worked.</td></tr>
-            <tr><td><strong class="num">Didactics</strong></td><td>Sessions attended — in-window and not lost to call, pager, off, or PTO.</td></tr>
+            <tr><td><strong class="num">Didactics</strong></td><td>Sessions attended, over the sessions this month could offer them — e.g. <strong>3 / 4</strong>. The denominator drops call days and PTO, which nothing can fix. Holding the pager still counts as attended (they go and step out if needed); hover the cell to see how many were like that.</td></tr>
             <tr><td><strong class="num">Off</strong></td><td>Counted days off.</td></tr>
             <tr><td><strong class="num">PTO</strong></td><td>Leave days.</td></tr>
             <tr><td><strong class="num">Bonus</strong></td><td>Free/bonus offs that don't count against quota.</td></tr>
@@ -762,7 +766,10 @@
         <table>
           <thead><tr><th>Code</th><th>Meaning</th></tr></thead>
           <tbody>
-            <tr><td class="code-cell">W_ATTENDING_PAGER</td><td>An attending had to hold the pager that day.</td></tr>
+            <tr><td class="code-cell">W_ATTENDING_PAGER</td><td>An attending had to hold the pager that day (or you handed them that afternoon).</td></tr>
+            <tr><td class="code-cell">W_DIDACTICS_OFF</td><td>A day off landed on that resident's own didactics day — a missed session <em>and</em> a day off spent on a half-day.</td></tr>
+            <tr><td class="code-cell">W_DIDACTICS_SLEEP</td><td>They are post-call asleep through their didactics afternoon.</td></tr>
+            <tr><td class="code-cell">W_DIDACTICS_PAGER</td><td>They make didactics but carry the pager through it. When nobody else on the team is free to take it, the row offers <strong>Attending covers the pager</strong> — one click hands that afternoon over and solves again.</td></tr>
             <tr><td class="code-cell">W_DIDACTICS_MISS</td><td>Pager duty makes someone miss hard didactics.</td></tr>
             <tr><td class="code-cell">W_MULTI_OFF</td><td>More than one person is off the same day.</td></tr>
             <tr><td class="code-cell">W_SENIOR_OFF_SC</td><td>A senior is off on a short-call day.</td></tr>
@@ -775,6 +782,18 @@
           </tbody>
         </table>
       </div>
+      <div class="callout">
+        <span class="label">After an app update</span>
+        <p>
+          If the app has been updated since you last solved a month, opening that scenario shows a
+          note above the calendar: <em>"This schedule was built under older scheduling rules."</em>
+          Press <strong>Solve</strong> and it rebuilds the month under the current rules — your
+          roster, clinics, PTO, pins and attending days are all kept. You do not need to clear the
+          scenario or re-enter anything. A schedule solved by the current version keeps re-solving
+          stably, exactly as before.
+        </p>
+      </div>
+
       <div class="callout warn">
         <span class="label">If you ever see this</span>
         <p>

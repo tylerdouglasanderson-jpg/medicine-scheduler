@@ -53,13 +53,51 @@ export function defaultDidactics(role, kind) {
   return dow === null ? null : { dow, half: 'PM', hard: false };
 }
 
+// Bump ONLY when the solver's or auditor's SEMANTICS change (a new/removed/reweighted rule) —
+// not for UI, packaging, or bug fixes with no effect on what an optimal schedule looks like.
+// solve() stamps every schedule it produces with this. A saved solution carrying a different stamp
+// is not used to anchor re-solve stability, so a scenario file built under older rules re-solves to
+// the NEW optimum without being cleared and re-typed first.
+export const RULES_VERSION = '0.6.0';
+
 export function parseScenario(json) {
   for (const k of ['team', 'month', 'anchorType', 'residents'])
     if (json[k] == null) throw new Error(`scenario missing ${k}`);
-  return {
-    carryIn: null, pins: [], notes: [], lastSolution: null,
+  return normalize({
+    carryIn: null, pins: [], notes: [], attendingPagerDays: [], lastSolution: null,
     ...json,
     options: { offQuota: 4, goldenWeekend: false, ...(json.options ?? {}) },
     residents: json.residents.map(r => ({ didactics: null, commitments: [], pto: [], ...r })),
-  };
+  });
+}
+
+// A scenario file outlives the roster, the month, and the rules that produced its schedule. Drop
+// anything that can no longer point at something real — otherwise it surfaces as a hard error or a
+// render crash the UI gives no way to clear, and the only fix is starting the month over.
+function normalize(s) {
+  const names = new Set(s.residents.map(r => r.name));
+  const inMonth = d => typeof d === 'string' && d.length === 10 && d.slice(0, 7) === s.month;
+
+  s.pins = (s.pins ?? []).filter(p => p && names.has(p.person) && inMonth(p.date));
+  s.notes = (s.notes ?? []).filter(n => n && inMonth(n.date));
+  s.attendingPagerDays = [...new Set((s.attendingPagerDays ?? []).filter(inMonth))].sort();
+  for (const r of s.residents) {
+    r.commitments = (r.commitments ?? []).filter(c => c && inMonth(c.date));
+    r.pto = [...new Set((r.pto ?? []).filter(inMonth))].sort();
+  }
+  if (s.carryIn && !names.has(s.carryIn.nightPerson)) s.carryIn = null;
+
+  // A solution only counts as this month's if it covers every date and names only current people.
+  const days = s.lastSolution?.days;
+  const covers = days && monthDates(s.month).every(d => days[d])
+    && Object.keys(days).every(inMonth)
+    && Object.keys(s.lastSolution.totals ?? {}).every(n => names.has(n));
+  if (!covers) s.lastSolution = null;
+  return s;
+}
+
+// True when the saved schedule was produced by the rules currently compiled in. Only then may it
+// anchor the re-solve stability term; otherwise the old answer would pin the new rules in place.
+export function solutionIsCurrent(scenario) {
+  return scenario.lastSolution?.rulesVersion === RULES_VERSION;
 }

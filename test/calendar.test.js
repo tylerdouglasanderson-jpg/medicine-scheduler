@@ -68,3 +68,48 @@ describe('calendar render (feb-2026 solved)', () => {
     expect(w.querySelectorAll('li.warning').length).toBe(audit(s, schedule).warnings.length);
   });
 });
+
+// The pager holder still goes to didactics and steps out if something happens (program rule, 2026-08),
+// so the DIDACTICS row keeps them, tagged — and the totals carry a denominator a chief can act on.
+describe('didactics reporting', () => {
+  let s, schedule;
+  beforeAll(async () => {
+    s = parseScenario(feb);
+    ({ schedule } = await solve(s));
+  });
+
+  it('a didactics-day pager holder stays on the DIDACTICS row, tagged', () => {
+    const el = renderCalendar(s, schedule);
+    const rows = [...el.querySelectorAll('tr')]
+      .filter(tr => tr.querySelector('th')?.textContent === 'DIDACTICS');
+    const text = rows.map(tr => tr.textContent).join(' ');
+    const tethered = Object.entries(schedule.totals).filter(([, t]) => t.didacticsPager > 0);
+    if (tethered.length) expect(text).toContain(`${tethered[0][0]} (pager)`);
+    // and nobody who lost the half-day to an off day is listed as present
+    for (const [d, dd] of Object.entries(schedule.days))
+      for (const name of dd.off) {
+        const cell = el.querySelector(`[data-date="${d}"][data-row="didactics"]`);
+        if (cell) expect(cell.textContent).not.toContain(name);
+      }
+  });
+
+  it('totals show didactics as attended / attendable, not a bare count', () => {
+    const t = renderTotals(schedule);
+    for (const [name, tot] of Object.entries(schedule.totals)) {
+      const cell = t.querySelector(`[data-name="${name}"][data-col="didactics"]`);
+      if (!tot.didacticsOf) continue;
+      expect(cell.textContent).toBe(`${tot.didactics} / ${tot.didacticsOf}`);
+    }
+  });
+});
+
+it('a schedule saved before the denominator existed shows the bare old count, not a fake n / n', async () => {
+  const s = parseScenario(feb);
+  const { schedule } = await solve(s);
+  const old = { ...schedule, totals: Object.fromEntries(Object.entries(schedule.totals)
+    .map(([n, t]) => [n, { ...t, didacticsOf: undefined, didacticsPager: undefined }])) };
+  const t = renderTotals(old);
+  const name = Object.keys(old.totals)[0];
+  expect(t.querySelector(`[data-name="${name}"][data-col="didactics"]`).textContent)
+    .toBe(String(old.totals[name].didactics));
+});

@@ -94,10 +94,15 @@ function calendarBlock(s, schedule) {
     if (dd.working.includes(r.name)) return 'W';
     return '-';
   };
-  // A PM didactics is only truly missed when on call (in-house all day), on nights,
-  // or holding the pager (what the app itself flags). A plain day-team day rounds in
-  // the AM and can still attend PM didactics, so that is NOT a miss.
-  const misses = (d, st) => st === 'N' || st === 'P' || (types.get(d) === 'call' && st === 'W');
+  // Didactics semantics (program rule, 2026-08): a call day or PTO is structurally unattendable and is
+  // not the schedule's doing; a day off or post-call sleep LOSES the half-day; holding the pager
+  // still gets them there, tethered. Anything else is a clean attendance.
+  const didStatus = (d, st) => {
+    if (types.get(d) === 'call' || st === 'X') return '·';   // structural
+    if (st === 'O' || st === 'N' || st === 'S') return '!';         // lost
+    if (st === 'P') return 'p';                                     // attends on the pager
+    return 'd';
+  };
 
   const lines = [];
   lines.push('    ' + pad('  day') + dates.map(d => String(Number(d.slice(8, 10)) % 10)).join(''));
@@ -106,19 +111,22 @@ function calendarBlock(s, schedule) {
     const st = dates.map(d => status(r, d));
     lines.push('    ' + pad(r.name) + st.join('') + `   ${r.role}`);
     if (r.didactics) {
-      let missed = 0;
+      let attended = 0, of = 0, tethered = 0;
       const dl = dates.map((d, i) => {
         if (!onSvc(r, d) || dowOf(d) !== r.didactics.dow) return ' ';
-        if (misses(d, st[i])) { missed++; return '!'; }
-        return 'd';
+        const c = didStatus(d, st[i]);
+        if (c === '·') return c;
+        of++;
+        if (c !== '!') attended++;
+        if (c === 'p') tethered++;
+        return c;
       }).join('');
-      const soft = r.didactics.hard ? '' : ' (soft, no warning)';
       lines.push('    ' + pad(`  ${DOW[r.didactics.dow]} didx`) + dl +
-        `   ${missed} missed${soft}`);
+        `   ${attended}/${of} attended${tethered ? ` (${tethered} on the pager)` : ''}`);
     }
   }
   lines.push('    legend  W work · N night · S post-night sleep · P pager · O off · X PTO · . off-service');
-  lines.push('    didx    d = didactics that day (free) · ! = on duty, MISSES didactics');
+  lines.push('    didx    d = attends free · p = attends holding the pager · ! = LOSES it (off/night/sleep) · · = call or PTO');
   return lines.join('\n');
 }
 

@@ -2,8 +2,10 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { solve } from '../src/solve.js';
 import { audit } from '../src/audit.js';
 import { validate } from '../src/validate.js';
-import { parseScenario, deriveCycle, quotaFor } from '../src/model.js';
+import { parseScenario, deriveCycle, quotaFor, solutionIsCurrent, RULES_VERSION } from '../src/model.js';
 import feb from '../fixtures/feb-2026.json';
+import oct from '../fixtures/oct-2026-didactics.json';
+import stale from '../fixtures/oct-2026-stale-solution.json';
 
 const CALLS = ['2026-02-05', '2026-02-11', '2026-02-17', '2026-02-23'];
 const nextDate = d => { const [y, m, dd] = d.split('-').map(Number);
@@ -198,5 +200,133 @@ describe('variants', () => {
     const r = await solve(s);
     expect(r.infeasible.diagnosis).toMatch(/off quota/i);
     expect(r.infeasible.culprits.map(c => c.person).sort()).toEqual(['Intern2', 'Senior1']);
+  });
+});
+
+// --- didactics protection (program rule, 2026-08) -------------------------------------------------
+// Regression for the reported "the senior gets didactics, the interns don't". The old model had a
+// senior-only didactics term and no off-on-didactics penalty at all, so this exact month solved to
+// senior 3/4, interns 1/4 and 0/4, with six teaching afternoons spent as days off.
+describe('oct-2026 didactics protection', () => {
+  let s, schedule;
+  beforeAll(async () => {
+    s = parseScenario(oct);
+    ({ schedule } = await solve(s));
+  });
+
+  const dowOf = d => { const [y, m, dd] = d.split('-').map(Number); return new Date(y, m - 1, dd).getDay(); };
+
+  it('zero audit violations', () => expect(audit(s, schedule).violations).toEqual([]));
+
+  it('everyone attends every session the month can offer — interns included', () => {
+    for (const r of s.residents) {
+      const t = schedule.totals[r.name];
+      expect(t.didacticsOf).toBeGreaterThan(0);
+      expect(t.didactics).toBe(t.didacticsOf);
+    }
+  });
+
+  it('no day off is ever placed on the resident’s own didactics day', () => {
+    for (const r of s.residents)
+      for (const [d, day] of Object.entries(schedule.days))
+        if (day.off.includes(r.name)) expect(dowOf(d)).not.toBe(r.didactics.dow);
+  });
+
+  it('committed afternoons (clinic PM + didactics + pager) come out within one of each other', () => {
+    const { types } = deriveCycle(s.anchorType, s.month);
+    const load = r => {
+      const svc = Object.keys(schedule.days).filter(d => r.serviceStart <= d && d <= r.serviceEnd && !r.pto.includes(d));
+      return svc.filter(d => r.commitments.some(c => c.date === d && c.half === 'PM')).length
+        + svc.filter(d => dowOf(d) === r.didactics.dow && types.get(d) !== 'call').length
+        + schedule.totals[r.name].pager;
+    };
+    const loads = s.residents.map(load);
+    expect(Math.max(...loads) - Math.min(...loads)).toBeLessThanOrEqual(1);
+  });
+
+  it('the senior no longer hides from the pager: every intern carries fewer than twice the senior', () => {
+    const senior = s.residents.find(r => r.role === 'senior');
+    for (const r of s.residents.filter(r => r.role === 'intern'))
+      expect(schedule.totals[r.name].pager).toBeLessThan(2 * schedule.totals[senior.name].pager);
+  });
+
+  it('tethered didactics are flagged, and handing those afternoons to the attending clears them', async () => {
+    const flagged = audit(s, schedule).warnings.filter(w => w.code === 'W_DIDACTICS_PAGER');
+    expect(flagged.length).toBeGreaterThan(0);
+    expect(flagged.every(w => w.attendingCanCover)).toBe(true);
+
+    const s2 = parseScenario({ ...oct, attendingPagerDays: flagged.map(w => w.date) });
+    expect(validate(s2)).toEqual([]);
+    const { schedule: sch2 } = await solve(s2);
+    expect(audit(s2, sch2).violations).toEqual([]);
+    for (const d of s2.attendingPagerDays) expect(sch2.days[d].pager).toBe('ATTENDING');
+    for (const r of s2.residents) {
+      expect(sch2.totals[r.name].didactics).toBe(sch2.totals[r.name].didacticsOf);
+      expect(sch2.totals[r.name].didacticsPager).toBe(0);
+    }
+  });
+});
+
+// --- a scenario file must survive a rule change (program rule, 2026-08) --------------------------------
+// The co-resident's real Oct-2026 file, saved by v0.5.0. Re-solving it used to return the OLD
+// schedule almost unchanged: the stability term (3000 per changed binary) anchored on the saved
+// answer, so the only way to feel a new rule was Clear scenario and re-typing the whole month.
+describe('re-solving a file saved under older rules', () => {
+  it('the saved schedule is recognised as stale, not current', () => {
+    expect(solutionIsCurrent(parseScenario(stale))).toBe(false);
+    expect(parseScenario(stale).lastSolution).toBeTruthy();   // still shown, just not authoritative
+  });
+
+  it('re-solves to the CURRENT optimum without clearing — inputs all preserved', async () => {
+    const s = parseScenario(stale);
+    expect(s.residents).toHaveLength(3);                       // roster, clinics, PTO untouched
+    expect(s.residents[0].commitments.length).toBeGreaterThan(0);
+
+    const { schedule } = await solve(s);
+    expect(audit(s, schedule).violations).toEqual([]);
+    for (const r of s.residents)
+      expect(schedule.totals[r.name].didactics).toBe(schedule.totals[r.name].didacticsOf);
+    expect(schedule.rulesVersion).toBe(RULES_VERSION);
+  });
+
+  it('a solution this build produced DOES still anchor stability', async () => {
+    const s = parseScenario(stale);
+    const { schedule } = await solve(s);
+    expect(solutionIsCurrent({ lastSolution: schedule })).toBe(true);
+
+    const again = parseScenario({ ...stale, lastSolution: schedule });
+    const { schedule: s2 } = await solve(again);
+    let changed = 0;
+    for (const d of Object.keys(schedule.days)) {
+      const a = schedule.days[d], b = s2.days[d];
+      changed += a.off.filter(n => !b.off.includes(n)).length + (a.pager === b.pager ? 0 : 1);
+    }
+    expect(changed).toBe(0);                                   // identical: stability held
+  });
+});
+
+describe('scenario normalization', () => {
+  it('drops what can no longer point at anything real', () => {
+    const s = parseScenario({
+      ...oct,
+      pins: [
+        { person: 'Alvarez', date: '2026-10-06', type: 'work', half: null, note: '' },   // keep
+        { person: 'Nobody', date: '2026-10-06', type: 'work', half: null, note: '' },    // gone: no such resident
+        { person: 'Alvarez', date: '2026-11-06', type: 'work', half: null, note: '' },   // gone: another month
+      ],
+      notes: [{ date: '2026-10-06', text: 'keep' }, { date: '2026-12-06', text: 'gone' }],
+      attendingPagerDays: ['2026-10-07', '2026-10-07', '2026-11-07'],
+    });
+    expect(s.pins).toHaveLength(1);
+    expect(s.pins[0].person).toBe('Alvarez');
+    expect(s.notes).toHaveLength(1);
+    expect(s.attendingPagerDays).toEqual(['2026-10-07']);      // deduped, out-of-month dropped
+  });
+
+  it('drops a saved schedule that belongs to another month or a since-changed roster', () => {
+    const feb2 = parseScenario(feb);
+    expect(parseScenario({ ...oct, lastSolution: { days: { '2026-02-01': {} }, totals: {} } }).lastSolution).toBeNull();
+    expect(parseScenario({ ...oct, lastSolution: { ...stale.lastSolution, totals: { Ghost: {} } } }).lastSolution).toBeNull();
+    expect(feb2.lastSolution).toBeNull();                      // the golden fixture ships unsolved
   });
 });

@@ -57,14 +57,16 @@ function ptoNames(scenario, date) {
 function offNames(scenario, dd, date) {
   return dd.off.map(n => (isBonusOff(scenario, n, date) ? `${n} (bonus)` : n));
 }
+// The pager holder still goes to didactics and steps out if something happens (program rule, 2026-08),
+// so they stay on this row, tagged. Off / post-call sleep / PTO genuinely lose the half-day.
 function didacticsNames(scenario, schedule, date, type) {
   if (type === 'call') return [];
   const dd = schedule.days[date];
   const dow = dowOf(date);
   return scenario.residents
     .filter(r => r.didactics && r.didactics.dow === dow && onService(r, date))
-    .filter(r => !(dd.pager === r.name || dd.off.includes(r.name) || dd.sleeper === r.name || (r.pto ?? []).includes(date)))
-    .map(r => r.name);
+    .filter(r => !(dd.off.includes(r.name) || dd.sleeper === r.name || (r.pto ?? []).includes(date)))
+    .map(r => (dd.pager === r.name ? `${r.name} (pager)` : r.name));
 }
 
 function cellText(row, date, type, dd, scenario, schedule) {
@@ -119,7 +121,10 @@ function writeTotals(ws, schedule) {
   let row = 3;
   for (const [name, t] of Object.entries(schedule.totals)) {
     const data = { ...t, name, offBonus: t.off + t.bonus };
-    TOTALS_COLS.forEach(([, col], i) => { ws.getCell(row, TOTALS_START_COL + i).value = data[col]; });
+    TOTALS_COLS.forEach(([, col], i) => {
+      ws.getCell(row, TOTALS_START_COL + i).value = col === 'didactics'
+        ? (t.didacticsOf == null ? t.didactics : `${t.didactics} / ${t.didacticsOf}`) : data[col];
+    });
     row++;
   }
 }

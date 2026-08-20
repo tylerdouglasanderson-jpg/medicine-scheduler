@@ -38,3 +38,14 @@ it('QUOTA_IMPOSSIBLE: clinic on every eligible day leaves nowhere to put the 4 o
   expect(errs.map(e => e.code)).toContain('QUOTA_IMPOSSIBLE');
   expect(errs.find(e => e.code === 'QUOTA_IMPOSSIBLE').message).toMatch(/only has 0 eligible/);
 });
+
+it('attending-pager days must be days a pager holder is actually needed', () => {
+  const call = parseScenario({ ...good, attendingPagerDays: ['2026-02-05'] });   // a call day
+  expect(validate(call).map(e => e.code)).toContain('ATTENDING_DAY_INVALID');
+  expect(validate(parseScenario({ ...good, attendingPagerDays: ['2026-02-02'] }))).toEqual([]);
+  // parseScenario normalizes a day from another month away entirely — there is no UI to clear one,
+  // so it must never become a hard error that blocks Solve. validate still catches a raw scenario.
+  expect(parseScenario({ ...good, attendingPagerDays: ['2026-03-05'] }).attendingPagerDays).toEqual([]);
+  expect(validate({ ...parseScenario(good), attendingPagerDays: ['2026-03-05'] }).map(e => e.code))
+    .toContain('ATTENDING_DAY_OUTSIDE_MONTH');
+});

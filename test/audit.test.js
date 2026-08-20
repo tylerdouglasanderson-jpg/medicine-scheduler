@@ -28,3 +28,35 @@ it('duty-hour + long-stretch warnings fire', () => {
   expect(codes).toContain('W_DUTY_HOUR');
   expect(codes).toContain('W_LONG_STRETCH');
 });
+
+// Didactics ledger (program rule, 2026-08): an off or post-call sleep LOSES the half-day; the pager
+// still gets them there, tethered — and is only unfixable when nobody else could have taken it.
+describe('didactics ledger', () => {
+  const withDidactics = (name, dow) => {
+    const fx = structuredClone(valid);
+    fx.scenario.residents.find(r => r.name === name).didactics = { dow, half: 'PM', hard: false };
+    return fx;
+  };
+
+  it('an off on your own didactics day is flagged', () => {
+    const fx = withDidactics('Senior2', 0);            // Feb 1 2026 is a Sunday; Senior2 is off that day
+    const w = audit(fx.scenario, fx.schedule).warnings;
+    expect(w.some(x => x.code === 'W_DIDACTICS_OFF' && x.person === 'Senior2' && x.date === '2026-02-01')).toBe(true);
+  });
+
+  it('holding the pager is a tether, not a loss — and not offered to the attending when someone else is free', () => {
+    const fx = withDidactics('Intern2', 1);               // Feb 2 is a Monday; Intern2 holds the pager
+    const w = audit(fx.scenario, fx.schedule).warnings;
+    const hit = w.find(x => x.code === 'W_DIDACTICS_PAGER' && x.person === 'Intern2' && x.date === '2026-02-02');
+    expect(hit).toBeTruthy();
+    expect(hit.attendingCanCover).toBe(false);        // Senior1 and Senior2 are both working and free
+    expect(w.some(x => x.code === 'W_DIDACTICS_OFF' && x.date === '2026-02-02')).toBe(false);
+  });
+
+  it('an attending day the schedule ignored is a violation', () => {
+    const fx = structuredClone(valid);
+    fx.scenario.attendingPagerDays = ['2026-02-01'];  // pager there is Senior1, not the attending
+    const codes = audit(fx.scenario, fx.schedule).violations.map(v => v.code);
+    expect(codes).toContain('A_ATTENDING_DAY_IGNORED');
+  });
+});

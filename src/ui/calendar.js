@@ -34,14 +34,16 @@ function offNames(scenario, dd, date) {
   if (!dd) return [];
   return dd.off.map(n => (isBonusOff(scenario, n, date) ? `${n} (bonus)` : n));
 }
+// The pager holder still goes to didactics and steps out if something happens (program rule, 2026-08),
+// so they stay on this row, tagged. Off / post-call sleep / PTO genuinely lose the half-day.
 function didacticsNames(scenario, schedule, date, type) {
   if (type === 'call') return [];
   const dd = schedule.days[date];
   const dow = dowOf(date);
   return scenario.residents
     .filter(r => r.didactics && r.didactics.dow === dow && onService(r, date))
-    .filter(r => !(dd.pager === r.name || dd.off.includes(r.name) || dd.sleeper === r.name || (r.pto ?? []).includes(date)))
-    .map(r => r.name);
+    .filter(r => !(dd.off.includes(r.name) || dd.sleeper === r.name || (r.pto ?? []).includes(date)))
+    .map(r => (dd.pager === r.name ? `${r.name} (pager)` : r.name));
 }
 
 function renderRounders(td, date, type, dd, scenario) {
@@ -191,7 +193,15 @@ export function renderTotals(schedule) {
       const td = document.createElement('td');
       td.dataset.name = name;
       td.dataset.col = col;
-      td.textContent = col === 'name' ? name : row[col].toFixed(1);
+      // Didactics reads as a fraction of the sessions this month could actually offer them
+      // (call days and PTO are excluded from the denominator — nothing can be done about those).
+      if (col === 'name') td.textContent = name;
+      else if (col === 'didactics') {
+        // A schedule saved before the denominator existed shows the bare old count — inventing
+        // `n / n` there would read as a perfect score for a schedule that was nothing of the kind.
+        td.textContent = t.didacticsOf == null ? String(t.didactics) : `${t.didactics} / ${t.didacticsOf}`;
+        if (t.didacticsPager) td.title = `${t.didacticsPager} of those attended while holding the pager`;
+      } else td.textContent = row[col].toFixed(1);
       tr.appendChild(td);
     }
     tbody.appendChild(tr);
@@ -200,7 +210,10 @@ export function renderTotals(schedule) {
   return table;
 }
 
-export function renderWarnings(auditResult) {
+// onAttendingCover(date) — optional. When a resident is tethered to the pager on their own
+// didactics day and nobody else on the team is free to take it, the only remedy is handing that
+// afternoon to the attending; the row offers it as a one-click re-solve rather than a rule change.
+export function renderWarnings(auditResult, onAttendingCover) {
   const container = document.createElement('div');
   container.className = 'warnings-panel';
 
@@ -212,11 +225,26 @@ export function renderWarnings(auditResult) {
   for (const w of auditResult.warnings) {
     const li = document.createElement('li');
     li.className = 'warning';
+    const text = document.createElement('span');
     if (w.date) {
       const [, m, d] = w.date.split('-').map(Number);
-      li.textContent = `${MONTH_ABBR[m - 1]} ${d}: ${w.message}`;
+      text.textContent = `${MONTH_ABBR[m - 1]} ${d}: ${w.message}`;
     } else {
-      li.textContent = w.message;
+      text.textContent = w.message;
+    }
+    li.appendChild(text);
+    if ((w.attendingCanCover || w.attendingChosen) && onAttendingCover) {
+      const undo = !!w.attendingChosen;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-ghost warning-action';
+      btn.textContent = undo ? 'Give it back to the team' : 'Attending covers the pager';
+      btn.dataset.attendingDate = w.date;
+      btn.title = undo
+        ? `Take ${w.date} back off the attending and solve again.`
+        : `Hand the pager on ${w.date} to the attending and solve again — the rest of the month is held steady.`;
+      btn.addEventListener('click', () => onAttendingCover(w.date, undo));
+      li.appendChild(btn);
     }
     ul.appendChild(li);
   }

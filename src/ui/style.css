@@ -348,6 +348,21 @@ dialog#feedback-dialog::backdrop { background: oklch(0.2 0.02 255 / 0.5); }
 }
 .warnings-panel h2 { font-size: var(--fs-h2); margin: 0 0 0.4rem; }
 .warnings-panel li.warning { color: var(--warn); margin-bottom: 0.25rem; }
+.stale-rules {
+  border: 1px solid var(--warn);
+  border-left-width: 3px;
+  border-radius: var(--radius);
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 0.9rem;
+  color: var(--warn);
+  font-size: var(--fs-small);
+}
+.warnings-panel .warning-action {
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.5rem;
+  font-size: var(--fs-small);
+  vertical-align: baseline;
+}
 .warnings-panel ul { margin: 0; padding-left: 1.1rem; }
 .warnings-panel ul:empty { padding-left: 0; }
 .warnings-panel ul:empty::after { content: 'No issues flagged.'; color: var(--ok); font-size: var(--fs-small); }

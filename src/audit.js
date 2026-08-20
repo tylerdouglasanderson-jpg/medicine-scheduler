@@ -88,7 +88,13 @@ export function audit(scenario, schedule) {
       if (dd.pager == null)
         V('A_PAGER_MISSING', `No pager holder on ${d}`, null, d);
       else if (dd.pager === 'ATTENDING')
-        W('W_ATTENDING_PAGER', `Attending holds the pager on ${d}`, null, d);
+        warnings.push({
+          code: 'W_ATTENDING_PAGER', person: null, date: d,
+          message: (scenario.attendingPagerDays ?? []).includes(d)
+            ? `Attending holds the pager on ${d} — you handed them this afternoon`
+            : `Attending holds the pager on ${d}`,
+          attendingChosen: (scenario.attendingPagerDays ?? []).includes(d),
+        });
       else {
         const pr = byName[dd.pager];
         if (!pr || !onSvc(pr, d))
@@ -196,6 +202,43 @@ export function audit(scenario, schedule) {
       if (rest) flush(); else run.push(d);
     }
     flush();
+  }
+
+  // ---------- didactics ledger (program rule, 2026-08) ----------
+  // Every teaching half-day the schedule could have protected, and what took it. Off and post-call
+  // sleep are misses; the pager still lets them go but tethered, and when nobody else on the team
+  // was eligible that afternoon the only remedy is handing the pager to the attending — flagged so
+  // the chief can do exactly that and re-solve.
+  for (const r of scenario.residents) {
+    if (!r.didactics) continue;
+    for (const d of dates) {
+      if (dow(d) !== r.didactics.dow || !onSvc(r, d) || isPto(r, d)) continue;
+      if (types.get(d) === 'call') continue;               // structural — not the schedule's doing
+      const dd = day(d);
+      if (dd.off.includes(r.name))
+        W('W_DIDACTICS_OFF', `${r.name} is off on ${d}, their didactics day — a missed session and a day off spent on a half-day`, r.name, d);
+      else if (dd.sleeper === r.name)
+        W('W_DIDACTICS_SLEEP', `${r.name} is post-call asleep on ${d} and misses didactics`, r.name, d);
+      else if (dd.pager === r.name && !r.didactics.hard) {  // hard already raises W_DIDACTICS_MISS above
+        const relief = scenario.residents.some(o => o.name !== r.name && onSvc(o, d) && !isPto(o, d)
+          && !dd.off.includes(o.name) && dd.sleeper !== o.name
+          && !(o.commitments ?? []).some(c => c.date === d && c.half === 'PM'));
+        warnings.push({
+          code: 'W_DIDACTICS_PAGER', person: r.name, date: d,
+          message: relief
+            ? `${r.name} attends didactics on ${d} holding the pager`
+            : `${r.name} attends didactics on ${d} holding the pager — nobody else on the team is free to take it`,
+          attendingCanCover: !relief,
+        });
+      }
+    }
+  }
+
+  // ---------- A_ATTENDING_DAY_IGNORED ----------
+  for (const d of scenario.attendingPagerDays ?? []) {
+    const dd = day(d);
+    if (dd && dd.pager !== 'ATTENDING')
+      V('A_ATTENDING_DAY_IGNORED', `The attending was set to cover the pager on ${d} but ${dd.pager ?? 'nobody'} holds it`, null, d);
   }
 
   // ---------- A_PIN_VIOLATED ----------

@@ -52,6 +52,14 @@ export function validate(scenario) {
     }
   }
 
+  for (const d of scenario.attendingPagerDays ?? []) {
+    if (!dates.includes(d))
+      err('ATTENDING_DAY_OUTSIDE_MONTH', null, d, `The attending is set to cover the pager on ${d}, which is not in this month`);
+    else if (['call', 'postcall'].includes(types.get(d)))
+      err('ATTENDING_DAY_INVALID', null, d,
+        `The attending cannot cover the pager on a ${types.get(d)} day (${d}) — ${types.get(d) === 'call' ? 'no pager holder exists' : 'the post-call pager is fixed by the prior night'}`);
+  }
+
   if (scenario.anchorType === 'postcall' && !scenario.carryIn)
     err('CARRYIN_REQUIRED', null, dates[0], 'Anchor is post-call: carry-in (night person + day-call intern/senior) is required');
 

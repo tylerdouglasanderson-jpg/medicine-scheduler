@@ -1,7 +1,7 @@
 // MILP formulation — emits a CPLEX-LP string for HiGHS plus a var-extraction map.
 // Encodings follow docs/superpowers/plans/2026-07-16-med-scheduler.md Task 5;
 // rule authority is docs/plan-v2.md. audit.js must NEVER import from here (CLAUDE.md).
-import { deriveCycle, monthDates, onService, serviceDaysIn, quotaFor } from './model.js';
+import { deriveCycle, monthDates, onService, serviceDaysIn, quotaFor, solutionIsCurrent } from './model.js';
 
 export const WEIGHTS = {
   consecSlack: 1000000,    // P1 per consecutive-nights slack use
@@ -16,10 +16,12 @@ export const WEIGHTS = {
   offSpread: 10,           // S4 per unit of |weekOffs - 1| per person-week
   seniorOffSC: 25,         // S5 per senior off on sc1/sc2
   seniorOffFirstDay: 30,   // S11 per senior off on the first day of the month (soft: try not to)
-  pagerSenior: 3,          // S6 per senior-pager day
-  pagerInternDev: 1,       // S6 per pp of intern pager-rate deviation
-  seniorDidactics: 6,      // S7 per senior pager on own didactics dow
-  seniorDidacticsDev: 4,   // S7 per unit senior didactics-miss imbalance
+  afternoonLoad: 6,        // S6 per pp of committed-afternoon-rate deviation (clinic PM + didactics + pager)
+  didacticsOff: 45,        // S7 own didactics half-day lost to a day off (a miss AND a wasted off)
+  didacticsSleep: 30,      // S7 own didactics half-day lost to post-call sleep (a miss)
+  didacticsPager: 12,      // S7 own didactics half-day held tethered to the pager (they go, but on the pager)
+  didacticsIntern: 2,      // S7 multiplier: an intern's protected teaching time comes before a senior's
+  didacticsDev: 12,        // S7 per unit of didactics-miss imbalance across the team
   morningReport: 4,        // S8 per off on a Morning-Report pre-call day
   multiOff: 2,             // S9 per excess off above 1 on a date
   goldenWeekend: 15,       // S10 reward (applied negative) per Sat+Sun off pair
@@ -42,6 +44,10 @@ export function buildModel(scenario, freezeDate = null, { elasticQuota = false }
   const lastDate = dates[dates.length - 1];
   const carry = scenario.anchorType === 'postcall' ? scenario.carryIn : null;
   const last = scenario.lastSolution;
+  // Stability may only anchor on a solution the CURRENT rules produced. A schedule saved under an
+  // older rules version still renders and can still be frozen through, but it must not hold the
+  // new rules hostage — otherwise a file has to be cleared and re-typed to feel a rule change.
+  const stableRef = solutionIsCurrent(scenario) ? last : null;
 
   // ---- accumulators ----
   const vars = new Map();
@@ -127,11 +133,15 @@ export function buildModel(scenario, freezeDate = null, { elasticQuota = false }
     });
   });
 
-  dates.forEach(d => {          // attending-pager slack: non-call, non-post-call days only
+  // attending-pager slack: non-call, non-post-call days only. Normally near-forbidden; on a day the
+  // chief has explicitly handed to the attending it is forced instead, and costs nothing.
+  const attendingDays = new Set(scenario.attendingPagerDays ?? []);
+  dates.forEach(d => {
     const t = types.get(d);
     if (t === 'call' || t === 'postcall') return;
-    cont(`att_${di.get(d)}`, { kind: 'att', date: d }, 0, 1);
-    addObj(WEIGHTS.attendingPager, `att_${di.get(d)}`);
+    const v = cont(`att_${di.get(d)}`, { kind: 'att', date: d }, 0, 1);
+    if (attendingDays.has(d)) cons.push(`attfix_${di.get(d)}: 1 ${v} = 1`);
+    else addObj(WEIGHTS.attendingPager, v);
   });
 
   if (elasticQuota) people.forEach((p, pi) => {   // diagnostic-only quota slack
@@ -337,30 +347,63 @@ export function buildModel(scenario, freezeDate = null, { elasticQuota = false }
     pi: m.pi, denom: m.denom, constant: m.denom, terms: m.terms.map(t => T(-1, t.name)),
   })), WEIGHTS.dayCallSplit);
 
-  // S6 pager fairness: flat cost per senior-pager day + intern pager-rate deviation
-  const internPager = [];
+  // S6 committed-afternoon equity (program rule, 2026-08): pager + clinic PM + didactics afternoons should
+  // come out roughly even across the team, pro-rated by service days. A senior with a heavy clinic
+  // week therefore earns fewer pager days from the DATA rather than from a flat role discount — and
+  // the interns stop absorbing the whole pager. Short call is a morning thing and never appears here.
+  const afternoons = [];
   people.forEach((p, pi) => {
+    const svc = dates.filter(d => onService(p, d) && !isPto(p, d));
+    const clinicPM = svc.filter(d => p.commitments.some(c => c.date === d && c.half === 'PM')).length;
+    const didacticsDays = p.didactics
+      ? svc.filter(d => dow(d) === p.didactics.dow && types.get(d) !== 'call').length : 0;
     const pvs = dates.map(d => pagerName.get(p.name + '|' + d)).filter(Boolean);
-    if (p.role === 'senior') pvs.forEach(v => addObj(WEIGHTS.pagerSenior, v));
-    else if (pvs.length) internPager.push({ pi, denom: serviceDaysIn(p, scenario.month), terms: pvs.map(v => T(1, v)), constant: 0 });
+    const denom = serviceDaysIn(p, scenario.month);
+    if (denom) afternoons.push({ pi, denom, terms: pvs.map(v => T(1, v)), constant: clinicPM + didacticsDays });
   });
-  ratePattern('pg', internPager, WEIGHTS.pagerInternDev);
+  ratePattern('af', afternoons, WEIGHTS.afternoonLoad);
 
-  // S7 senior soft didactics: cost per pager on own didactics dow + miss-count imbalance (2 seniors)
-  const seniorMiss = [];
-  people.forEach(p => {
-    if (p.role !== 'senior' || !p.didactics) return;
-    const vs = dates.filter(d => dow(d) === p.didactics.dow)
-      .map(d => pagerName.get(p.name + '|' + d)).filter(Boolean);
-    vs.forEach(v => addObj(WEIGHTS.seniorDidactics, v));
-    seniorMiss.push(vs);
+  // S7 didactics protection — ROLE-NEUTRAL, interns weighted first (program rule, 2026-08). Every
+  // controllable way to lose your own teaching half-day is priced, tiered by how much is lost:
+  // an off day is a miss AND a wasted off, post-call sleep is a miss, the pager still lets them
+  // go but tethered. A call day is structural and is never charged to the solver. `hard` didactics
+  // escalates the off to the escape weight (the pager is already pruned for hard, see var creation).
+  const didMiss = [];   // {pi, terms, constant} — per-person miss count, for the imbalance term
+  people.forEach((p, pi) => {
+    if (!p.didactics) return;
+    const factor = p.role === 'intern' ? WEIGHTS.didacticsIntern : 1;
+    const terms = []; let constant = 0;
+    dates.forEach(d => {
+      if (dow(d) !== p.didactics.dow || !onService(p, d) || isPto(p, d)) return;
+      const t = types.get(d);
+      if (t === 'call') { constant += 1; return; }              // structural miss, nothing to optimize
+      const ov = offName.get(p.name + '|' + d);
+      if (ov) {
+        addObj(p.didactics.hard ? WEIGHTS.didacticsEscape : factor * WEIGHTS.didacticsOff, ov);
+        terms.push(T(1, ov));
+      }
+      if (t === 'postcall') {
+        const c = prevCallOf.get(d);
+        const nv = c && nightName.get(p.name + '|' + c);
+        if (nv) { addObj(factor * WEIGHTS.didacticsSleep, nv); terms.push(T(1, nv)); }
+      }
+      const pv = pagerName.get(p.name + '|' + d);
+      if (pv) addObj(factor * WEIGHTS.didacticsPager, pv);      // attends tethered — not a miss, not free
+    });
+    didMiss.push({ pi, terms, constant });
   });
-  if (seniorMiss.length === 2) {
-    cont('sddev', { kind: 'dev' });
-    const t = [...seniorMiss[0].map(v => T(-1, v)), ...seniorMiss[1].map(v => T(1, v))];
-    cons.push('dv1_sd: ' + lin([T(1, 'sddev'), ...t]) + ' >= 0');
-    cons.push('dv2_sd: ' + lin([T(1, 'sddev'), ...t.map(x => T(-x.coef, x.name))]) + ' >= 0');
-    addObj(WEIGHTS.seniorDidacticsDev, 'sddev');
+  // Spread the misses a month cannot avoid instead of stacking them on the same person.
+  if (didMiss.length >= 2) {
+    cont('dmu', { kind: 'dev' }, 'free');
+    didMiss.forEach(m => {
+      cont(`dmiss_${m.pi}`, { kind: 'dev', person: people[m.pi].name }, 'free');
+      cont(`ddev_${m.pi}`, { kind: 'dev', person: people[m.pi].name });
+      cons.push(`dm_${m.pi}: ` + lin([T(1, `dmiss_${m.pi}`), ...m.terms.map(t => T(-t.coef, t.name))]) + ' = ' + m.constant);
+      cons.push(`dd1_${m.pi}: ` + lin([T(1, `ddev_${m.pi}`), T(-1, `dmiss_${m.pi}`), T(1, 'dmu')]) + ' >= 0');
+      cons.push(`dd2_${m.pi}: ` + lin([T(1, `ddev_${m.pi}`), T(1, `dmiss_${m.pi}`), T(-1, 'dmu')]) + ' >= 0');
+      addObj(WEIGHTS.didacticsDev, `ddev_${m.pi}`);
+    });
+    cons.push('dd_mu: ' + lin([T(didMiss.length, 'dmu'), ...didMiss.map(m => T(-1, `dmiss_${m.pi}`))]) + ' = 0');
   }
 
   // S5 senior off on sc1/sc2; S8 off on Morning-Report days
@@ -386,6 +429,7 @@ export function buildModel(scenario, freezeDate = null, { elasticQuota = false }
       : t === 'sc2' ? WEIGHTS.offSc2 : 0;
     if (!reward) return;
     people.forEach(p => {
+      if (p.didactics && dow(d) === p.didactics.dow) return;   // never bribe an off onto teaching time
       const v = offName.get(p.name + '|' + d);
       if (v) addObj(-reward, v);
     });
@@ -467,7 +511,7 @@ export function buildModel(scenario, freezeDate = null, { elasticQuota = false }
   });
 
   // S1 re-solve stability: Hamming distance to lastSolution (constant part dropped)
-  if (last) {
+  if (stableRef) {
     for (const [name, meta] of vars) {
       if (!['off', 'night', 'pager'].includes(meta.kind)) continue;
       const v = prevVal(meta);
