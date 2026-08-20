@@ -1,6 +1,9 @@
 // Independent auditor — deliberately re-implements cycle typing and every hard rule.
 // NO imports from milp.js or model.js (see CLAUDE.md): the auditor's value is independence.
 const CYCLE = ['precall', 'call', 'postcall', 'ppc', 'sc1', 'sc2'];
+// Nobody attends didactics on a call or post-call day — re-stated here, not imported (see CLAUDE.md).
+const NO_DIDACTICS = ['call', 'postcall'];
+const DOW_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 function deriveTypes(anchorType, month) {           // local re-implementation, do not import
   const [y, m] = month.split('-').map(Number);
@@ -108,7 +111,7 @@ export function audit(scenario, schedule) {
             V('A_PAGER_CONFLICT', `Pager holder ${dd.pager} is the post-call sleeper on ${d}`, dd.pager, d);
           if ((pr.commitments ?? []).some(c => c.date === d && c.half === 'PM'))
             V('A_PAGER_CONFLICT', `Pager holder ${dd.pager} has a PM commitment on ${d}`, dd.pager, d);
-          if (pr.didactics?.hard && pr.didactics.dow === dow(d))
+          if (pr.didactics?.hard && pr.didactics.dow === dow(d) && !NO_DIDACTICS.includes(t))
             W('W_DIDACTICS_MISS', `${dd.pager} holds the pager on ${d} and will miss didactics`, dd.pager, d);
         }
       }
@@ -213,25 +216,57 @@ export function audit(scenario, schedule) {
     if (!r.didactics) continue;
     for (const d of dates) {
       if (dow(d) !== r.didactics.dow || !onSvc(r, d) || isPto(r, d)) continue;
-      if (types.get(d) === 'call') continue;               // structural — not the schedule's doing
+      if (NO_DIDACTICS.includes(types.get(d))) continue;   // no session to make on a call/post-call day
       const dd = day(d);
       if (dd.off.includes(r.name))
         W('W_DIDACTICS_OFF', `${r.name} is off on ${d}, their didactics day — a missed session and a day off spent on a half-day`, r.name, d);
-      else if (dd.sleeper === r.name)
-        W('W_DIDACTICS_SLEEP', `${r.name} is post-call asleep on ${d} and misses didactics`, r.name, d);
       else if (dd.pager === r.name && !r.didactics.hard) {  // hard already raises W_DIDACTICS_MISS above
-        const relief = scenario.residents.some(o => o.name !== r.name && onSvc(o, d) && !isPto(o, d)
+        const free = o => o.name !== r.name && onSvc(o, d) && !isPto(o, d)
           && !dd.off.includes(o.name) && dd.sleeper !== o.name
-          && !(o.commitments ?? []).some(c => c.date === d && c.half === 'PM'));
-        warnings.push({
-          code: 'W_DIDACTICS_PAGER', person: r.name, date: d,
-          message: relief
-            ? `${r.name} attends didactics on ${d} holding the pager`
-            : `${r.name} attends didactics on ${d} holding the pager — nobody else on the team is free to take it`,
-          attendingCanCover: !relief,
-        });
+          && !(o.commitments ?? []).some(c => c.date === d && c.half === 'PM');
+        const freeSenior = scenario.residents.find(o => o.role === 'senior' && free(o));
+        const freeAnyone = scenario.residents.some(free);
+        if (r.role === 'senior') {
+          warnings.push({
+            code: 'W_DIDACTICS_PAGER', person: r.name, date: d,
+            message: freeAnyone
+              ? `${r.name} attends didactics on ${d} holding the pager`
+              : `${r.name} attends didactics on ${d} holding the pager — nobody else on the team is free to take it`,
+            attendingCanCover: !freeAnyone,
+          });
+        } else {
+          // An intern on the pager through their own didactics is barely at didactics at all, and
+          // carrying it is normally a senior's job — so this always offers a way out, either the
+          // senior who was free that afternoon or the attending.
+          warnings.push({
+            code: 'W_DIDACTICS_PAGER_INTERN', person: r.name, date: d,
+            message: freeSenior
+              ? `${r.name} (intern) carries the pager through their own didactics on ${d} — ${freeSenior.name} is free that afternoon and would normally take it. Pin the pager to them and re-solve.`
+              : freeAnyone
+                ? `${r.name} (intern) carries the pager through their own didactics on ${d} — no senior is free that afternoon`
+                : `${r.name} (intern) carries the pager through their own didactics on ${d} — nobody else on the team is free to take it`,
+            attendingCanCover: !freeSenior,
+          });
+        }
       }
     }
+  }
+
+  // An input-level collision the solver can never fix: if a senior has a PM commitment on EVERY one
+  // of an intern's didactics afternoons, no schedule can ever put a senior on that pager. The chief
+  // has to move a clinic or hand those afternoons to the attending, so say it once, plainly.
+  for (const r of scenario.residents) {
+    if (r.role !== 'intern' || !r.didactics) continue;
+    const sessions = dates.filter(d => dow(d) === r.didactics.dow && onSvc(r, d) && !isPto(r, d)
+      && !NO_DIDACTICS.includes(types.get(d)));
+    if (sessions.length < 2) continue;
+    const coverable = sessions.filter(d => scenario.residents.some(o => o.role === 'senior'
+      && onSvc(o, d) && !isPto(o, d)
+      && !(o.commitments ?? []).some(c => c.date === d && c.half === 'PM')));
+    if (coverable.length === 0)
+      W('W_DIDACTICS_NO_SENIOR_COVER',
+        `No senior can cover ${r.name}'s ${DOW_NAMES[r.didactics.dow]} didactics on any of the ${sessions.length} afternoons this month — a senior has a PM commitment every one of those days. They can only fall to another intern or the attending. Moving one of those clinics is the real fix.`,
+        r.name);
   }
 
   // ---------- A_ATTENDING_DAY_IGNORED ----------

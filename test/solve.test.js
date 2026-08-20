@@ -63,10 +63,14 @@ describe('feb-2026 golden solve (Node)', () => {
         expect(['Senior1', 'Senior2']).toContain(schedule.days[nextDate(c)].pager);
   });
 
-  it('Feb 12: pager wins over Thu didactics, warning emitted (both interns hard-Thu)', () => {
+  it('Feb 12 is post-call: the day-call intern pages and no didactics warning is raised', () => {
+    // Nobody attends didactics on a post-call day (program rule, 2026-08), so the pager there costs
+    // nobody a session — this used to raise W_DIDACTICS_MISS against the holder.
     const holder = schedule.days['2026-02-12'].pager;
-    expect(['Intern1', 'Intern2']).toContain(holder);
-    expect(warnings.some(w => w.code === 'W_DIDACTICS_MISS' && w.person === holder)).toBe(true);
+    expect(holder).toBe(schedule.days['2026-02-11'].dayCall.intern);
+    expect(warnings.some(w => w.code === 'W_DIDACTICS_MISS' && w.date === '2026-02-12')).toBe(false);
+    expect(audit(s, schedule).warnings.some(w => w.date === '2026-02-12' && w.code.startsWith('W_DIDACTICS')))
+      .toBe(false);
   });
 
   it('Senior1 idle on PTO day Feb 20', () => {
@@ -251,7 +255,8 @@ describe('oct-2026 didactics protection', () => {
   });
 
   it('tethered didactics are flagged, and handing those afternoons to the attending clears them', async () => {
-    const flagged = audit(s, schedule).warnings.filter(w => w.code === 'W_DIDACTICS_PAGER');
+    const TETHER = ['W_DIDACTICS_PAGER', 'W_DIDACTICS_PAGER_INTERN'];
+    const flagged = audit(s, schedule).warnings.filter(w => TETHER.includes(w.code));
     expect(flagged.length).toBeGreaterThan(0);
     expect(flagged.every(w => w.attendingCanCover)).toBe(true);
 

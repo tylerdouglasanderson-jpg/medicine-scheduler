@@ -98,9 +98,10 @@ function calendarBlock(s, schedule) {
   // not the schedule's doing; a day off or post-call sleep LOSES the half-day; holding the pager
   // still gets them there, tethered. Anything else is a clean attendance.
   const didStatus = (d, st) => {
-    if (types.get(d) === 'call' || st === 'X') return '·';   // structural
-    if (st === 'O' || st === 'N' || st === 'S') return '!';         // lost
-    if (st === 'P') return 'p';                                     // attends on the pager
+    // Nobody attends on a call or post-call day, and PTO is PTO — no session existed to make.
+    if (types.get(d) === 'call' || types.get(d) === 'postcall' || st === 'X') return '·';
+    if (st === 'O') return '!';                                     // a day off LOSES the half-day
+    if (st === 'P') return 'p';                                     // attends holding the pager
     return 'd';
   };
 
@@ -126,7 +127,7 @@ function calendarBlock(s, schedule) {
     }
   }
   lines.push('    legend  W work · N night · S post-night sleep · P pager · O off · X PTO · . off-service');
-  lines.push('    didx    d = attends free · p = attends holding the pager · ! = LOSES it (off/night/sleep) · · = call or PTO');
+  lines.push('    didx    d = attends free · p = attends holding the pager · ! = LOSES it (day off) · · = no session (call / post-call / PTO)');
   return lines.join('\n');
 }
 

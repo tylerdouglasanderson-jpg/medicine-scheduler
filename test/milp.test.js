@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildModel, WEIGHTS } from '../src/milp.js';
+import { buildModel, WEIGHTS, NO_DIDACTICS } from '../src/milp.js';
 import { parseScenario, deriveCycle } from '../src/model.js';
 import feb from '../fixtures/feb-2026.json';
 import medc from '../fixtures/comp-medc.json';
@@ -65,9 +65,33 @@ it('weight-ladder invariants (trade-off regression guard)', () => {
 // penalty is raised above the sleep/off ones the solver starts trading an ATTENDED-but-tethered
 // afternoon for an outright miss, which is strictly worse for the resident.
 describe('didactics + afternoon-load weights', () => {
-  it('tiers run pager < sleep < off — attending tethered always beats not attending', () => {
-    expect(WEIGHTS.didacticsPager).toBeLessThan(WEIGHTS.didacticsSleep);
-    expect(WEIGHTS.didacticsSleep).toBeLessThan(WEIGHTS.didacticsOff);
+  it('per role, being tethered to the pager always beats not attending at all', () => {
+    expect(WEIGHTS.didacticsPager).toBeLessThan(WEIGHTS.didacticsOff);
+    expect(WEIGHTS.didacticsPagerIntern).toBeLessThan(WEIGHTS.didacticsOff * WEIGHTS.didacticsIntern);
+  });
+
+  it('an intern tethered to the pager costs far more than a senior — only a senior should normally do it', () =>
+    expect(WEIGHTS.didacticsPagerIntern).toBeGreaterThan(3 * WEIGHTS.didacticsPager));
+
+  it('a pager on a call or post-call day is never priced as a didactics loss', () => {
+    expect([...NO_DIDACTICS].sort()).toEqual(['call', 'postcall']);
+    const s = parseScenario(feb);
+    const { lp } = buildModel(s);
+    const objective = lp.split('Subject To')[0];
+    const { types } = deriveCycle(s.anchorType, s.month);
+    const dow = d => { const [y, m, dd] = d.split('-').map(Number); return new Date(y, m - 1, dd).getDay(); };
+    let checked = 0;
+    for (const r of s.residents) {
+      if (!r.didactics) continue;
+      for (const [d, t] of types) {
+        if (t !== 'postcall' || dow(d) !== r.didactics.dow) continue;   // call days have no pager var at all
+        const name = `pager_${s.residents.indexOf(r)}_${Number(d.slice(8)) - 1}`;
+        expect(objective).not.toContain(` ${name} `);
+        expect(objective).not.toContain(` ${name}\n`);
+        checked++;
+      }
+    }
+    expect(checked).toBeGreaterThan(0);   // the fixture really does exercise this
   });
 
   it('no off-placement reward can buy a teaching afternoon', () =>

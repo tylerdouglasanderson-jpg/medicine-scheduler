@@ -60,12 +60,12 @@ function offNames(scenario, dd, date) {
 // The pager holder still goes to didactics and steps out if something happens (program rule, 2026-08),
 // so they stay on this row, tagged. Off / post-call sleep / PTO genuinely lose the half-day.
 function didacticsNames(scenario, schedule, date, type) {
-  if (type === 'call') return [];
+  if (type === 'call' || type === 'postcall') return [];   // nobody attends on those days
   const dd = schedule.days[date];
   const dow = dowOf(date);
   return scenario.residents
     .filter(r => r.didactics && r.didactics.dow === dow && onService(r, date))
-    .filter(r => !(dd.off.includes(r.name) || dd.sleeper === r.name || (r.pto ?? []).includes(date)))
+    .filter(r => !(dd.off.includes(r.name) || (r.pto ?? []).includes(date)))
     .map(r => (dd.pager === r.name ? `${r.name} (pager)` : r.name));
 }
 

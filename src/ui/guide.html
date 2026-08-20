@@ -499,9 +499,12 @@
                 them on the pager over hard didactics when there is truly no other option, and it
                 raises a warning when it does.
                 <br><br>Teaching time is protected for <strong>everyone</strong>, interns first. The
-                solver will not park a day off on someone's own didactics day, will not leave them
-                post-call asleep through it, and prefers to keep them off the pager that afternoon —
-                in that order, because an off day spent on a teaching afternoon wastes both.</td>
+                solver will not park a day off on someone's own didactics day, and it keeps interns
+                off the pager on their own didactics afternoon wherever it can — an intern carrying
+                the pager through didactics is barely there at all, and carrying it is normally a
+                senior's job. Nobody is listed for didactics on a <strong>call</strong> or
+                <strong>post-call</strong> day: those are not sessions anyone could have made, so
+                they never count against the total.</td>
             </tr>
           </tbody>
         </table>
@@ -768,8 +771,9 @@
           <tbody>
             <tr><td class="code-cell">W_ATTENDING_PAGER</td><td>An attending had to hold the pager that day (or you handed them that afternoon).</td></tr>
             <tr><td class="code-cell">W_DIDACTICS_OFF</td><td>A day off landed on that resident's own didactics day — a missed session <em>and</em> a day off spent on a half-day.</td></tr>
-            <tr><td class="code-cell">W_DIDACTICS_SLEEP</td><td>They are post-call asleep through their didactics afternoon.</td></tr>
-            <tr><td class="code-cell">W_DIDACTICS_PAGER</td><td>They make didactics but carry the pager through it. When nobody else on the team is free to take it, the row offers <strong>Attending covers the pager</strong> — one click hands that afternoon over and solves again.</td></tr>
+            <tr><td class="code-cell">W_DIDACTICS_PAGER</td><td>A senior makes didactics but carries the pager through it — the normal, acceptable case. When nobody else is free either, the row offers <strong>Attending covers the pager</strong>.</td></tr>
+            <tr><td class="code-cell">W_DIDACTICS_PAGER_INTERN</td><td>An <em>intern</em> carries the pager through their own didactics, which is close to not attending at all. The row names the senior who was free that afternoon (pin the pager to them and re-solve), or offers <strong>Attending covers the pager</strong> when no senior was.</td></tr>
+            <tr><td class="code-cell">W_DIDACTICS_NO_SENIOR_COVER</td><td>A senior has a PM commitment on <em>every one</em> of an intern's didactics afternoons this month, so no schedule can ever put a senior on that pager. Moving one of those clinics is the real fix.</td></tr>
             <tr><td class="code-cell">W_DIDACTICS_MISS</td><td>Pager duty makes someone miss hard didactics.</td></tr>
             <tr><td class="code-cell">W_MULTI_OFF</td><td>More than one person is off the same day.</td></tr>
             <tr><td class="code-cell">W_SENIOR_OFF_SC</td><td>A senior is off on a short-call day.</td></tr>

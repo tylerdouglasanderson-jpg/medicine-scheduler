@@ -3,6 +3,12 @@
 // rule authority is docs/plan-v2.md. audit.js must NEVER import from here (CLAUDE.md).
 import { deriveCycle, monthDates, onService, serviceDaysIn, quotaFor, solutionIsCurrent } from './model.js';
 
+// Nobody attends didactics on these days (program rule, 2026-08): a call day is in-house start to
+// finish, and a post-call day is spent sleeping or handing over. They are excluded from the model,
+// from the totals denominator, and from the calendar's DIDACTICS row — not counted as misses,
+// because there was never a session to make.
+export const NO_DIDACTICS = new Set(['call', 'postcall']);
+
 export const WEIGHTS = {
   consecSlack: 1000000,    // P1 per consecutive-nights slack use
   quotaShort: 200000,      // P2 per whole off short — DIAGNOSTIC ONLY (opts.elasticQuota; the
@@ -18,9 +24,9 @@ export const WEIGHTS = {
   seniorOffFirstDay: 30,   // S11 per senior off on the first day of the month (soft: try not to)
   afternoonLoad: 6,        // S6 per pp of committed-afternoon-rate deviation (clinic PM + didactics + pager)
   didacticsOff: 45,        // S7 own didactics half-day lost to a day off (a miss AND a wasted off)
-  didacticsSleep: 30,      // S7 own didactics half-day lost to post-call sleep (a miss)
-  didacticsPager: 12,      // S7 own didactics half-day held tethered to the pager (they go, but on the pager)
-  didacticsIntern: 2,      // S7 multiplier: an intern's protected teaching time comes before a senior's
+  didacticsPager: 8,       // S7 a SENIOR tethered to the pager at their own didactics — the normal case
+  didacticsPagerIntern: 35,// S7 an INTERN tethered — nearly as bad as not going, so buy them out of it
+  didacticsIntern: 2,      // S7 multiplier on didacticsOff: interns' protected teaching time comes first
   didacticsDev: 12,        // S7 per unit of didactics-miss imbalance across the team
   morningReport: 4,        // S8 per off on a Morning-Report pre-call day
   multiOff: 2,             // S9 per excess off above 1 on a date
@@ -356,41 +362,38 @@ export function buildModel(scenario, freezeDate = null, { elasticQuota = false }
     const svc = dates.filter(d => onService(p, d) && !isPto(p, d));
     const clinicPM = svc.filter(d => p.commitments.some(c => c.date === d && c.half === 'PM')).length;
     const didacticsDays = p.didactics
-      ? svc.filter(d => dow(d) === p.didactics.dow && types.get(d) !== 'call').length : 0;
+      ? svc.filter(d => dow(d) === p.didactics.dow && !NO_DIDACTICS.has(types.get(d))).length : 0;
     const pvs = dates.map(d => pagerName.get(p.name + '|' + d)).filter(Boolean);
     const denom = serviceDaysIn(p, scenario.month);
     if (denom) afternoons.push({ pi, denom, terms: pvs.map(v => T(1, v)), constant: clinicPM + didacticsDays });
   });
   ratePattern('af', afternoons, WEIGHTS.afternoonLoad);
 
-  // S7 didactics protection — ROLE-NEUTRAL, interns weighted first (program rule, 2026-08). Every
-  // controllable way to lose your own teaching half-day is priced, tiered by how much is lost:
-  // an off day is a miss AND a wasted off, post-call sleep is a miss, the pager still lets them
-  // go but tethered. A call day is structural and is never charged to the solver. `hard` didactics
-  // escalates the off to the escape weight (the pager is already pruned for hard, see var creation).
-  const didMiss = [];   // {pi, terms, constant} — per-person miss count, for the imbalance term
+  // S7 didactics protection — ROLE-NEUTRAL, interns weighted first (program rule, 2026-08). Nobody
+  // attends on a call or post-call day (program rule, 2026-08), so those are out of the model entirely:
+  // not a miss to charge anyone for, not a session anyone could have made. On every other day the
+  // ways to lose it are priced: a day off is a miss AND a wasted off; the pager still gets them
+  // there, tethered — cheap for a senior, expensive for an intern, because an intern on the pager
+  // at didactics is barely there at all. `hard` escalates the off to the escape weight (the pager
+  // is already pruned for hard, see var creation).
+  const didMiss = [];   // {pi, terms} — per-person miss count, for the imbalance term
   people.forEach((p, pi) => {
     if (!p.didactics) return;
-    const factor = p.role === 'intern' ? WEIGHTS.didacticsIntern : 1;
-    const terms = []; let constant = 0;
+    const offW = (p.role === 'intern' ? WEIGHTS.didacticsIntern : 1) * WEIGHTS.didacticsOff;
+    const pagerW = p.role === 'intern' ? WEIGHTS.didacticsPagerIntern : WEIGHTS.didacticsPager;
+    const terms = [];
     dates.forEach(d => {
       if (dow(d) !== p.didactics.dow || !onService(p, d) || isPto(p, d)) return;
-      const t = types.get(d);
-      if (t === 'call') { constant += 1; return; }              // structural miss, nothing to optimize
+      if (NO_DIDACTICS.has(types.get(d))) return;               // nobody attends on call / post-call
       const ov = offName.get(p.name + '|' + d);
       if (ov) {
-        addObj(p.didactics.hard ? WEIGHTS.didacticsEscape : factor * WEIGHTS.didacticsOff, ov);
+        addObj(p.didactics.hard ? WEIGHTS.didacticsEscape : offW, ov);
         terms.push(T(1, ov));
       }
-      if (t === 'postcall') {
-        const c = prevCallOf.get(d);
-        const nv = c && nightName.get(p.name + '|' + c);
-        if (nv) { addObj(factor * WEIGHTS.didacticsSleep, nv); terms.push(T(1, nv)); }
-      }
       const pv = pagerName.get(p.name + '|' + d);
-      if (pv) addObj(factor * WEIGHTS.didacticsPager, pv);      // attends tethered — not a miss, not free
+      if (pv) addObj(pagerW, pv);                               // attends tethered — not a miss, not free
     });
-    didMiss.push({ pi, terms, constant });
+    didMiss.push({ pi, terms });
   });
   // Spread the misses a month cannot avoid instead of stacking them on the same person.
   if (didMiss.length >= 2) {
@@ -398,7 +401,7 @@ export function buildModel(scenario, freezeDate = null, { elasticQuota = false }
     didMiss.forEach(m => {
       cont(`dmiss_${m.pi}`, { kind: 'dev', person: people[m.pi].name }, 'free');
       cont(`ddev_${m.pi}`, { kind: 'dev', person: people[m.pi].name });
-      cons.push(`dm_${m.pi}: ` + lin([T(1, `dmiss_${m.pi}`), ...m.terms.map(t => T(-t.coef, t.name))]) + ' = ' + m.constant);
+      cons.push(`dm_${m.pi}: ` + lin([T(1, `dmiss_${m.pi}`), ...m.terms.map(t => T(-t.coef, t.name))]) + ' = 0');
       cons.push(`dd1_${m.pi}: ` + lin([T(1, `ddev_${m.pi}`), T(-1, `dmiss_${m.pi}`), T(1, 'dmu')]) + ' >= 0');
       cons.push(`dd2_${m.pi}: ` + lin([T(1, `ddev_${m.pi}`), T(1, `dmiss_${m.pi}`), T(-1, 'dmu')]) + ' >= 0');
       addObj(WEIGHTS.didacticsDev, `ddev_${m.pi}`);
@@ -429,7 +432,7 @@ export function buildModel(scenario, freezeDate = null, { elasticQuota = false }
       : t === 'sc2' ? WEIGHTS.offSc2 : 0;
     if (!reward) return;
     people.forEach(p => {
-      if (p.didactics && dow(d) === p.didactics.dow) return;   // never bribe an off onto teaching time
+      if (p.didactics && dow(d) === p.didactics.dow && !NO_DIDACTICS.has(t)) return;  // never bribe an off onto teaching time
       const v = offName.get(p.name + '|' + d);
       if (v) addObj(-reward, v);
     });
@@ -499,16 +502,6 @@ export function buildModel(scenario, freezeDate = null, { elasticQuota = false }
       addObj(-WEIGHTS.goldenWeekend, g);
     }));
   }
-
-  // P3 didactics escape: post-call pager hitting the holder's HARD didactics dow
-  dates.forEach(d => {
-    if (types.get(d) !== 'postcall') return;
-    people.forEach(p => {
-      if (!p.didactics?.hard || p.didactics.dow !== dow(d)) return;
-      const v = pagerName.get(p.name + '|' + d);
-      if (v) addObj(WEIGHTS.didacticsEscape, v);
-    });
-  });
 
   // S1 re-solve stability: Hamming distance to lastSolution (constant part dropped)
   if (stableRef) {

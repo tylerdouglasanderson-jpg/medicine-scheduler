@@ -1,6 +1,6 @@
 // HiGHS wrapper + column-primal extraction to the Schedule shape + staged pin diagnosis.
 // solve() is pure (no DOM, no storage). It does NOT import audit.js — the UI composes them.
-import { buildModel } from './milp.js';
+import { buildModel, NO_DIDACTICS } from './milp.js';
 import { deriveCycle, onService, RULES_VERSION } from './model.js';
 import { validate } from './validate.js';
 
@@ -160,10 +160,10 @@ function extract(scenario, vars, cols) {
     if (p.didactics) {
       for (const d of svc) {
         if (dow(d) !== p.didactics.dow) continue;
-        if (types.get(d) === 'call' || p.pto.includes(d)) continue;      // structurally unattendable
+        if (NO_DIDACTICS.has(types.get(d)) || p.pto.includes(d)) continue;   // no session to make
         didacticsOf++;                                                   // the denominator a chief can act on
         const dd = days[d];
-        if (dd.off.includes(name) || dd.sleeper === name) continue;      // lost the half-day
+        if (dd.off.includes(name)) continue;                             // lost the half-day
         didactics++;
         if (dd.pager === name) didacticsPager++;   // they go, but tethered to the pager (program rule, 2026-08)
       }
@@ -184,7 +184,7 @@ function extract(scenario, vars, cols) {
   for (const d of dates) {
     const dd = days[d];
     if (attOf[d]) W('W_ATTENDING_PAGER', `Attending holds the pager on ${d}`, null, d);
-    if (types.get(d) === 'call') continue;
+    if (NO_DIDACTICS.has(types.get(d))) continue;
     const holder = dd.pager;
     if (!holder || holder === 'ATTENDING') continue;
     const pr = people.find(p => p.name === holder);

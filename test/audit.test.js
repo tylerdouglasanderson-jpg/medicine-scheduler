@@ -44,13 +44,33 @@ describe('didactics ledger', () => {
     expect(w.some(x => x.code === 'W_DIDACTICS_OFF' && x.person === 'Senior2' && x.date === '2026-02-01')).toBe(true);
   });
 
-  it('holding the pager is a tether, not a loss — and not offered to the attending when someone else is free', () => {
-    const fx = withDidactics('Intern2', 1);               // Feb 2 is a Monday; Intern2 holds the pager
+  it('an INTERN on the pager at their own didactics is flagged separately and names the free senior', () => {
+    const fx = withDidactics('Intern2', 1);               // Intern2 is an intern; Feb 2 is a Monday, he pages
     const w = audit(fx.scenario, fx.schedule).warnings;
-    const hit = w.find(x => x.code === 'W_DIDACTICS_PAGER' && x.person === 'Intern2' && x.date === '2026-02-02');
+    const hit = w.find(x => x.code === 'W_DIDACTICS_PAGER_INTERN' && x.date === '2026-02-02');
     expect(hit).toBeTruthy();
-    expect(hit.attendingCanCover).toBe(false);        // Senior1 and Senior2 are both working and free
+    expect(hit.person).toBe('Intern2');
+    expect(hit.message).toMatch(/Senior1|Senior2/);      // both seniors are working and free that day
+    expect(hit.attendingCanCover).toBe(false);        // pin the senior instead — no attending needed
     expect(w.some(x => x.code === 'W_DIDACTICS_OFF' && x.date === '2026-02-02')).toBe(false);
+  });
+
+  it('a SENIOR on the pager at their own didactics is the ordinary case', () => {
+    const fx = withDidactics('Senior1', 0);             // Senior1 is a senior and pages Feb 1 (a Sunday)
+    const w = audit(fx.scenario, fx.schedule).warnings;
+    const hit = w.find(x => x.code === 'W_DIDACTICS_PAGER' && x.date === '2026-02-01');
+    expect(hit).toBeTruthy();
+    expect(hit.person).toBe('Senior1');
+  });
+
+  it('nobody is charged for didactics on a call or post-call day', () => {
+    const types = { '2026-02-05': 'call', '2026-02-06': 'postcall' };
+    for (const [date] of Object.entries(types)) {
+      const d = new Date(...date.split('-').map((v, i) => i === 1 ? Number(v) - 1 : Number(v)));
+      const fx = withDidactics('Intern2', d.getDay());
+      const w = audit(fx.scenario, fx.schedule).warnings;
+      expect(w.some(x => x.code.startsWith('W_DIDACTICS') && x.date === date)).toBe(false);
+    }
   });
 
   it('an attending day the schedule ignored is a violation', () => {
