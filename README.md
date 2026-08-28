@@ -24,7 +24,8 @@ works offline, your data never leaves your computer.**
 - **Pin** any cell (night, day-call, pager, off, work) and re-solve — early weeks stay
   put via freeze-through-date, so one fix doesn't reshuffle the month.
 - Flags soft "Potential Issues" (e.g. a forced didactics miss) without blocking.
-- Export a styled **.xlsx** (colors match the on-screen grid) or **print to PDF**.
+- Export one **.ics calendar per resident** (individually or together as a ZIP), a formatted
+  **.xlsx** for Excel/Google Sheets, or **print to PDF**.
 
 ## Use it in 4 steps
 

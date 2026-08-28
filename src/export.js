@@ -21,6 +21,7 @@ const TOTALS_COLS = [
 ];
 const TOTALS_START_COL = 10; // column J
 const MR_FONT = 'FF7030A0';  // Morning-Report label — matches the app's --cal-mr
+const ROW_HEIGHTS = { DATE: 20, TYPE: 36, ROUNDERS: 72, PAGER: 34, CLINIC: 42, DIDACTICS: 42, PTO: 42, OFF: 42 };
 
 const dowOf = date => { const [y, m, d] = date.split('-').map(Number); return new Date(y, m - 1, d).getDay(); };
 
@@ -96,6 +97,7 @@ function writeCalendar(ws, scenario, schedule, types, dates, firstDow, mrDays) {
   for (const week of buildWeeks(dates, firstDow)) {
     for (const label of ROWS) {
       const rowIdx = row++;
+      ws.getRow(rowIdx).height = ROW_HEIGHTS[label];
       ws.getCell(rowIdx, 1).value = label;
       week.forEach((date, ci) => {
         const cell = ws.getCell(rowIdx, ci + 2);
@@ -131,17 +133,44 @@ function writeTotals(ws, schedule) {
 
 function writeNotes(ws, scenario, auditResult, startRow) {
   let row = startRow + 1;
-  ws.getCell(row++, 1).value = 'Notes';
-  ws.getCell(row++, 1).value = 'MORNING REPORT = this team presents (pre-call team, Tue & Thu).';
+  const line = (value, bold = false) => {
+    ws.mergeCells(row, 1, row, 8);
+    const cell = ws.getCell(row, 1);
+    cell.value = value;
+    cell.font = bold ? { bold: true } : undefined;
+    ws.getRow(row).height = bold ? 24 : 36;
+    row++;
+  };
+  line('Notes', true);
+  line('MORNING REPORT = this team presents (pre-call team, Tue & Thu).');
   for (const r of scenario.residents) {
     if (!r.didactics) continue;
     const stop = r.didactics.hard ? 'hard stop' : 'soft stop';
-    ws.getCell(row++, 1).value = `${r.name}: ${DOW_NAMES[r.didactics.dow]} didactics (${stop})`;
+    line(`${r.name}: ${DOW_NAMES[r.didactics.dow]} didactics (${stop})`);
   }
   row++;
-  ws.getCell(row++, 1).value = 'Potential Issues';
+  line('Potential Issues', true);
   for (const w of auditResult.warnings)
-    ws.getCell(row++, 1).value = w.date ? `${w.date}: ${w.message}` : w.message;
+    line(w.date ? `${w.date}: ${w.message}` : w.message);
+}
+
+function formatSheet(ws) {
+  ws.getColumn(1).width = 14;
+  for (let col = 2; col <= 8; col++) ws.getColumn(col).width = 22;
+  ws.getColumn(9).width = 2;
+  const totalsWidths = [20, 10, 10, 10, 14, 10, 10, 10, 10, 14];
+  totalsWidths.forEach((width, i) => { ws.getColumn(TOTALS_START_COL + i).width = width; });
+
+  ws.views = [{ state: 'frozen', xSplit: 1, ySplit: 1, topLeftCell: 'B2', activeCell: 'B2' }];
+  ws.pageSetup = {
+    orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0,
+    paperSize: 9, margins: { left: 0.25, right: 0.25, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 },
+  };
+  ws.getRow(1).height = 24;
+  ws.getCell(1, 1).font = { bold: true, size: 14 };
+  ws.eachRow(row => row.eachCell(cell => {
+    cell.alignment = { ...cell.alignment, vertical: 'top', wrapText: true };
+  }));
 }
 
 export async function buildWorkbook(scenario, schedule, auditResult, version) {
@@ -154,11 +183,13 @@ export async function buildWorkbook(scenario, schedule, auditResult, version) {
   const ws = wb.addWorksheet(scenario.anchorType || 'Schedule');
 
   ws.getCell(1, 1).value = `${MONTH_NAMES[M - 1]} ${Y}  ${DOW_NAMES[firstDow].toUpperCase()}  —  built ${version}`;
+  ws.mergeCells('A1:H1');
 
   const afterCalendar = writeCalendar(ws, scenario, schedule, types, dates, firstDow,
     new Set(morningReportDays));
   writeTotals(ws, schedule);
   writeNotes(ws, scenario, auditResult, afterCalendar);
+  formatSheet(ws);
 
   return wb;
 }

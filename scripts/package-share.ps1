@@ -47,7 +47,7 @@ HOW TO START (2 minutes)
 TO BUILD YOUR OWN MONTH
   Set the team / month / anchor day, add each resident with their clinics and
   PTO, then Solve. Nudge any cell by pinning it and Solve again. When it looks
-  right, Export to Excel or Print to PDF to share with the team.
+  right, export personal calendars or a formatted spreadsheet, or Print to PDF to share with the team.
   Step-by-step (every field, all pin types, export): see  User Guide.html
 
 REQUIREMENTS

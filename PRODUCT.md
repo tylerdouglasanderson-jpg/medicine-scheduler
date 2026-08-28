@@ -7,7 +7,7 @@ A single self-contained HTML file that builds an optimal monthly inpatient-medic
 call schedule (6-day call cycle: pre-call → call → post-call → post-post-call → short-call-1 →
 short-call-2) via an exact MILP solver (HiGHS-in-WASM). Chief residents open it in any
 browser on Windows/Mac with zero install, set up their team, Solve, iterate with pins, and
-export a styled xlsx / print a PDF to share.
+export personal calendars, a styled xlsx, or a PDF to share.
 
 ## Who uses it, where
 A chief resident at a laptop — often late, tired, under fluorescent light — building next
@@ -25,7 +25,8 @@ calm and clinical. Not flashy. The tool should disappear into the task.
 2. **Solve** — one button; hard errors block it, an independent auditor flags soft "Potential Issues".
 3. **Iterate** — click a calendar cell to pin an assignment; freeze-through a date so early weeks
    stay put; re-solve.
-4. **Ship** — export styled xlsx (matches the on-screen color language) or print to PDF.
+4. **Ship** — export personal .ics calendars, a styled xlsx (matching the on-screen color
+   language), or print to PDF.
 
 ## Design register & strategy
 - **Restrained** chrome (neutral surfaces + one clinical-blue accent for primary action / selection /
@@ -36,6 +37,6 @@ calm and clinical. Not flashy. The tool should disappear into the task.
 
 ## Non-negotiables
 - Ships as ONE self-contained `dist/med-scheduler.html` (no external refs). Deps stay exactly
-  `exceljs` + `highs`.
+  `exceljs` + `jszip` + `highs`.
 - Solver (`milp.js`) and independent auditor (`audit.js`) semantics are frozen — never touched by design work.
 - Calendar DOM contract (classes, `data-*`, totals columns) is asserted by tests; recolor via CSS only.

@@ -4,6 +4,7 @@ import { loadScenario, saveScenario, blankScenario, exportScenarioJSON, importSc
 import { validate } from '../validate.js';
 import { audit } from '../audit.js';
 import { downloadXlsx } from '../export.js';
+import { downloadResidentCalendar, downloadCalendarsZip } from '../ics.js';
 import { solve, initHighs } from '../solve.js';
 import { onService, monthDates, parseScenario, solutionIsCurrent } from '../model.js';
 import { renderCalendar, renderTotals, renderWarnings } from './calendar.js';
@@ -34,8 +35,8 @@ export function mount(container) {
   render();
 }
 
-function onChange(next) {
-  scenario = next;
+function onChange(next, { preserveSolution = false } = {}) {
+  scenario = preserveSolution ? next : { ...next, lastSolution: null };
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => saveScenario(scenario), 300);
   render();
@@ -319,7 +320,7 @@ function onAttendingCover(date, undo = false) {
   if (solving) return;
   const days = scenario.attendingPagerDays ?? [];
   const next = undo ? days.filter(d => d !== date) : days.includes(date) ? days : [...days, date];
-  onChange({ ...scenario, attendingPagerDays: next });
+  onChange({ ...scenario, attendingPagerDays: next }, { preserveSolution: true });
   runSolve();
 }
 
@@ -575,7 +576,7 @@ function ioButtons() {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      try { onChange(importScenarioJSON(reader.result)); }
+      try { onChange(importScenarioJSON(reader.result), { preserveSolution: true }); }
       catch (e) { alert(`Could not load scenario: ${e.message}`); }
     };
     reader.readAsText(file);
@@ -592,14 +593,69 @@ function exportButtons() {
   wrap.className = 'export-buttons';
   const schedule = scenario.lastSolution;
 
+  const calendarSelect = document.createElement('select');
+  calendarSelect.id = 'calendar-export-person';
+  calendarSelect.title = 'Choose one resident calendar or download every resident as a ZIP.';
+  const all = document.createElement('option');
+  all.value = '';
+  all.textContent = 'All residents (.zip)';
+  calendarSelect.appendChild(all);
+  for (const resident of scenario.residents) {
+    const option = document.createElement('option');
+    option.value = resident.name;
+    option.textContent = resident.name;
+    calendarSelect.appendChild(option);
+  }
+  calendarSelect.disabled = !schedule;
+  wrap.appendChild(calendarSelect);
+
+  const calendarBtn = document.createElement('button');
+  calendarBtn.id = 'calendar-export-button';
+  calendarBtn.type = 'button';
+  calendarBtn.className = 'btn-secondary';
+  calendarBtn.textContent = 'Download calendar';
+  calendarBtn.title = 'Download one personal .ics calendar, or a ZIP containing one per resident.';
+  calendarBtn.disabled = !schedule;
+  calendarBtn.addEventListener('click', async () => {
+    calendarBtn.disabled = true;
+    calendarSelect.disabled = true;
+    const original = calendarBtn.textContent;
+    calendarBtn.textContent = 'Preparing…';
+    try {
+      if (calendarSelect.value)
+        downloadResidentCalendar(scenario, schedule, calendarSelect.value);
+      else
+        await downloadCalendarsZip(scenario, schedule);
+    } finally {
+      calendarBtn.textContent = original;
+      calendarBtn.disabled = false;
+      calendarSelect.disabled = false;
+    }
+  });
+  wrap.appendChild(calendarBtn);
+
   const xlsxBtn = document.createElement('button');
+  xlsxBtn.id = 'xlsx-export-button';
   xlsxBtn.type = 'button';
   xlsxBtn.className = 'btn-secondary';
-  xlsxBtn.textContent = 'Export xlsx';
-  xlsxBtn.title = 'Download a colored spreadsheet matching this grid.';
+  xlsxBtn.textContent = 'Export spreadsheet';
+  xlsxBtn.title = 'Download a formatted .xlsx for Excel or Google Sheets.';
   xlsxBtn.disabled = !schedule;
   xlsxBtn.addEventListener('click', () => downloadXlsx(scenario, schedule, audit(scenario, schedule)));
   wrap.appendChild(xlsxBtn);
+
+  const sheetsBtn = document.createElement('button');
+  sheetsBtn.id = 'google-sheets-button';
+  sheetsBtn.type = 'button';
+  sheetsBtn.className = 'btn-secondary';
+  sheetsBtn.textContent = 'Download & open Google Sheets';
+  sheetsBtn.title = 'Downloads the formatted workbook and opens a new Google Sheet. In Sheets, use File → Import → Upload.';
+  sheetsBtn.disabled = !schedule;
+  sheetsBtn.addEventListener('click', () => {
+    window.open('https://sheets.new', '_blank', 'noopener');
+    downloadXlsx(scenario, schedule, audit(scenario, schedule));
+  });
+  wrap.appendChild(sheetsBtn);
 
   const printBtn = document.createElement('button');
   printBtn.type = 'button';

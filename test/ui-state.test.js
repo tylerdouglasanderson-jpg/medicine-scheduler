@@ -2,6 +2,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { storage, saveScenario, loadScenario, exportScenarioJSON, importScenarioJSON } from '../src/ui/state.js';
 import { mount } from '../src/ui/app.js';
+import { solve } from '../src/solve.js';
 import feb from '../fixtures/feb-2026.json';
 
 describe('state round-trip', () => {
@@ -60,5 +61,36 @@ describe('app smoke (jsdom)', () => {
     expect(document.querySelectorAll('#roster-section tbody tr').length).toBe(0);
     expect(loadScenario().residents).toEqual([]);
     expect(loadScenario().month).toBe('');
+  });
+
+  it('a solved schedule offers each resident calendar, a ZIP, and spreadsheet exports', async () => {
+    const { schedule } = await solve(feb);
+    saveScenario({ ...feb, lastSolution: schedule });
+    document.body.innerHTML = '<div id="app"></div>';
+    mount(document.getElementById('app'));
+
+    const calendarSelect = document.querySelector('#calendar-export-person');
+    expect([...calendarSelect.options].map(o => o.textContent)).toEqual([
+      'All residents (.zip)', 'Intern1', 'Intern2', 'Senior1', 'Senior2',
+    ]);
+    expect(document.querySelector('#calendar-export-button').textContent).toBe('Download calendar');
+    expect(document.querySelector('#xlsx-export-button').textContent).toBe('Export spreadsheet');
+    expect(document.querySelector('#google-sheets-button').textContent).toBe('Download & open Google Sheets');
+  });
+
+  it('invalidates a solved schedule after an input edit so stale exports cannot be downloaded', async () => {
+    const { schedule } = await solve(feb);
+    saveScenario({ ...feb, lastSolution: schedule });
+    document.body.innerHTML = '<div id="app"></div>';
+    mount(document.getElementById('app'));
+
+    expect(document.querySelector('#calendar-export-button').disabled).toBe(false);
+    const name = document.querySelector('#roster-section input[type="text"]');
+    name.value = 'Renamed resident';
+    name.dispatchEvent(new Event('change'));
+
+    expect(document.querySelector('#calendar-export-button').disabled).toBe(true);
+    expect(document.querySelector('#xlsx-export-button').disabled).toBe(true);
+    expect(document.querySelector('#google-sheets-button').disabled).toBe(true);
   });
 });

@@ -3,7 +3,7 @@ import pkg from '../package.json';
 
 describe('scaffold', () => {
   it('has exactly the allowed deps', () => {
-    expect(Object.keys(pkg.dependencies).sort()).toEqual(['exceljs', 'highs']);
+    expect(Object.keys(pkg.dependencies).sort()).toEqual(['exceljs', 'highs', 'jszip']);
     expect(pkg.type).toBe('module');
   });
 });
