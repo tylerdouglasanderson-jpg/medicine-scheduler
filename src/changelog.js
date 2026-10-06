@@ -4,6 +4,13 @@
 // The first entry's version must equal package.json's version.
 export const CHANGELOG = [
   {
+    version: '1.0.1', date: '2026-10-06',
+    items: [
+      'The downloaded app no longer includes the website’s anonymous visit counter — it sends nothing unless you use Report a problem',
+      'User guide: the list of Potential Issues codes is corrected and complete',
+    ],
+  },
+  {
     version: '1.0.0', date: '2026-10-06',
     items: [
       'Every Solve now gives up to 5 different schedules that all follow the rules — flip between them with the Solution tabs; each tab says how it differs from Solution 1',

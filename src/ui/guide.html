@@ -871,7 +871,9 @@
             <tr><td class="code-cell">W_MR_NO_INTERN</td><td>No intern on for Morning Report.</td></tr>
             <tr><td class="code-cell">W_DUTY_HOUR</td><td>Fewer than one rest day in seven across their service.</td></tr>
             <tr><td class="code-cell">W_LONG_STRETCH</td><td>More than six consecutive worked days.</td></tr>
-            <tr><td class="code-cell">W_CONSEC_NIGHT</td><td>Night call on back-to-back call days.</td></tr>
+            <tr><td class="code-cell">W_CONSEC_NIGHT_SLACK</td><td>Someone takes night call on back-to-back call days — only when no other arrangement exists.</td></tr>
+            <tr><td class="code-cell">W_DIDACTICS_HALF_OFF</td><td>A half day off lands on someone's own didactics half — that session is missed.</td></tr>
+            <tr><td class="code-cell">W_CARRYOUT</td><td>Whoever takes the last night of the month is post-call on the 1st of next month — tell next month's chief.</td></tr>
           </tbody>
         </table>
       </div>
@@ -920,7 +922,9 @@
       <h2><span class="num-badge">14</span>Get the app</h2>
       <p>
         The <strong>Download</strong> button at the top gets you the newest version so you can run it
-        offline on your own computer — no install, no account, nothing uploaded.
+        offline on your own computer — no install, no account, nothing uploaded. The downloaded file
+        sends nothing anywhere unless you use <strong>Report a problem</strong>. (The website itself counts
+        anonymous page visits; the downloaded file does not.)
       </p>
       <ul>
         <li><strong>Download the app (one HTML file)</strong> — the whole app as a single file. Save
@@ -938,6 +942,11 @@
     <section id="whatsnew">
       <h2><span class="num-badge">15</span>What's new</h2>
       <p>Newest first. The same list opens when you click the version number at the top of the app.</p>
+      <h3>1.0.1 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">· 2026-10-06</span></h3>
+      <ul>
+        <li>The downloaded app no longer includes the website’s anonymous visit counter — it sends nothing unless you use Report a problem</li>
+        <li>User guide: the list of Potential Issues codes is corrected and complete</li>
+      </ul>
       <h3>1.0.0 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">· 2026-10-06</span></h3>
       <ul>
         <li>Every Solve now gives up to 5 different schedules that all follow the rules — flip between them with the Solution tabs; each tab says how it differs from Solution 1</li>

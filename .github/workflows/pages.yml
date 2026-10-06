@@ -14,6 +14,7 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: cp dist/med-scheduler.html dist/index.html
+      - run: node scripts/add-site-beacon.mjs dist/index.html   # analytics on the hosted page only; downloads stay beacon-free
       - run: echo 'scheduler.tylerdouglasanderson.com' > dist/CNAME
       - uses: actions/upload-pages-artifact@v3
         with: { path: dist }

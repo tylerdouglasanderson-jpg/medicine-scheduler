@@ -64,14 +64,12 @@ async function savedFile() {
 }
 
 describe('loaded schedule export and save guard', () => {
-  it('a 1.0.0 schedule is stale under the corrected rules while the package stays 1.0.0', async () => {
+  it('a 1.0.0 schedule is stale under the corrected rules (rules stamp is independent of the package version)', async () => {
     const s = structuredClone(clean);
     s.lastSolution.rulesVersion = '1.0.0';
     expect(solutionIsCurrent(s)).toBe(false);
     show(s);
     expect($('#stale-rules-note')).not.toBeNull();
-    const pkg = await import('../package.json');
-    expect(pkg.default.version).toBe('1.0.0');
   });
 
   it.each([true, false])('locks every export and scope for invalid loaded schedules (hard inputs=%s)', async withPins => {

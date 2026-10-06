@@ -10,6 +10,8 @@ it('single-file build emits dist/med-scheduler.html with no external refs', () =
   // attribute must live inside a <script>/<img> OPENING tag — not an inlined JS `.src="javascript:"`
   // string literal that ships inside the (inlined) ExcelJS bundle.
   expect(html).not.toMatch(/<(?:script|img)\b[^>]*\ssrc="(?!data:)[^"]/i);
+  expect(html).not.toMatch(/<(?:script|img)\b[^>]*\ssrc='(?!data:)[^']/i);   // single-quoted too
+  expect(html).not.toContain('cloudflareinsights');                             // the download sends nothing
   expect(html).not.toMatch(/href=".*\.css"/);      // css inlined
   expect(html.length).toBeGreaterThan(500_000);    // wasm actually inlined
 }, 120_000);

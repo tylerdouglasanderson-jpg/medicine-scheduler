@@ -64,10 +64,16 @@ describe('changelog', () => {
 
 describe('index.html', () => {
   const html = read('../index.html');
-  it('no longer hard-codes the download modal, and keeps the analytics beacon', () => {
+  it('no longer hard-codes the download modal, and carries NO analytics beacon (downloads send nothing)', () => {
     expect(html).not.toContain('dl-modal');
-    expect(html).toContain('static.cloudflareinsights.com/beacon.min.js');
-    expect(html).toContain('df859a3058d64f2cb31a24e189c51774');
+    expect(html).not.toContain('cloudflareinsights');
+  });
+  it('the hosted page gets the beacon from scripts/add-site-beacon.mjs, exactly once', async () => {
+    const { addSiteBeacon } = await import('../scripts/add-site-beacon.mjs');
+    const page = addSiteBeacon('<html><body><div id="app"></div></body></html>');
+    expect(page).toContain('df859a3058d64f2cb31a24e189c51774');
+    expect(page.indexOf('</body>')).toBeGreaterThan(page.indexOf('cloudflareinsights'));
+    expect(addSiteBeacon(page)).toBe(page);
   });
 });
 

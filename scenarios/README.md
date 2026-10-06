@@ -92,6 +92,9 @@ Only `npm run stress` (`--private`) runs them.
 | 31 | `31-tight-but-feasible-senior-clinic-wall.json` | D | Nov / ppc | 1S+2I | Exactly enough eligible off days for the senior (5 free for quota 4) and one intern (4 for 4) |
 | 32 | `32-2s1i-six-call-days.json` | E | Dec / call | 2S+1I | 6 call days: intern 3 alternating nights, seniors 2 + 1 (was XFAIL, fixed in 1.0.0) |
 | 33 | `33-single-halfoff-pin.json` | F | Feb27 / ppc | 1S+2I | One `halfOff` pin: a freebie, full whole-day quota for everyone (was XFAIL, fixed in 1.0.0) |
+| 34 | `34-2s1i-postcall-carryin-intern-5-calls.json` | E | Mar / postcall | 2S+1I | Intern carried in last month's night: skips the first call night, strict alternation, 5 call days |
+| 35 | `35-2s1i-intern-leaves-oct-26.json` | E | Oct / precall | 2S+1I* | Intern leaves Oct 26: NOT a whole-month 2S+1I, so the special night split must not apply |
+| 36 | `36-halfoff-over-didactics-and-mr.json` | F | Feb / ppc | 1S+2I | Half day off over the resident's own didactics half and a Morning Report day |
 
 \*04 lists 4 residents but always has 1 senior + 2 interns on service at once.
 
