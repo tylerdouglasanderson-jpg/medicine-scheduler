@@ -110,3 +110,49 @@ describe('didactics + afternoon-load weights', () => {
     expect(obj).toContain(` ${WEIGHTS.attendingPager} att_2`);   // every other day still priced
   });
 });
+
+// Senior short-call offs (program rule, 2026-10): weekend short call takes no admissions, and a
+// month where interns admit alone can lift the weekday rule too. The first-day rule is separate.
+describe('senior short-call + first-day options', () => {
+  const objCoef = (lp, name) => {             // sum of `[sign] coef name` terms in the objective
+    const toks = lp.slice(lp.indexOf('Minimize'), lp.indexOf('Subject To')).replace('obj:', '').split(/\s+/);
+    let c = 0;
+    toks.forEach((t, k) => {
+      if (t !== name) return;
+      c += Number(toks[k - 1]) * (toks[k - 2] === '-' ? -1 : 1);
+    });
+    return c;
+  };
+  const offVar = (vars, person, date) =>
+    [...vars.entries()].find(([, m]) => m.kind === 'off' && m.person === person && m.date === date)?.[0];
+  const solveWith = options => buildModel(parseScenario({ ...feb, options: { ...feb.options, ...options } }));
+  const { types } = deriveCycle(feb.anchorType, feb.month);
+  const dowOf = d => new Date(2026, 1, Number(d.slice(8))).getDay();
+  const scDates = [...types].filter(([, t]) => ['sc1', 'sc2'].includes(t)).map(([d]) => d);
+  const base = solveWith({}), lifted = solveWith({ seniorsOffShortCall: true });
+  const delta = d => {
+    const v = offVar(base.vars, 'Senior1', d);
+    return v ? objCoef(base.lp, v) - objCoef(lifted.lp, offVar(lifted.vars, 'Senior1', d)) : null;
+  };
+
+  it('a weekday short-call off costs a senior seniorOffSC, and the option lifts it', () => {
+    const weekday = scDates.filter(d => ![0, 6].includes(dowOf(d)) && delta(d) !== null);
+    expect(weekday.length).toBeGreaterThan(0);
+    weekday.forEach(d => expect(delta(d)).toBe(WEIGHTS.seniorOffSC));
+  });
+
+  it('a weekend short-call off is never charged, option or not', () => {
+    const weekend = scDates.filter(d => [0, 6].includes(dowOf(d)) && delta(d) !== null);
+    expect(weekend.length).toBeGreaterThan(0);
+    weekend.forEach(d => expect(delta(d)).toBe(0));
+  });
+
+  it('seniorFirstDay (default on) charges a senior off on day 1; turning it off removes it', () => {
+    const d1 = '2026-02-01';
+    const on = solveWith({}), off = solveWith({ seniorFirstDay: false });
+    const v = offVar(on.vars, 'Senior1', d1);
+    expect(v).toBeTruthy();
+    expect(objCoef(on.lp, v) - objCoef(off.lp, offVar(off.vars, 'Senior1', d1))).toBe(WEIGHTS.seniorOffFirstDay);
+  });
+});
+

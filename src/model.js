@@ -58,7 +58,7 @@ export function defaultDidactics(role, kind) {
 // solve() stamps every schedule it produces with this. A saved solution carrying a different stamp
 // is not used to anchor re-solve stability, so a scenario file built under older rules re-solves to
 // the NEW optimum without being cleared and re-typed first.
-export const RULES_VERSION = '0.7.0';
+export const RULES_VERSION = '0.9.0';
 
 export function parseScenario(json) {
   for (const k of ['team', 'month', 'anchorType', 'residents'])
@@ -66,7 +66,10 @@ export function parseScenario(json) {
   return normalize({
     carryIn: null, pins: [], notes: [], attendingPagerDays: [], lastSolution: null,
     ...json,
-    options: { offQuota: 4, goldenWeekend: false, ...(json.options ?? {}) },
+    options: {
+      offQuota: 4, goldenWeekend: false, seniorsOffShortCall: false, seniorFirstDay: true,
+      ...(json.options ?? {}),
+    },
     residents: json.residents.map(r => ({ didactics: null, commitments: [], pto: [], ...r })),
   });
 }

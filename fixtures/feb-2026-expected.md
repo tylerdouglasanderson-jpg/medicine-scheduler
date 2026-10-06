@@ -50,9 +50,9 @@ Source: Senior1's ChatGPT share (Medicine F Team, Feb 2026), transcribed 2026-07
 - Off counts exactly = quota per person (or quota−1 + explicit warning).
 - No offs on call/post-call days; night workers sleep next day (uncounted).
 - Intern1 scheduled for nothing after Feb 15.
-- Staffing ≥2 working every day through Feb 15; ≥2 where possible Feb 16-28 (3-person roster).
+- Staffing ≥2 working every day through Feb 15; ≥2 where possible Feb 16-28 (3-person roster). (A 2-person team — 1 intern + 1 senior — has a floor of 1; not this month.)
 - Off-day spread ≈ 1/calendar-week per person (soft — assert no person has 3+ offs within any 7-day window without cause).
-- Seniors not off on sc1/sc2 unless unavoidable (assert warning emitted if violated).
+- Seniors not off on a WEEKDAY sc1/sc2 unless unavoidable (assert warning emitted if violated). Weekend short call takes no admissions: a senior off on a Sat/Sun sc1/sc2 is fine and never warned (program rule, 2026-10, v0.9.0).
 - Senior1 works ≤ 0 duties on Feb 20 (PTO).
 - Trade-off ordering: senior-not-off-on-SC outranks small equity gains (weight regression guard).
 

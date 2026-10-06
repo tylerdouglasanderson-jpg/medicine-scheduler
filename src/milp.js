@@ -20,7 +20,7 @@ export const WEIGHTS = {
   nightSplit: 2,           // S3 per pp of intern night-rate deviation
   dayCallSplit: 2,         // S3b per pp of intern day-call-rate deviation
   offSpread: 10,           // S4 per unit of |weekOffs - 1| per person-week
-  seniorOffSC: 25,         // S5 per senior off on sc1/sc2
+  seniorOffSC: 25,         // S5 per senior off on a WEEKDAY sc1/sc2 (weekend SC takes no admits; option lifts it)
   seniorOffFirstDay: 30,   // S11 per senior off on the first day of the month (soft: try not to)
   afternoonLoad: 6,        // S6 per pp of committed-afternoon-rate deviation (clinic PM + didactics + pager)
   didacticsOff: 45,        // S7 own didactics half-day lost to a day off (a miss AND a wasted off)
@@ -259,7 +259,9 @@ export function buildModel(scenario, freezeDate = null, { elasticQuota = false }
         : 1;
     }
     const medC = scenario.team === 'C' && availPeople.every(p => p.role === 'senior');
-    const rhs = Math.min(medC ? 1 : 2, avail - sleeperOut);
+    // a two-person team (1 intern + 1 senior) is run by one resident whenever the other is off or asleep
+    const twoPerson = people.filter(p => onService(p, d)).length <= 2;
+    const rhs = Math.min(medC || twoPerson ? 1 : 2, avail - sleeperOut);
     let constant = 0; const terms = [];
     people.forEach(p => { const w = wTerm(p, d); constant += w.constant; terms.push(...w.terms); });
     if (terms.length) cons.push(`stf_${di.get(d)}: ` + lin(terms) + ' >= ' + (rhs - constant));
@@ -409,9 +411,12 @@ export function buildModel(scenario, freezeDate = null, { elasticQuota = false }
     cons.push('dd_mu: ' + lin([T(didMiss.length, 'dmu'), ...didMiss.map(m => T(-1, `dmiss_${m.pi}`))]) + ' = 0');
   }
 
-  // S5 senior off on sc1/sc2; S8 off on Morning-Report days
+  // S5 senior off on a weekday sc1/sc2 — the senior is wanted for short-call admissions. Weekend short
+  // call takes no admits, and the seniorsOffShortCall option covers months when interns admit alone.
+  // S8 off on Morning-Report days
   dates.forEach(d => {
     if (!['sc1', 'sc2'].includes(types.get(d))) return;
+    if (scenario.options.seniorsOffShortCall || [0, 6].includes(dow(d))) return;
     people.forEach(p => {
       if (p.role !== 'senior') return;
       const v = offName.get(p.name + '|' + d);
@@ -455,9 +460,9 @@ export function buildModel(scenario, freezeDate = null, { elasticQuota = false }
     softMin(avail.filter(p => p.role === 'intern'), 1, `mrint_${k}`, WEIGHTS.mrNoIntern);
   });
 
-  // S11 seniors preferably not off on the first day of the month
+  // S11 seniors preferably not off on the first day of the month (option, default on)
   people.forEach(p => {
-    if (p.role !== 'senior') return;
+    if (p.role !== 'senior' || scenario.options.seniorFirstDay === false) return;
     const v = offName.get(p.name + '|' + dates[0]);
     if (v) addObj(WEIGHTS.seniorOffFirstDay, v);
   });

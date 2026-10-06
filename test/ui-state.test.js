@@ -14,7 +14,7 @@ describe('state round-trip', () => {
   it('scenario JSON export/import round-trips exactly', () => {
     const s = importScenarioJSON(exportScenarioJSON(feb));
     expect(s.residents.map(r => r.name)).toEqual(['Intern1', 'Intern2', 'Senior1', 'Senior2']);
-    expect(s.options).toEqual({ offQuota: 4, goldenWeekend: false });
+    expect(s.options).toEqual({ offQuota: 4, goldenWeekend: false, seniorsOffShortCall: false, seniorFirstDay: true });
   });
   it('importScenarioJSON throws a readable error on garbage', () =>
     expect(() => importScenarioJSON('{nope')).toThrow());

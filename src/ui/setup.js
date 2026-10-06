@@ -103,6 +103,28 @@ export function render(container, scenario, onChange) {
   }));
   row.appendChild(labeled('Attempt golden weekend', golden));
 
+  const scOff = document.createElement('input');
+  scOff.type = 'checkbox';
+  scOff.name = 'seniorsOffShortCall';
+  scOff.checked = !!scenario.options.seniorsOffShortCall;
+  scOff.title = 'For months when interns admit on their own: stop steering seniors away from weekday '
+    + 'short-call days off. Weekend short call takes no admissions, so it is never protected.';
+  scOff.addEventListener('change', () => onChange({
+    ...scenario, options: { ...scenario.options, seniorsOffShortCall: scOff.checked },
+  }));
+  row.appendChild(labeled('Allow seniors off on short-call days', scOff));
+
+  const firstDay = document.createElement('input');
+  firstDay.type = 'checkbox';
+  firstDay.name = 'seniorFirstDay';
+  firstDay.checked = scenario.options.seniorFirstDay !== false;
+  firstDay.title = 'Steer seniors away from a day off on the 1st of the month, so a senior is there for '
+    + 'the team changeover (soft goal).';
+  firstDay.addEventListener('change', () => onChange({
+    ...scenario, options: { ...scenario.options, seniorFirstDay: firstDay.checked },
+  }));
+  row.appendChild(labeled('Have a senior present on the 1st', firstDay));
+
   // carryIn required only when the month anchors on a post-call day (Solve gate: validate.js CARRYIN_REQUIRED)
   if (scenario.anchorType === 'postcall') {
     const ci = scenario.carryIn || { nightPerson: '', dayCallIntern: '', dayCallSenior: '' };

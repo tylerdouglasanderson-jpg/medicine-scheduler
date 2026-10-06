@@ -80,3 +80,31 @@ describe('didactics ledger', () => {
     expect(codes).toContain('A_ATTENDING_DAY_IGNORED');
   });
 });
+
+// Senior short-call offs (program rule, 2026-10). In valid-mini, Feb 2 is a Monday sc1 and Feb 8 a
+// Sunday sc1; giving Senior1 (senior) those offs is enough to exercise the warning in isolation.
+describe('W_SENIOR_OFF_SC', () => {
+  const seniorOff = (date, options = {}) => {
+    const fx = structuredClone(valid);
+    fx.scenario.options = { ...fx.scenario.options, ...options };
+    fx.schedule.days[date].off = ['Senior1'];
+    fx.schedule.days[date].working = fx.schedule.days[date].working.filter(n => n !== 'Senior1');
+    return audit(fx.scenario, fx.schedule).warnings.filter(w => w.code === 'W_SENIOR_OFF_SC');
+  };
+  it('fires on a weekday short-call day', () => expect(seniorOff('2026-02-02').length).toBe(1));
+  it('never fires on a weekend short-call day', () => expect(seniorOff('2026-02-08')).toEqual([]));
+  it('is silenced by the seniorsOffShortCall option', () =>
+    expect(seniorOff('2026-02-02', { seniorsOffShortCall: true })).toEqual([]));
+});
+
+it('A_STAFFING: a two-person team may run a day with one resident', () => {
+  const fx = structuredClone(valid);
+  fx.scenario.residents = fx.scenario.residents.filter(r => ['Intern2', 'Senior1'].includes(r.name));
+  const keep = n => ['Intern2', 'Senior1'].includes(n);
+  for (const day of Object.values(fx.schedule.days)) {
+    day.working = day.working.filter(keep); day.off = day.off.filter(keep);
+  }
+  const staffing = audit(fx.scenario, fx.schedule).violations.filter(v => v.code === 'A_STAFFING');
+  expect(staffing).toEqual([]);
+});
+

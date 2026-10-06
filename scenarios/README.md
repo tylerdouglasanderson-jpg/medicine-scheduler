@@ -27,7 +27,7 @@ plus three input-vs-output checks:
 
 A scenario is "accurate" only if the audit is clean **and** all inputs are honored.
 Solved schedules are written to `scenarios/solved/*.solved.json` for inspection/diff.
-Last run: **10/10 accurate**.
+Last run: **13/13 accurate** (v0.9.0).
 
 ## The scenarios
 
@@ -43,6 +43,8 @@ Last run: **10/10 accurate**.
 | 08 | `08-with-pins-medF.json` | F | Feb · ppc | 1S + 2I | Four pins (nightCall, dayCall, offCounted, offFree) all honored |
 | 09 | `09-april-precall-medA.json` | A | Apr · precall | 1S + 2I | 30-day month + `precall` anchor (cycle math across month length) |
 | 10 | `10-three-intern-medF.json` | F | Mar · call | 1S + 3I | Larger roster, `call` anchor, one intern PTO day |
+| 12 | `12-two-person-1s1i-medE.json` | E | Feb · ppc | 1S + 1I | Two-person team: one resident runs the day while the other is off (v0.9.0) |
+| 13 | `13-interns-admit-alone-medA.json` | A | Feb · ppc | 1S + 2I | `seniorsOffShortCall: true` + `seniorFirstDay: false` — no short-call or first-day steering for the senior |
 
 \*04 has 4 residents on paper but always 1 senior + 2 interns on service at once.
 

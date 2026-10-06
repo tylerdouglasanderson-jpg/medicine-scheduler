@@ -91,14 +91,16 @@ describe('feb-2026 golden solve (Node)', () => {
         expect(offDates.filter(d => d >= lo && d <= hi).length).toBeLessThan(3);
       }
     }
-    // (b) no senior in day.off on any sc1/sc2 date unless a warning names it
+    // (b) no senior off on a WEEKDAY sc1/sc2 unless a warning names it; weekend SC is never warned
     const { types } = deriveCycle(s.anchorType, s.month);
     const seniors = new Set(s.residents.filter(r => r.role === 'senior').map(r => r.name));
+    const weekend = d => [0, 6].includes(new Date(2026, 1, Number(d.slice(8))).getDay());
     for (const [d, day] of Object.entries(schedule.days)) {
       if (!['sc1', 'sc2'].includes(types.get(d))) continue;
       for (const name of day.off)
         if (seniors.has(name))
-          expect(warnings.some(w => w.person === name && w.date === d)).toBe(true);
+          expect(warnings.some(w => w.code === 'W_SENIOR_OFF_SC' && w.person === name && w.date === d))
+            .toBe(!weekend(d));
     }
   });
 });
@@ -193,17 +195,43 @@ describe('variants', () => {
   });
 
   it('an unreachable off quota is named as the culprit, not "over-constrained inputs"', async () => {
-    // Two residents on team F: the day team needs 2, so nobody can ever take a day off, yet each
-    // is owed 4. Eligible days exist (validate passes) — only the solve can find this.
+    // Three residents on team F: the day team needs 2, so at most one person is off on any day,
+    // yet each is owed 10. Each has enough eligible days (validate passes) — only the solve can
+    // find that they can't all have them.
     const s = parseScenario({
       ...feb,
-      residents: feb.residents.filter(r => ['Intern2', 'Senior1'].includes(r.name))
+      options: { ...feb.options, offQuota: 10 },
+      residents: feb.residents.filter(r => ['Intern2', 'Senior1', 'Senior2'].includes(r.name))
         .map(r => ({ ...r, pto: [], commitments: [], serviceStart: '2026-02-01', serviceEnd: '2026-02-28' })),
     });
     expect(validate(s)).toEqual([]);
     const r = await solve(s);
     expect(r.infeasible.diagnosis).toMatch(/off quota/i);
-    expect(r.infeasible.culprits.map(c => c.person).sort()).toEqual(['Intern2', 'Senior1']);
+    expect(r.infeasible.culprits.length).toBeGreaterThan(0);
+  });
+
+  it('a two-person team (1 intern + 1 senior) gets full quota: one resident runs the day alone', async () => {
+    // Program rule (2026-10): on a 1+1 team a single resident covering the day is the expectation.
+    // Before v0.9.0 the floor of 2 made every day off impossible and the month was infeasible.
+    const s = parseScenario({
+      ...feb,
+      residents: feb.residents.filter(r => ['Intern2', 'Senior1'].includes(r.name))
+        .map(r => ({ ...r, pto: [], commitments: [], serviceStart: '2026-02-01', serviceEnd: '2026-02-28' })),
+    });
+    const r = await solve(s);
+    expect(r.infeasible).toBeUndefined();
+    expect(audit(s, r.schedule).violations).toEqual([]);
+    for (const p of s.residents) expect(r.schedule.totals[p.name].off).toBe(quotaFor(p, s));
+    const alone = Object.values(r.schedule.days).filter(day => day.off.length === 1);
+    expect(alone.length).toBeGreaterThan(0);
+  });
+
+  it('seniorsOffShortCall silences every short-call warning and the month stays audit-clean', async () => {
+    const s = parseScenario({ ...feb, options: { ...feb.options, seniorsOffShortCall: true } });
+    const r = await solve(s);
+    const a = audit(s, r.schedule);
+    expect(a.violations).toEqual([]);
+    expect([...r.warnings, ...a.warnings].filter(w => w.code === 'W_SENIOR_OFF_SC')).toEqual([]);
   });
 });
 

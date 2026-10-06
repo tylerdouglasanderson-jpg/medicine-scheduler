@@ -452,6 +452,19 @@
                 schedule can afford it. Never overrides a hard rule.</td>
             </tr>
             <tr>
+              <td><strong>Allow seniors off on short-call days</strong></td>
+              <td>Off by default. Normally the solver steers seniors away from a day off on a
+                <em>weekday</em> short-call day, because short call takes admissions and the senior is
+                wanted for them. Tick this for a month when the interns admit on their own; senior days
+                off can then land on any short-call day. Weekend short call takes no admissions, so it
+                is never protected either way.</td>
+            </tr>
+            <tr>
+              <td><strong>Have a senior present on the 1st</strong></td>
+              <td>On by default: a soft goal that keeps seniors from being off on the first day of the
+                month, when the team changes over. Untick it to let a senior's day off fall there.</td>
+            </tr>
+            <tr>
               <td><strong>Carry-in</strong></td>
               <td>Appears only when the anchor is post-call. Records who was <strong>night</strong>,
                 <strong>day-call intern</strong>, and <strong>day-call senior</strong> on the last
@@ -639,6 +652,17 @@
         won't bunch two of someone's days off into the same week just to land on a pre-call. Morning
         Report pre-calls are excluded from the preference.
       </p>
+      <p>
+        Seniors are steered away from days off on <strong>weekday</strong> short-call days (short
+        call takes admissions). Weekend short call takes none, so a senior off on a Saturday or
+        Sunday short-call day costs nothing — and the <em>Allow seniors off on short-call days</em>
+        setting lifts the weekday preference too.
+      </p>
+      <p>
+        On a <strong>two-person team</strong> (one intern, one senior) a single resident runs the day
+        whenever the other is off, so days off work the same way as on a bigger team. Every other
+        team keeps at least two people on the day team.
+      </p>
       <h3>Color legend</h3>
       <p>These are the exact fills used on screen, in the exported xlsx, and when you print — one color language throughout.</p>
       <div class="legend-grid">
@@ -786,7 +810,7 @@
             <tr><td class="code-cell">W_DIDACTICS_NO_SENIOR_COVER</td><td>A senior has a PM commitment on <em>every one</em> of an intern's didactics afternoons this month, so no schedule can ever put a senior on that pager. Moving one of those clinics is the real fix.</td></tr>
             <tr><td class="code-cell">W_DIDACTICS_MISS</td><td>Pager duty makes someone miss hard didactics.</td></tr>
             <tr><td class="code-cell">W_MULTI_OFF</td><td>More than one person is off the same day.</td></tr>
-            <tr><td class="code-cell">W_SENIOR_OFF_SC</td><td>A senior is off on a short-call day.</td></tr>
+            <tr><td class="code-cell">W_SENIOR_OFF_SC</td><td>A senior is off on a weekday short-call day. Never raised for a weekend short-call day, or when <strong>Allow seniors off on short-call days</strong> is ticked.</td></tr>
             <tr><td class="code-cell">W_MR_THIN</td><td>Fewer than two people on for Morning Report.</td></tr>
             <tr><td class="code-cell">W_MR_NO_SENIOR</td><td>No senior on for Morning Report.</td></tr>
             <tr><td class="code-cell">W_MR_NO_INTERN</td><td>No intern on for Morning Report.</td></tr>

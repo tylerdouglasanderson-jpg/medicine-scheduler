@@ -117,13 +117,15 @@ export function audit(scenario, schedule) {
       }
     }
 
-    // A_STAFFING — mirrors milp floor: min(2, on-service non-PTO minus night (call) / sleeper (post-call))
+    // A_STAFFING — mirrors milp floor: min(2 — or 1 for Med C / a two-person team —, on-service non-PTO minus night (call) / sleeper (post-call))
     const sleeperOut = dd.sleeper && avail.some(r => r.name === dd.sleeper) ? 1 : 0;
     const effAvail = avail.length - (t === 'call' ? 1 : sleeperOut);
     const dayTeam = t === 'call' ? dd.working.filter(n => n !== dd.night) : dd.working;
     const medCstaff = scenario.team === 'C' && roster.every(r => r.role === 'senior');
-    if (dayTeam.length < Math.min(medCstaff ? 1 : 2, effAvail))
-      V('A_STAFFING', `Only ${dayTeam.length} working the day team on ${d} (floor ${Math.min(medCstaff ? 1 : 2, effAvail)})`, null, d);
+    const twoPersonTeam = roster.length <= 2;   // 1 intern + 1 senior: one resident runs it alone
+    const floor = Math.min(medCstaff || twoPersonTeam ? 1 : 2, effAvail);
+    if (dayTeam.length < floor)
+      V('A_STAFFING', `Only ${dayTeam.length} working the day team on ${d} (floor ${floor})`, null, d);
 
     // W_MR_THIN / W_MR_NO_SENIOR / W_MR_NO_INTERN — Morning Report = pre-call on Tue/Thu, this
     // team presents: want 2+ on, ideally a senior and an intern. Soft, so these are warnings.
@@ -140,7 +142,9 @@ export function audit(scenario, schedule) {
     // W_MULTI_OFF / W_SENIOR_OFF_SC
     if (dd.off.length > 1)
       W('W_MULTI_OFF', `${dd.off.length} people off on ${d} (${dd.off.join(', ')})`, null, d);
-    if (t === 'sc1' || t === 'sc2')
+    // weekend short call takes no admissions; the option covers months when interns admit alone
+    const seniorWantedOnSC = !scenario.options?.seniorsOffShortCall && dow(d) !== 0 && dow(d) !== 6;
+    if ((t === 'sc1' || t === 'sc2') && seniorWantedOnSC)
       for (const name of dd.off)
         if (byName[name]?.role === 'senior')
           W('W_SENIOR_OFF_SC', `Senior ${name} is off on a ${t} day (${d})`, name, d);

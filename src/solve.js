@@ -191,8 +191,9 @@ function extract(scenario, vars, cols) {
     if (pr?.didactics?.hard && pr.didactics.dow === dow(d))
       W('W_DIDACTICS_MISS', `${holder} holds the pager on ${d} and will miss didactics`, holder, d);
   }
-  for (const d of dates) {                       // seniors are only softly discouraged from SC-day offs — surface it
+  for (const d of dates) {                       // seniors are only softly discouraged from weekday SC offs — surface it
     if (!['sc1', 'sc2'].includes(types.get(d))) continue;
+    if (scenario.options.seniorsOffShortCall || [0, 6].includes(dow(d))) continue;
     for (const name of days[d].off)
       if (people.find(p => p.name === name)?.role === 'senior')
         W('W_SENIOR_OFF_SC', `${name} (senior) is off on a short-call day (${d})`, name, d);
