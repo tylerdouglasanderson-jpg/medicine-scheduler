@@ -35,20 +35,35 @@ Medicine Team Scheduler
 WHAT IT IS
   Builds an optimal monthly inpatient-medicine call schedule (6-day call cycle,
   pager, offs, clinics/didactics). Runs entirely in your browser. Nothing to
-  install. Works offline. Your data never leaves your computer.
+  install. Works offline. Your data never leaves your computer unless you
+  press Send on "Report a problem".
 
 HOW TO START (2 minutes)
   1. Double-click  "Click me"  - it opens in your browser; press the big button.
-  2. Click  "Load example"  (or Load Scenario, then pick a file from
-     the "Example Schedules" folder).
-  3. Click  Solve.  Read the calendar and the totals on the right.
+  2. Click  "Load example"  (or  "Open a saved month..."  at the bottom of the
+     screen, then pick a file from the "Example Schedules" folder).
+  3. Click  Solve.  You get up to 5 different schedules - flip between them
+     with the Solution 1 ... Solution 5 tabs above the calendar.
   4. Open  "User Guide.html"  any time for the full how-to.
 
 TO BUILD YOUR OWN MONTH
   Set the team / month / anchor day, add each resident with their clinics and
   PTO, then Solve. Nudge any cell by pinning it and Solve again. When it looks
-  right, export personal calendars or a formatted spreadsheet, or Print to PDF to share with the team.
+  right, export personal calendars or a formatted spreadsheet (one solution or
+  all of them), or Print to PDF to share with the team.
   Step-by-step (every field, all pin types, export): see  User Guide.html
+
+KEEP YOUR WORK / SHARE IT
+  "Save my month (.json)" saves your setup and every solution in one file.
+  Reopen it anytime with "Open a saved month...", or send it to a co-chief.
+
+SOMETHING WRONG?
+  Press the amber "Report a problem" button at the top. It sends us your
+  message and (if the box is ticked) your schedule, so we see what you see.
+
+GET THE LATEST VERSION
+  Press "Download" at the top of the app for the newest file, or the starter
+  kit. Click the version number next to the title to see what is new.
 
 REQUIREMENTS
   Any modern browser (Chrome, Edge, Safari, Firefox). No internet connection

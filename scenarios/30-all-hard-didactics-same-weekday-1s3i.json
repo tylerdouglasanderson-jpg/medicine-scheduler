@@ -1,0 +1,141 @@
+{
+  "team": "F",
+  "month": "2027-06",
+  "anchorType": "call",
+  "carryIn": null,
+  "options": {
+    "offQuota": 4,
+    "goldenWeekend": false
+  },
+  "residents": [
+    {
+      "name": "Zimmer",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2027-06-01",
+      "serviceEnd": "2027-06-30",
+      "didactics": {
+        "dow": 4,
+        "half": "PM",
+        "hard": true
+      },
+      "commitments": [
+        {
+          "date": "2027-06-15",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-06-21",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-06-22",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-06-28",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Abernathy",
+      "role": "intern",
+      "kind": "categorical",
+      "serviceStart": "2027-06-01",
+      "serviceEnd": "2027-06-30",
+      "didactics": {
+        "dow": 4,
+        "half": "PM",
+        "hard": true
+      },
+      "commitments": [
+        {
+          "date": "2027-06-16",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-06-23",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-06-30",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Bascombe",
+      "role": "intern",
+      "kind": "categorical",
+      "serviceStart": "2027-06-01",
+      "serviceEnd": "2027-06-30",
+      "didactics": {
+        "dow": 4,
+        "half": "PM",
+        "hard": true
+      },
+      "commitments": [
+        {
+          "date": "2027-06-04",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-06-11",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-06-18",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Cranmer",
+      "role": "intern",
+      "kind": "TY",
+      "serviceStart": "2027-06-01",
+      "serviceEnd": "2027-06-30",
+      "didactics": {
+        "dow": 4,
+        "half": "PM",
+        "hard": true
+      },
+      "commitments": [
+        {
+          "date": "2027-06-15",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-06-22",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-06-29",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    }
+  ],
+  "pins": [],
+  "notes": [],
+  "attendingPagerDays": [],
+  "lastSolution": null
+}

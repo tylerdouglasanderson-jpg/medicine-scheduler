@@ -67,6 +67,8 @@ function didacticsNames(scenario, schedule, date, type) {
   return scenario.residents
     .filter(r => r.didactics && r.didactics.dow === dow && onService(r, date))
     .filter(r => !(dd.off.includes(r.name) || (r.pto ?? []).includes(date)))
+    .filter(r => !(scenario.pins ?? []).some(p => p.type === 'halfOff' && p.person === r.name
+      && p.date === date && p.half === (r.didactics.half ?? 'PM')))
     .map(r => (dd.pager === r.name ? `${r.name} (pager)` : r.name));
 }
 
@@ -92,8 +94,8 @@ function buildWeeks(dates, firstDow) {
   return weeks;
 }
 
-function writeCalendar(ws, scenario, schedule, types, dates, firstDow, mrDays) {
-  let row = 2;
+function writeCalendar(ws, scenario, schedule, types, dates, firstDow, mrDays, top) {
+  let row = top;
   for (const week of buildWeeks(dates, firstDow)) {
     for (const label of ROWS) {
       const rowIdx = row++;
@@ -118,9 +120,9 @@ function writeCalendar(ws, scenario, schedule, types, dates, firstDow, mrDays) {
   return row; // first row after the calendar
 }
 
-function writeTotals(ws, schedule) {
-  TOTALS_COLS.forEach(([label], i) => { ws.getCell(2, TOTALS_START_COL + i).value = label; });
-  let row = 3;
+function writeTotals(ws, schedule, top) {
+  TOTALS_COLS.forEach(([label], i) => { ws.getCell(top, TOTALS_START_COL + i).value = label; });
+  let row = top + 1;
   for (const [name, t] of Object.entries(schedule.totals)) {
     const data = { ...t, name, offBonus: t.off + t.bonus };
     TOTALS_COLS.forEach(([, col], i) => {
@@ -173,35 +175,65 @@ function formatSheet(ws) {
   }));
 }
 
-export async function buildWorkbook(scenario, schedule, auditResult, version) {
+// One schedule onto one worksheet. `headerLines` (an alternative's "how it differs from Solution 1")
+// sit between the title row and the calendar; with none, the sheet is exactly the single export.
+function fillSheet(ws, scenario, schedule, auditResult, version, headerLines = []) {
   const { types, morningReportDays } = deriveCycle(scenario.anchorType, scenario.month);
   const dates = monthDates(scenario.month);
   const [Y, M] = scenario.month.split('-').map(Number);
   const firstDow = new Date(Y, M - 1, 1).getDay();
 
-  const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet(scenario.anchorType || 'Schedule');
-
   ws.getCell(1, 1).value = `${MONTH_NAMES[M - 1]} ${Y}  ${DOW_NAMES[firstDow].toUpperCase()}  —  built ${version}`;
   ws.mergeCells('A1:H1');
+  headerLines.forEach((text, i) => {
+    ws.mergeCells(2 + i, 1, 2 + i, 8);
+    ws.getCell(2 + i, 1).value = text;
+    ws.getCell(2 + i, 1).font = { italic: true };
+    ws.getRow(2 + i).height = 20;
+  });
+  const top = 2 + headerLines.length;
 
   const afterCalendar = writeCalendar(ws, scenario, schedule, types, dates, firstDow,
-    new Set(morningReportDays));
-  writeTotals(ws, schedule);
+    new Set(morningReportDays), top);
+  writeTotals(ws, schedule, top);
   writeNotes(ws, scenario, auditResult, afterCalendar);
   formatSheet(ws);
+}
 
+export async function buildWorkbook(scenario, schedule, auditResult, version) {
+  const wb = new ExcelJS.Workbook();
+  fillSheet(wb.addWorksheet(scenario.anchorType || 'Schedule'), scenario, schedule, auditResult, version);
   return wb;
 }
 
-export async function downloadXlsx(scenario, schedule, auditResult) {
-  const wb = await buildWorkbook(scenario, schedule, auditResult, __BUILD_VERSION__);
+// Every solution in one workbook, a sheet each ("Solution 1".."Solution N"), in tab order.
+// entries: [{ schedule, auditResult, headerLines }] — headerLines empty for Solution 1.
+export async function buildAllSolutionsWorkbook(scenario, entries, version) {
+  const wb = new ExcelJS.Workbook();
+  entries.forEach(({ schedule, auditResult, headerLines }, i) =>
+    fillSheet(wb.addWorksheet(`Solution ${i + 1}`), scenario, schedule, auditResult, version, headerLines));
+  return wb;
+}
+
+async function downloadWorkbook(wb, filename) {
   const buf = await wb.xlsx.writeBuffer();
   const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${scenario.team || 'schedule'}-${scenario.month || 'unset'}.xlsx`;
+  a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+const baseName = scenario => `${scenario.team || 'schedule'}-${scenario.month || 'unset'}`;
+
+export async function downloadXlsx(scenario, schedule, auditResult) {
+  await downloadWorkbook(await buildWorkbook(scenario, schedule, auditResult, __BUILD_VERSION__),
+    `${baseName(scenario)}.xlsx`);
+}
+
+export async function downloadAllXlsx(scenario, entries) {
+  await downloadWorkbook(await buildAllSolutionsWorkbook(scenario, entries, __BUILD_VERSION__),
+    `${baseName(scenario)}-all-solutions.xlsx`);
 }

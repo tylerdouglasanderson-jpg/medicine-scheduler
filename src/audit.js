@@ -62,6 +62,10 @@ export function audit(scenario, schedule) {
       if (r && (r.commitments ?? []).some(c => c.date === d))
         V('A_OFF_ON_COMMITMENT', `${name} is off on ${d} but has a commitment (clinic) that day`, name, d);
     }
+    for (const p of (scenario.pins ?? []).filter(x => x.type === 'halfOff' && x.date === d)) {
+      if ((byName[p.person]?.commitments ?? []).some(c => c.date === d && c.half === p.half))
+        V('A_OFF_ON_COMMITMENT', `${p.person} has a half day off on ${d} over their own ${p.half} commitment`, p.person, d);
+    }
 
     if (t === 'call') {
       // A_PAGER_ON_CALL
@@ -111,6 +115,8 @@ export function audit(scenario, schedule) {
             V('A_PAGER_CONFLICT', `Pager holder ${dd.pager} is the post-call sleeper on ${d}`, dd.pager, d);
           if ((pr.commitments ?? []).some(c => c.date === d && c.half === 'PM'))
             V('A_PAGER_CONFLICT', `Pager holder ${dd.pager} has a PM commitment on ${d}`, dd.pager, d);
+          if ((scenario.pins ?? []).some(x => x.person === dd.pager && x.date === d && x.type === 'halfOff' && x.half === 'PM'))
+            V('A_PAGER_CONFLICT', `Pager holder ${dd.pager} has the afternoon off on ${d}`, dd.pager, d);
           if (pr.didactics?.hard && pr.didactics.dow === dow(d) && !NO_DIDACTICS.includes(t))
             W('W_DIDACTICS_MISS', `${dd.pager} holds the pager on ${d} and will miss didactics`, dd.pager, d);
         }
@@ -165,7 +171,9 @@ export function audit(scenario, schedule) {
       V('A_NIGHT_NO_SLEEP', `${n} took night ${d} but is not sleeping ${next}`, n, next);
     // A_POSTCALL_PAGER: day-call intern pages post-call; if none existed, a working senior must
     if (types.get(next) === 'postcall') {
-      const intern = day(d).dayCall?.intern ?? null;
+      // a day-call intern whose service ended on the call day can't page tomorrow: a senior must
+      const dci = day(d).dayCall?.intern ?? null;
+      const intern = dci && byName[dci] && onSvc(byName[dci], next) ? dci : null;
       if (intern) {
         if (nd.pager !== intern)
           V('A_POSTCALL_PAGER', `Post-call pager on ${next} must be the day-call intern ${intern}`, nd.pager, next);
@@ -176,6 +184,36 @@ export function audit(scenario, schedule) {
     }
   });
 
+  // ---------- A_NIGHT_SPLIT: whole-month two seniors + one intern (program rule, 2026-10) ----------
+  // Only when exactly three residents serve this month (2 seniors + 1 intern) and every one of them is
+  // on service on EVERY date of the month (PTO ignored). The intern then takes exactly every other
+  // call night — never two in a row, and the seniors never two in a row either — and the seniors'
+  // counts differ by <= 1. Parity: an intern who carried in last month's night skips the first call
+  // night; a senior who carried it in hands the first to the intern; an odd month starts with the
+  // intern (ceil(n/2)); an even month with no carry-in may start either way.
+  const callDates = allDates.filter(d => types.get(d) === 'call');
+  const team = scenario.residents.filter(r => allDates.some(d => onSvc(r, d)));
+  const fullMonth = team.length === 3 && team.every(r => allDates.every(d => onSvc(r, d)));
+  const tInterns = team.filter(r => r.role === 'intern'), tSeniors = team.filter(r => r.role === 'senior');
+  if (fullMonth && tInterns.length === 1 && tSeniors.length === 2
+      && callDates.length && callDates.every(d => schedule.days[d])) {
+    const I = tInterns[0].name;
+    const isI = callDates.map(d => day(d).night === I);
+    const carried = scenario.anchorType === 'postcall' ? scenario.carryIn?.nightPerson : null;
+    const q = carried ? (carried === I ? 1 : 0) : callDates.length % 2 ? 0 : (isI[0] ? 0 : 1);
+    const expected = callDates.filter((_, k) => k % 2 === q);
+    const off = callDates.find((_, k) => isI[k] !== (k % 2 === q));
+    if (off)
+      V('A_NIGHT_SPLIT', `Two seniors + one intern all month: ${I} should take exactly every other call night `
+        + `(${expected.join(', ')})${carried ? `, given ${carried} carried in last month's night` : ''} — `
+        + `${off} breaks the alternation (${day(off).night ?? 'nobody'} on night)`, day(off).night ?? null, off);
+    const [s1, s2] = tSeniors.map(r => callDates.filter(d => day(d).night === r.name).length);
+    const want = callDates.length - expected.length;
+    if (s1 + s2 !== want || Math.abs(s1 - s2) > 1)
+      V('A_NIGHT_SPLIT', `Two seniors + one intern over ${callDates.length} call days: the seniors should share `
+        + `${want} night(s) evenly (the intern alternates the rest), but they have ${s1} and ${s2}`, null, null);
+  }
+
   // ---------- per-person: A_QUOTA_SHORT / W_DUTY_HOUR / W_LONG_STRETCH ----------
   for (const r of scenario.residents) {
     const svc = allDates.filter(d => onSvc(r, d));
@@ -183,9 +221,9 @@ export function audit(scenario, schedule) {
     const quota = Math.floor(scenario.options.offQuota * svc.length / allDates.length + 0.5); // round-half-up
     const pins = scenario.pins ?? [];
     const freeDates = new Set(pins.filter(p => p.person === r.name && p.type === 'offFree').map(p => p.date));
-    let counted = svc.filter(d => day(d)?.off.includes(r.name) && !freeDates.has(d)).length;
-    counted += 0.5 * pins.filter(p => p.person === r.name && p.type === 'halfOff').length;
-    // Quota is a hard line: the full pro-rated number of offs, every person, every month.
+    // Half days off (halfOff pins) are freebies: they never count toward the quota (program rule, 2026-10).
+    const counted = svc.filter(d => day(d)?.off.includes(r.name) && !freeDates.has(d)).length;
+    // Quota is a hard line: the full pro-rated number of whole offs, every person, every month.
     if (counted < quota)
       V('A_QUOTA_SHORT', `${r.name} has ${counted} counted offs; the quota is ${quota} (${svc.length} service days)`, r.name);
 
@@ -222,7 +260,11 @@ export function audit(scenario, schedule) {
       if (dow(d) !== r.didactics.dow || !onSvc(r, d) || isPto(r, d)) continue;
       if (NO_DIDACTICS.includes(types.get(d))) continue;   // no session to make on a call/post-call day
       const dd = day(d);
-      if (dd.off.includes(r.name))
+      const halfOffHere = (scenario.pins ?? []).some(x => x.person === r.name && x.date === d
+        && x.type === 'halfOff' && x.half === (r.didactics.half ?? 'PM'));
+      if (halfOffHere && !dd.off.includes(r.name))
+        W('W_DIDACTICS_HALF_OFF', `${r.name} has the ${r.didactics.half ?? 'PM'} off on ${d}, their didactics half-day — a missed session`, r.name, d);
+      else if (dd.off.includes(r.name))
         W('W_DIDACTICS_OFF', `${r.name} is off on ${d}, their didactics day — a missed session and a day off spent on a half-day`, r.name, d);
       else if (dd.pager === r.name && !r.didactics.hard) {  // hard already raises W_DIDACTICS_MISS above
         const free = o => o.name !== r.name && onSvc(o, d) && !isPto(o, d)
@@ -288,7 +330,7 @@ export function audit(scenario, schedule) {
     pager: (dd, p) => dd.pager === p,
     dayCall: (dd, p) => dd.working.includes(p) && dd.night !== p,
     nightCall: (dd, p) => dd.night === p,
-    halfOff: (dd, p) => dd.working.includes(p),          // works the day, noted 0.5 in totals
+    halfOff: (dd, p) => dd.working.includes(p),          // works the other half; a freebie, not an off
   };
   for (const p of scenario.pins ?? []) {
     const dd = day(p.date);

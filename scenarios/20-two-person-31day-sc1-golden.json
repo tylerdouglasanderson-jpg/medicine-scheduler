@@ -1,0 +1,81 @@
+{
+  "team": "E",
+  "month": "2026-07",
+  "anchorType": "sc1",
+  "carryIn": null,
+  "options": {
+    "offQuota": 4,
+    "goldenWeekend": true
+  },
+  "residents": [
+    {
+      "name": "Thorne",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2026-07-01",
+      "serviceEnd": "2026-07-31",
+      "didactics": {
+        "dow": 2,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2026-07-02",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-07-09",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-07-27",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-07-30",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Ulmer",
+      "role": "intern",
+      "kind": "categorical",
+      "serviceStart": "2026-07-01",
+      "serviceEnd": "2026-07-31",
+      "didactics": {
+        "dow": 4,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2026-07-01",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-07-08",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-07-15",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    }
+  ],
+  "pins": [],
+  "notes": [],
+  "attendingPagerDays": [],
+  "lastSolution": null
+}

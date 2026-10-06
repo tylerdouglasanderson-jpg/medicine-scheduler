@@ -38,9 +38,55 @@ export const WEIGHTS = {
   mrNoIntern: 20,          // S13 no intern present on a Morning-Report day
 };
 
+// Whole-month 2 seniors + 1 intern (program rule, 2026-10; Astra review 2026-10-06). Only when exactly
+// three residents serve this month — 2 seniors + 1 intern — and EVERY one of them is on service
+// from the 1st through the last day (PTO ignored). A partial window falls back to ordinary
+// eligibility/fairness: forcing the split on a month the intern leaves early produced back-to-back
+// nights and an uncovered post-call pager. Returns null, or { intern, seniors, callDays, parity }:
+// the intern takes every other call night, on call-day indexes with index % 2 === parity. parity is
+//   1 when the intern carried in the last night of the previous month (can't take the first night),
+//   0 when a senior carried it in, or with an odd number of call days (intern takes ceil(n/2)),
+//   null when either parity is allowed (even n, no carry-in).
+// validate.js uses this too (pins that make the alternation impossible); audit.js re-derives it.
+export function wholeMonth2S1I(scenario) {
+  const dates = monthDates(scenario.month);
+  const team = scenario.residents.filter(p => serviceDaysIn(p, scenario.month) > 0);
+  if (team.length !== 3) return null;
+  if (!team.every(p => p.serviceStart <= dates[0] && p.serviceEnd >= dates[dates.length - 1])) return null;
+  const interns = team.filter(p => p.role === 'intern'), seniors = team.filter(p => p.role === 'senior');
+  if (interns.length !== 1 || seniors.length !== 2) return null;
+  const { callDays } = deriveCycle(scenario.anchorType, scenario.month);
+  if (!callDays.length) return null;
+  const carry = scenario.anchorType === 'postcall' ? scenario.carryIn : null;
+  let parity = callDays.length % 2 ? 0 : null;
+  if (carry?.nightPerson) parity = carry.nightPerson === interns[0].name ? 1 : 0;
+  return { intern: interns[0], seniors, callDays, parity };
+}
+
+// Alternative schedules (v1.0.0, program rule, 2026-10) may cost at most this much more than the best
+// schedule, objective measured WITHOUT the stability term. 130 ≈ one shift of equity imbalance
+// (equity 40/pp × ~3.2 pp per shift in a 31-day month). Absolute, never a percentage — the best
+// objective can be 0 or negative. Every hard rule still holds, and no 100k+ penalty fits inside it.
+export const ALT_SLACK = 130;
+
 // opts.elasticQuota re-adds the per-person quota slack. Used ONLY by solve.js's diagnose() to tell
 // "the off quota is what's unsatisfiable" apart from every other cause of infeasibility.
-export function buildModel(scenario, freezeDate = null, { elasticQuota = false } = {}) {
+// The remaining opts build the alternative schedules (solve.js solveAlternatives, RULES.md §12):
+//   stability:false  drops the S1 re-solve anchor entirely.
+//   distinctFrom     schedules this one must differ from on >= minOffsMoved movable off cells each
+//                    (movable = an off var exists, after freezeDate, and nothing is pinned that day).
+//   objCap           the stability-free objective must come in at or under this value.
+//   categoryCaps     { att, escape, consec }: upper bounds on how many of each 100k+ penalty event a
+//                    schedule may use — attending pager days the chief did NOT hand over, hard-didactics
+//                    escapes, consecutive-night slack. Alternatives get Solution 1's counts, so an
+//                    alternative can never trade one such event for another inside the quality cap.
+// Returns { lp, vars, objective, stabilityTerms, categories, movableOffs }: `objective` is the
+// stability-free name -> coefficient map (no constant term), so a caller can price any solution;
+// `stabilityTerms` is the S1 name -> coefficient map (all binaries); `categories` lists the var names
+// behind each categoryCaps key; `movableOffs` lists the [name, meta] off vars the distance rows count.
+export function buildModel(scenario, freezeDate = null,
+  { elasticQuota = false, stability = true, distinctFrom = [], minOffsMoved = 0, objCap = null,
+    categoryCaps = null } = {}) {
   const { types, callDays, morningReportDays } = deriveCycle(scenario.anchorType, scenario.month);
   const dates = monthDates(scenario.month);
   const di = new Map(dates.map((d, i) => [d, i]));
@@ -53,10 +99,14 @@ export function buildModel(scenario, freezeDate = null, { elasticQuota = false }
   // Stability may only anchor on a solution the CURRENT rules produced. A schedule saved under an
   // older rules version still renders and can still be frozen through, but it must not hold the
   // new rules hostage — otherwise a file has to be cleared and re-typed to feel a rule change.
-  const stableRef = solutionIsCurrent(scenario) ? last : null;
+  const stableRef = stability && solutionIsCurrent(scenario) ? last : null;
+  // A freeze date only means something when there is a saved schedule to freeze to. A stale date
+  // with no lastSolution freezes nothing — not even the distance rows' idea of what can move.
+  const frozenThrough = freezeDate && last?.days ? freezeDate : null;
 
   // ---- accumulators ----
   const vars = new Map();
+  const categories = { att: [], escape: [], consec: [] };   // the 100k+ penalty events, by kind
   const cons = [], bounds = [], frees = [], binaries = [];
   const objMap = new Map();
   const addObj = (coef, name) => objMap.set(name, (objMap.get(name) ?? 0) + coef);
@@ -98,10 +148,7 @@ export function buildModel(scenario, freezeDate = null, { elasticQuota = false }
     E = E.filter(p => !(p.serviceEnd === c && c < lastDate)); // sleep day would fall outside window
     return { c, ci, on, interns, seniors, E };
   });
-  const whole2S1I = callInfo.length > 0 && callInfo.every(x =>
-    x.seniors.length === 2 && x.interns.length === 1 &&
-    x.interns[0] === callInfo[0].interns[0] &&
-    x.seniors.every(s => callInfo[0].seniors.includes(s)));
+  const whole2S1I = wholeMonth2S1I(scenario);
   const prevCallOf = new Map(); // post-call date -> its call date
   callDays.forEach(c => { const i = dates.indexOf(c); if (dates[i + 1]) prevCallOf.set(dates[i + 1], c); });
 
@@ -147,7 +194,7 @@ export function buildModel(scenario, freezeDate = null, { elasticQuota = false }
     if (t === 'call' || t === 'postcall') return;
     const v = cont(`att_${di.get(d)}`, { kind: 'att', date: d }, 0, 1);
     if (attendingDays.has(d)) cons.push(`attfix_${di.get(d)}: 1 ${v} = 1`);
-    else addObj(WEIGHTS.attendingPager, v);
+    else { addObj(WEIGHTS.attendingPager, v); categories.att.push(v); }
   });
 
   if (elasticQuota) people.forEach((p, pi) => {   // diagnostic-only quota slack
@@ -173,18 +220,18 @@ export function buildModel(scenario, freezeDate = null, { elasticQuota = false }
   }
 
   // ---- hard rows ----
-  // (1) HARD quota: counted offs = quota, no slack (offFree excluded; halfOff pins are 0.5 constants).
-  // Everyone gets their full pro-rated quota or the month is infeasible — a short month is never a
-  // valid answer. The slack only comes back under opts.elasticQuota, for diagnosis.
+  // (1) HARD quota: counted offs = quota, no slack. offFree is excluded, and halfOff pins are FREEBIES
+  // (program rule, 2026-10): they never count toward the quota, however many there are — two halves are
+  // not a day off. Everyone gets their full pro-rated quota in WHOLE days or the month is infeasible.
+  // The slack only comes back under opts.elasticQuota, for diagnosis.
   people.forEach((p, pi) => {
     const terms = [];
     dates.forEach(d => {
       const v = offName.get(p.name + '|' + d);
       if (v && !hasPin(p, d, 'offFree')) terms.push(T(1, v));
     });
-    const halfCount = scenario.pins.filter(x => x.person === p.name && x.type === 'halfOff').length;
     const slack = elasticQuota ? [T(1, `short_${pi}`)] : [];
-    cons.push(`q_${pi}: ` + lin([...terms, ...slack]) + ' = ' + (quotaFor(p, scenario) - 0.5 * halfCount));
+    cons.push(`q_${pi}: ` + lin([...terms, ...slack]) + ' = ' + quotaFor(p, scenario));
   });
 
   // (3) exactly one night per call day
@@ -202,6 +249,7 @@ export function buildModel(scenario, freezeDate = null, { elasticQuota = false }
       const v = bin(`consec_${pi}_${j}`, { kind: 'consec', person: p.name, date: callDays[j + 1] });
       cons.push(`cons_${pi}_${j}: ` + lin([T(1, na), T(1, nb), T(-1, v)]) + ' <= 1');
       addObj(WEIGHTS.consecSlack, v);
+      categories.consec.push(v);
     });
   }
 
@@ -284,29 +332,43 @@ export function buildModel(scenario, freezeDate = null, { elasticQuota = false }
     } else if (x.type === 'pager' && pv) row(pv, 1);
     else if (x.type === 'dayCall' && nv) row(nv, 0);
     else if (x.type === 'nightCall' && nv) row(nv, 1);
-    else if (x.type === 'halfOff' && ov) row(ov, 0); // 0.5 credit is a constant in quota/w
+    else if (x.type === 'halfOff' && ov) row(ov, 0); // works the other half: 0.5 in w, nothing in quota
   });
 
   // (11) freeze-through-date: implicit pins from lastSolution
-  if (freezeDate && last) {
+  if (frozenThrough) {
     for (const [name, meta] of vars) {
-      if (!['off', 'night', 'pager'].includes(meta.kind) || meta.date > freezeDate) continue;
+      if (!['off', 'night', 'pager'].includes(meta.kind) || meta.date > frozenThrough) continue;
       const v = prevVal(meta);
       if (v !== null) cons.push(`pin_frz_${name}: 1 ${name} = ${v}`);
     }
   }
 
-  // (12) whole-month 2S+1I alternation
+  // (12) whole-month 2S+1I alternation (program rule, 2026-10; chief resident 2026-10-06): the intern takes
+  // EXACTLY every other call night — of any two consecutive call days, one night is the intern's and
+  // one a senior's, so neither the intern nor the seniors ever go two in a row. The seniors share their
+  // nights as evenly as possible (counts differ by at most 1): 4-5 call days = 1 each, 6 = 2 + 1.
+  // A carry-in fixes the parity (see wholeMonth2S1I); otherwise an odd month gives the intern ceil(n/2).
+  // Pins that make this impossible are rejected by validate() (NIGHT_ALTERNATION_IMPOSSIBLE).
   if (whole2S1I) {
-    const I = callInfo[0].interns[0];
-    callInfo[0].seniors.forEach(s => {
-      const terms = callDays.map(c => nightName.get(s.name + '|' + c)).filter(Boolean).map(v => T(1, v));
-      if (terms.length) cons.push(`alt_${people.indexOf(s)}: ` + lin(terms) + ' = 1');
-    });
-    for (let j = 0; j + 1 < callDays.length; j++) {
-      const a = nightName.get(I.name + '|' + callDays[j]), b = nightName.get(I.name + '|' + callDays[j + 1]);
-      if (a && b) cons.push(`altI_${j}: ` + lin([T(1, a), T(1, b)]) + ' >= 1');
+    const { intern: I, seniors: S, parity } = whole2S1I;
+    const n = callDays.length;
+    const internNights = parity === 1 ? Math.floor(n / 2) : Math.ceil(n / 2);
+    const sn = S.map(s =>
+      callDays.map(c => nightName.get(s.name + '|' + c)).filter(Boolean).map(v => T(1, v)));
+    const all = sn.flat();
+    if (all.length) cons.push(`alt_s: ` + lin(all) + ' = ' + (n - internNights));
+    if (sn.length === 2 && sn[0].length && sn[1].length) {
+      const neg = ts => ts.map(t => T(-t.coef, t.name));
+      cons.push(`alt_d0: ` + lin([...sn[0], ...neg(sn[1])]) + ' <= 1');
+      cons.push(`alt_d1: ` + lin([...sn[1], ...neg(sn[0])]) + ' <= 1');
     }
+    for (let j = 0; j + 1 < n; j++) {
+      const a = nightName.get(I.name + '|' + callDays[j]), b = nightName.get(I.name + '|' + callDays[j + 1]);
+      if (a && b) cons.push(`altI_${j}: ` + lin([T(1, a), T(1, b)]) + ' = 1');
+    }
+    const first = nightName.get(I.name + '|' + callDays[0]);
+    if (parity !== null && first) cons.push(`altI_first: 1 ${first} = ${parity === 0 ? 1 : 0}`);
   }
 
   // ---- soft rows ----
@@ -378,24 +440,29 @@ export function buildModel(scenario, freezeDate = null, { elasticQuota = false }
   // there, tethered — cheap for a senior, expensive for an intern, because an intern on the pager
   // at didactics is barely there at all. `hard` escalates the off to the escape weight (the pager
   // is already pruned for hard, see var creation).
-  const didMiss = [];   // {pi, terms} — per-person miss count, for the imbalance term
+  const didMiss = [];   // {pi, terms, constant} — per-person miss count, for the imbalance term
   people.forEach((p, pi) => {
     if (!p.didactics) return;
     const offW = (p.role === 'intern' ? WEIGHTS.didacticsIntern : 1) * WEIGHTS.didacticsOff;
     const pagerW = p.role === 'intern' ? WEIGHTS.didacticsPagerIntern : WEIGHTS.didacticsPager;
     const terms = [];
+    let constant = 0;
     dates.forEach(d => {
       if (dow(d) !== p.didactics.dow || !onService(p, d) || isPto(p, d)) return;
       if (NO_DIDACTICS.has(types.get(d))) return;               // nobody attends on call / post-call
+      // A half day off pinned over the didactics half is a fixed miss (Astra review 2026-10-06): the
+      // chief chose it, so nothing to price — but it still counts toward the miss spread.
+      if (pinsOf(p, d).some(x => x.type === 'halfOff' && x.half === (p.didactics.half ?? 'PM'))) { constant++; return; }
       const ov = offName.get(p.name + '|' + d);
       if (ov) {
         addObj(p.didactics.hard ? WEIGHTS.didacticsEscape : offW, ov);
+        if (p.didactics.hard) categories.escape.push(ov);
         terms.push(T(1, ov));
       }
       const pv = pagerName.get(p.name + '|' + d);
       if (pv) addObj(pagerW, pv);                               // attends tethered — not a miss, not free
     });
-    didMiss.push({ pi, terms });
+    didMiss.push({ pi, terms, constant });
   });
   // Spread the misses a month cannot avoid instead of stacking them on the same person.
   if (didMiss.length >= 2) {
@@ -403,7 +470,7 @@ export function buildModel(scenario, freezeDate = null, { elasticQuota = false }
     didMiss.forEach(m => {
       cont(`dmiss_${m.pi}`, { kind: 'dev', person: people[m.pi].name }, 'free');
       cont(`ddev_${m.pi}`, { kind: 'dev', person: people[m.pi].name });
-      cons.push(`dm_${m.pi}: ` + lin([T(1, `dmiss_${m.pi}`), ...m.terms.map(t => T(-t.coef, t.name))]) + ' = 0');
+      cons.push(`dm_${m.pi}: ` + lin([T(1, `dmiss_${m.pi}`), ...m.terms.map(t => T(-t.coef, t.name))]) + ' = ' + m.constant);
       cons.push(`dd1_${m.pi}: ` + lin([T(1, `ddev_${m.pi}`), T(-1, `dmiss_${m.pi}`), T(1, 'dmu')]) + ' >= 0');
       cons.push(`dd2_${m.pi}: ` + lin([T(1, `ddev_${m.pi}`), T(1, `dmiss_${m.pi}`), T(-1, 'dmu')]) + ' >= 0');
       addObj(WEIGHTS.didacticsDev, `ddev_${m.pi}`);
@@ -487,8 +554,8 @@ export function buildModel(scenario, freezeDate = null, { elasticQuota = false }
     if (svc.length < 4) return;
     const pinnedOff = d => pinsOf(p, d).some(x => ['offCounted', 'offFree'].includes(x.type));
     const offVars = svc.filter(d => offName.get(p.name + '|' + d) && !pinnedOff(d));
-    const pinConst = svc.reduce((s, d) =>
-      s + (pinnedOff(d) ? 1 : pinsOf(p, d).some(x => x.type === 'halfOff') ? 0.5 : 0), 0);
+    // a half day off is a freebie: it does not satisfy "one off this week" (program rule, 2026-10)
+    const pinConst = svc.filter(pinnedOff).length;
     const w = cont(`wdev_${pi}_${wi}`, { kind: 'dev', person: p.name });
     cons.push(`wk1_${pi}_${wi}: ` + lin([T(1, w), ...offVars.map(d => T(1, offName.get(p.name + '|' + d)))]) + ' >= ' + (1 - pinConst));
     cons.push(`wk2_${pi}_${wi}: ` + lin([T(1, w), ...offVars.map(d => T(-1, offName.get(p.name + '|' + d)))]) + ' >= ' + (pinConst - 1));
@@ -508,12 +575,44 @@ export function buildModel(scenario, freezeDate = null, { elasticQuota = false }
     }));
   }
 
-  // S1 re-solve stability: Hamming distance to lastSolution (constant part dropped)
+  // Everything above is the schedule's quality; snapshot it before stability is mixed in. It has no
+  // constant term (stability's constant is dropped below), so Σ coef × primal is the exact objective.
+  const objective = new Map([...objMap].filter(([, c]) => c !== 0));
+
+  // ALT1 quality cap for alternatives: stay within objCap of the stability-free objective.
+  if (objCap !== null && objective.size)
+    cons.push('objcap: ' + lin([...objective].map(([name, coef]) => T(coef, name))) + ' <= ' + objCap);
+
+  // ALT3 high-penalty category caps for alternatives (no new 100k+ events, see categoryCaps above)
+  if (categoryCaps) for (const [k, cap] of Object.entries(categoryCaps)) {
+    const names = categories[k] ?? [];
+    if (names.length && Number.isFinite(cap)) cons.push(`ccap_${k}: ` + lin(names.map(n => T(1, n))) + ' <= ' + cap);
+  }
+
+  // ALT2 distinctness, days off only: Hamming distance to each reference over the movable off vars,
+  //   Σ_{ref off=0} off + Σ_{ref off=1} (1 - off) >= minOffsMoved
+  // Pinned and frozen cells can't move, so they never count toward (or against) the distance.
+  const movableOffs = [...vars].filter(([, m]) => m.kind === 'off'
+    && !(frozenThrough && m.date <= frozenThrough)
+    && !scenario.pins.some(x => x.person === m.person && x.date === m.date));
+  if (minOffsMoved > 0) distinctFrom.forEach((ref, ri) => {
+    const isOff = m => ref.days?.[m.date]?.off?.includes(m.person) ?? false;
+    const ones = movableOffs.filter(([, m]) => isOff(m)).length;
+    const terms = movableOffs.map(([name, m]) => T(isOff(m) ? -1 : 1, name));
+    if (terms.length) cons.push(`dist_${ri}: ` + lin(terms) + ' >= ' + (minOffsMoved - ones));
+  });
+
+  // S1 re-solve stability: Hamming distance to lastSolution (constant part dropped). Every term is on
+  // a binary, so a caller can subtract it from HiGHS's objective exactly (stabilityTerms).
+  const stabilityTerms = new Map();
   if (stableRef) {
     for (const [name, meta] of vars) {
       if (!['off', 'night', 'pager'].includes(meta.kind)) continue;
       const v = prevVal(meta);
-      if (v !== null) addObj(v ? -WEIGHTS.stability : WEIGHTS.stability, name);
+      if (v === null) continue;
+      const coef = v ? -WEIGHTS.stability : WEIGHTS.stability;
+      addObj(coef, name);
+      stabilityTerms.set(name, coef);
     }
   }
 
@@ -542,5 +641,5 @@ export function buildModel(scenario, freezeDate = null, { elasticQuota = false }
     'End',
   ].join('\n');
 
-  return { lp, vars };
+  return { lp, vars, objective, stabilityTerms, categories, movableOffs };
 }

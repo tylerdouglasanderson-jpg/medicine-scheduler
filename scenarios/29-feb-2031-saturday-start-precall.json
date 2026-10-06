@@ -1,0 +1,106 @@
+{
+  "team": "A",
+  "month": "2031-02",
+  "anchorType": "precall",
+  "carryIn": null,
+  "options": {
+    "offQuota": 4,
+    "goldenWeekend": false
+  },
+  "residents": [
+    {
+      "name": "Whitlock",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2031-02-01",
+      "serviceEnd": "2031-02-28",
+      "didactics": {
+        "dow": 2,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2031-02-06",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2031-02-10",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2031-02-13",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2031-02-17",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Xander",
+      "role": "intern",
+      "kind": "categorical",
+      "serviceStart": "2031-02-01",
+      "serviceEnd": "2031-02-28",
+      "didactics": {
+        "dow": 4,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2031-02-05",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2031-02-12",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2031-02-19",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Yeats",
+      "role": "intern",
+      "kind": "TY",
+      "serviceStart": "2031-02-01",
+      "serviceEnd": "2031-02-28",
+      "didactics": {
+        "dow": 3,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2031-02-07",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2031-02-28",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    }
+  ],
+  "pins": [],
+  "notes": [],
+  "attendingPagerDays": [],
+  "lastSolution": null
+}

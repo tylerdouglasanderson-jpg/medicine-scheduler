@@ -1,0 +1,156 @@
+{
+  "team": "A",
+  "month": "2027-04",
+  "anchorType": "ppc",
+  "carryIn": null,
+  "options": {
+    "offQuota": 4,
+    "goldenWeekend": false
+  },
+  "residents": [
+    {
+      "name": "Fairweather",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2027-04-01",
+      "serviceEnd": "2027-04-15",
+      "didactics": {
+        "dow": 2,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2027-04-01",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-04-08",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-04-15",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Garland",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2027-04-16",
+      "serviceEnd": "2027-04-30",
+      "didactics": {
+        "dow": 2,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2027-04-19",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-04-22",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-04-26",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Hartley",
+      "role": "intern",
+      "kind": "categorical",
+      "serviceStart": "2027-04-01",
+      "serviceEnd": "2027-04-30",
+      "didactics": {
+        "dow": 4,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2027-04-09",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-04-14",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-04-21",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-04-28",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Iverson",
+      "role": "intern",
+      "kind": "TY",
+      "serviceStart": "2027-04-01",
+      "serviceEnd": "2027-04-15",
+      "didactics": {
+        "dow": 3,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2027-04-13",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Jarrow",
+      "role": "intern",
+      "kind": "TY",
+      "serviceStart": "2027-04-16",
+      "serviceEnd": "2027-04-30",
+      "didactics": {
+        "dow": 3,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2027-04-20",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-04-27",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    }
+  ],
+  "pins": [],
+  "notes": [],
+  "attendingPagerDays": [],
+  "lastSolution": null
+}

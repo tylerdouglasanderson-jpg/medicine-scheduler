@@ -1,0 +1,63 @@
+{
+  "team": "E",
+  "month": "2026-10",
+  "anchorType": "precall",
+  "carryIn": null,
+  "options": {
+    "offQuota": 4,
+    "goldenWeekend": false
+  },
+  "residents": [
+    {
+      "name": "Marlow",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2026-10-01",
+      "serviceEnd": "2026-10-31",
+      "didactics": {
+        "dow": 2,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [],
+      "pto": []
+    },
+    {
+      "name": "Norcross",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2026-10-01",
+      "serviceEnd": "2026-10-31",
+      "didactics": {
+        "dow": 2,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2026-10-16",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Oakes",
+      "role": "intern",
+      "kind": "categorical",
+      "serviceStart": "2026-10-01",
+      "serviceEnd": "2026-10-26",
+      "didactics": {
+        "dow": 4,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [],
+      "pto": []
+    }
+  ],
+  "pins": [],
+  "notes": [],
+  "attendingPagerDays": []
+}

@@ -62,7 +62,7 @@ describe('quotas — proportional round-half-up', () => {
 });
 
 describe('onService', () => {
-  const anaelle = fixture.residents[0];
-  it('inside window', () => expect(onService(anaelle, '2026-02-15')).toBe(true));
-  it('outside window', () => expect(onService(anaelle, '2026-02-16')).toBe(false));
+  const intern1 = fixture.residents[0];
+  it('inside window', () => expect(onService(intern1, '2026-02-15')).toBe(true));
+  it('outside window', () => expect(onService(intern1, '2026-02-16')).toBe(false));
 });

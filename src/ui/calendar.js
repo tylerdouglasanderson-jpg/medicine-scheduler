@@ -43,6 +43,8 @@ function didacticsNames(scenario, schedule, date, type) {
   return scenario.residents
     .filter(r => r.didactics && r.didactics.dow === dow && onService(r, date))
     .filter(r => !(dd.off.includes(r.name) || (r.pto ?? []).includes(date)))
+    .filter(r => !(scenario.pins ?? []).some(p => p.type === 'halfOff' && p.person === r.name
+      && p.date === date && p.half === (r.didactics.half ?? 'PM')))
     .map(r => (dd.pager === r.name ? `${r.name} (pager)` : r.name));
 }
 
@@ -170,6 +172,21 @@ const TOTALS_COLS = [
   ['Didactics', 'didactics'], ['Off', 'off'], ['PTO', 'pto'], ['Bonus', 'bonus'],
   ['Perks', 'perks'], ['Off + Bonus', 'offBonus'],
 ];
+// Plain-words meaning of each column (mirrors solve.js totals and the guide's "Totals table").
+export const TOTALS_HELP = {
+  name: 'The resident.',
+  shifts: 'Days they worked on the team this month. A day with a half day off counts as half a shift.',
+  pager: 'Days they held the team pager.',
+  clinic: 'Clinic commitments that fell on a day they were working, so they went.',
+  didactics: 'Didactics sessions attended out of the sessions they could attend. Call, post-call and PTO days ' +
+    'are left out. Holding the pager still counts as attending.',
+  off: 'Whole days off that count toward their quota. Bonus days and half days are not in this number.',
+  pto: 'Leave days that fall while they are on the team.',
+  bonus: 'Extra free whole days off (pinned as free / bonus). They do not count toward the quota.',
+  perks: 'Half days off. Each one is an extra freebie: never counted in Off, and two halves do not make a day off.',
+  offBonus: 'All whole days off: counted offs plus bonus days. Half days are not included.',
+};
+const NO_DIDACTICS_TIP = 'No didactics sessions they could attend this month (call, post-call, PTO or off service)';
 
 export function renderTotals(schedule) {
   const table = document.createElement('table');
@@ -177,9 +194,19 @@ export function renderTotals(schedule) {
 
   const thead = document.createElement('thead');
   const headRow = document.createElement('tr');
-  for (const [label] of TOTALS_COLS) {
+  for (const [label, col] of TOTALS_COLS) {
     const th = document.createElement('th');
+    th.scope = 'col';
     th.textContent = label;
+    th.title = TOTALS_HELP[col];
+    if (col !== 'name') th.className = 'num';
+    // A hidden description the header points at: a title alone is never read on touch devices.
+    const desc = document.createElement('span');
+    desc.id = `totals-help-${col}`;
+    desc.hidden = true;
+    desc.textContent = TOTALS_HELP[col];
+    th.setAttribute('aria-describedby', desc.id);
+    th.appendChild(desc);
     headRow.appendChild(th);
   }
   thead.appendChild(headRow);
@@ -193,15 +220,22 @@ export function renderTotals(schedule) {
       const td = document.createElement('td');
       td.dataset.name = name;
       td.dataset.col = col;
+      if (col !== 'name') td.className = 'num';
       // Didactics reads as a fraction of the sessions this month could actually offer them
       // (call days and PTO are excluded from the denominator — nothing can be done about those).
       if (col === 'name') td.textContent = name;
       else if (col === 'didactics') {
         // A schedule saved before the denominator existed shows the bare old count — inventing
         // `n / n` there would read as a perfect score for a schedule that was nothing of the kind.
-        td.textContent = t.didacticsOf == null ? String(t.didactics) : `${t.didactics} / ${t.didacticsOf}`;
-        if (t.didacticsPager) td.title = `${t.didacticsPager} of those attended while holding the pager`;
-      } else td.textContent = row[col].toFixed(1);
+        if (t.didacticsOf === 0) {
+          td.textContent = '—';
+          td.title = NO_DIDACTICS_TIP;
+          td.setAttribute('aria-label', NO_DIDACTICS_TIP);
+        } else {
+          td.textContent = t.didacticsOf == null ? String(t.didactics) : `${t.didactics} / ${t.didacticsOf}`;
+          if (t.didacticsPager) td.title = `${t.didacticsPager} of those attended while holding the pager`;
+        }
+      } else td.textContent = Number.isInteger(row[col]) ? String(row[col]) : row[col].toFixed(1);   // half-days keep one decimal
       tr.appendChild(td);
     }
     tbody.appendChild(tr);

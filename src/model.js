@@ -58,13 +58,14 @@ export function defaultDidactics(role, kind) {
 // solve() stamps every schedule it produces with this. A saved solution carrying a different stamp
 // is not used to anchor re-solve stability, so a scenario file built under older rules re-solves to
 // the NEW optimum without being cleared and re-typed first.
-export const RULES_VERSION = '0.9.0';
+export const RULES_VERSION = '1.0.1';
 
 export function parseScenario(json) {
   for (const k of ['team', 'month', 'anchorType', 'residents'])
     if (json[k] == null) throw new Error(`scenario missing ${k}`);
   return normalize({
     carryIn: null, pins: [], notes: [], attendingPagerDays: [], lastSolution: null,
+    alternatives: [], activeSolution: 0, alternativesReason: null,
     ...json,
     options: {
       offQuota: 4, goldenWeekend: false, seniorsOffShortCall: false, seniorFirstDay: true,
@@ -91,11 +92,29 @@ function normalize(s) {
   if (s.carryIn && !names.has(s.carryIn.nightPerson)) s.carryIn = null;
 
   // A solution only counts as this month's if it covers every date and names only current people.
-  const days = s.lastSolution?.days;
-  const covers = days && monthDates(s.month).every(d => days[d])
-    && Object.keys(days).every(inMonth)
-    && Object.keys(s.lastSolution.totals ?? {}).every(n => names.has(n));
-  if (!covers) s.lastSolution = null;
+  const covers = sch => !!sch?.days && monthDates(s.month).every(d => sch.days[d])
+    && Object.keys(sch.days).every(inMonth)
+    && Object.keys(sch.totals ?? {}).every(n => names.has(n));
+  if (!covers(s.lastSolution)) s.lastSolution = null;
+
+  // Alternatives (docs/RULES.md §12): the tab set, in order. Each must be this month's AND built by
+  // the current rules. Solution 1 is what every other tab's header compares against, and the chosen
+  // tab must be the lastSolution — if either no longer holds, the set is dropped whole and the
+  // scenario falls back to the single saved schedule.
+  const alts = Array.isArray(s.alternatives) ? s.alternatives : [];
+  const ok = alts.filter(a => covers(a) && a.rulesVersion === RULES_VERSION);
+  const sameDays = a => JSON.stringify(a.days) === JSON.stringify(s.lastSolution?.days);
+  const active = ok[0] === alts[0] ? ok.findIndex(sameDays) : -1;
+  if (active < 0) {
+    s.alternatives = [];
+    s.activeSolution = 0;
+    s.alternativesReason = null;
+  } else {
+    s.alternatives = ok;
+    s.activeSolution = Number.isInteger(s.activeSolution) && ok[s.activeSolution] && sameDays(ok[s.activeSolution])
+      ? s.activeSolution : active;
+    if (typeof s.alternativesReason !== 'string') s.alternativesReason = null;
+  }
   return s;
 }
 

@@ -341,11 +341,15 @@
       <li><a href="#chips">5. Commitments · PTO · Pins</a></li>
       <li><a href="#solve">6. Solve</a></li>
       <li><a href="#iterate">7. Iterating: pins + freeze</a></li>
-      <li><a href="#reading">8. Calendar, legend, totals</a></li>
-      <li><a href="#export">9. Exporting &amp; sharing</a></li>
-      <li><a href="#errors">10. Errors glossary</a></li>
-      <li><a href="#warnings">11. Potential Issues glossary</a></li>
-      <li><a href="#tips">12. Tips &amp; troubleshooting</a></li>
+      <li><a href="#solutions">8. Trying different versions</a></li>
+      <li><a href="#reading">9. Calendar, legend, totals</a></li>
+      <li><a href="#export">10. Exporting &amp; sharing</a></li>
+      <li><a href="#errors">11. Errors glossary</a></li>
+      <li><a href="#warnings">12. Potential Issues glossary</a></li>
+      <li><a href="#report">13. Report a problem</a></li>
+      <li><a href="#download">14. Get the app</a></li>
+      <li><a href="#whatsnew">15. What's new</a></li>
+      <li><a href="#tips">16. Tips &amp; troubleshooting</a></li>
     </ol>
   </nav>
 
@@ -356,15 +360,15 @@
       <p>
         This app builds an optimal monthly inpatient-medicine call schedule using an exact
         solver — not a heuristic, not a greedy fill. It runs entirely in your browser: nothing
-        you type is uploaded anywhere, and once the page is open it keeps working with no
+        you type is uploaded anywhere (unless you choose to send a problem report, see §13), and once the page is open it keeps working with no
         internet connection at all. When you're happy with a month, you export a colored
         spreadsheet that looks exactly like what's on your screen, ready to print or hand to
         the team.
       </p>
       <ol class="steps">
         <li><span class="n">1</span> <strong>Set up</strong> — team, month, roster, commitments.</li>
-        <li><span class="n">2</span> <strong>Solve</strong> — one button, one optimal schedule.</li>
-        <li><span class="n">3</span> <strong>Iterate</strong> — pin a cell, freeze a date, re-solve.</li>
+        <li><span class="n">2</span> <strong>Solve</strong> — one button, up to five different schedules.</li>
+        <li><span class="n">3</span> <strong>Compare &amp; iterate</strong> — flip between solutions, pin a cell, freeze a date, re-solve.</li>
         <li><span class="n">4</span> <strong>Export</strong> — styled xlsx or print to PDF.</li>
       </ol>
     </section>
@@ -388,7 +392,10 @@
       <p>
         The whole on-service team works. Exactly one person takes <strong>night call</strong> —
         an intern, when two or more interns are on service; a team senior instead, for
-        Medicine&nbsp;C teams with no interns on. Everyone else takes <strong>day call</strong>.
+        Medicine&nbsp;C teams with no interns on. With <strong>two seniors and one intern</strong> all
+        month, the intern takes every other night (never two in a row) and the two seniors split the
+        rest as evenly as possible — one night each in most months; in a month with six call days one
+        senior takes a second night. Everyone else takes <strong>day call</strong>.
         No one is "off" on a call day, and there is <strong>no pager holder</strong> on call days
         — the whole team is present, so the pager doesn't need a dedicated owner.
       </p>
@@ -565,7 +572,7 @@
             <tr><td class="pin-name">Pager</td><td>The resident holds the pager that day.</td></tr>
             <tr><td class="pin-name">Day call</td><td>The resident works the call day as day-call, not night.</td></tr>
             <tr><td class="pin-name">Night call</td><td>The resident is the night-call person that day.</td></tr>
-            <tr><td class="pin-name">Half off (AM) / Half off (PM)</td><td>A half day off — counts as 0.5 off, shown as "½ off" on rounders.</td></tr>
+            <tr><td class="pin-name">Half off (AM) / Half off (PM)</td><td>A half day off — an extra freebie: it never counts toward anyone's days off, however many they get (two halves are not a day off). Shown as "½ off" on rounders and counted under Perks.</td></tr>
           </tbody>
         </table>
       </div>
@@ -581,7 +588,7 @@
       <p>
         Press <strong>Solve</strong> to build the optimal schedule for the month. The button is
         disabled while there are unresolved <strong>hard errors</strong> — fix those first (see
-        §10). While it runs you'll see a brief "Solving…" state.
+        §11). While it runs you'll see a brief "Solving…" state.
       </p>
       <div class="callout err">
         <span class="label">No feasible schedule</span>
@@ -592,9 +599,10 @@
         </p>
       </div>
       <p>
-        After a successful solve you get the full calendar, the totals table, and
+        A good solve builds up to <strong>five different schedules</strong> (see §8). After a
+        successful solve you get the full calendar, the totals table, and
         <strong>Potential Issues</strong> — soft warnings from an independent auditor that
-        double-checks the solver's work from scratch (see §11).
+        double-checks the solver's work from scratch (see §12).
       </p>
     </section>
 
@@ -620,8 +628,40 @@
       </div>
     </section>
 
+    <section id="solutions">
+      <h2><span class="num-badge">8</span>Trying different versions</h2>
+      <p>
+        Every <strong>Solve</strong> builds up to <strong>five different schedules</strong>, all of
+        which follow every rule. They appear as tabs above the calendar:
+        <strong>Solution 1</strong> to <strong>Solution 5</strong>. Click a tab to switch the whole
+        screen — calendar, totals, Potential Issues, and exports — to that schedule.
+      </p>
+      <ul>
+        <li><strong>Solution 1</strong> is your current schedule: the best fit for your inputs,
+          changed as little as possible from what you had on screen.</li>
+        <li><strong>Solutions 2–5</strong> are real alternatives. Each has a short note under the tabs
+          saying how it differs from Solution 1 — whose days off moved, who picked up different
+          nights, how the pager splits, and whether it is just as balanced.</li>
+        <li>They are meaningfully different on days off, and never noticeably worse. If fewer than
+          five truly different schedules exist (for example most days off are pinned, frozen, or
+          blocked by clinic or PTO), you get fewer and the app tells you why.</li>
+      </ul>
+      <p>
+        The tab you pick becomes the schedule the app builds on: pinning a cell, using
+        <strong>Freeze through</strong>, or pressing <strong>Solve</strong> again rebuilds all the
+        tabs around that choice. Changing the setup, roster, commitments or PTO clears the tabs
+        (they would no longer be valid).
+      </p>
+      <h3>Keep them, reopen them, share them</h3>
+      <p>
+        <strong>Save my month (.json)</strong> keeps every solution, and which tab you were on, in
+        the file. Reopen it later with <strong>Open a saved month…</strong>, or send it to a
+        co-chief — they see the same tabs, with the same one selected.
+      </p>
+    </section>
+
     <section id="reading">
-      <h2><span class="num-badge">8</span>Reading the calendar, legend, and totals</h2>
+      <h2><span class="num-badge">9</span>Reading the calendar, legend, and totals</h2>
       <p>
         The calendar lays out in Sun–Sat week blocks. Each day has rows for
         <strong>DATE</strong>/<strong>TYPE</strong> (the cycle phase — CALL is highlighted),
@@ -686,10 +726,10 @@
             <tr><td><strong class="num">Pager</strong></td><td>Days holding the pager.</td></tr>
             <tr><td><strong class="num">Clinic</strong></td><td>Committed half-days actually worked.</td></tr>
             <tr><td><strong class="num">Didactics</strong></td><td>Sessions attended, over the sessions this month could offer them — e.g. <strong>3 / 4</strong>. The denominator drops call days and PTO, which nothing can fix. Holding the pager still counts as attended (they go and step out if needed); hover the cell to see how many were like that.</td></tr>
-            <tr><td><strong class="num">Off</strong></td><td>Counted days off.</td></tr>
+            <tr><td><strong class="num">Off</strong></td><td>Counted whole days off — this is what meets the quota. Half days never count here.</td></tr>
             <tr><td><strong class="num">PTO</strong></td><td>Leave days.</td></tr>
             <tr><td><strong class="num">Bonus</strong></td><td>Free/bonus offs that don't count against quota.</td></tr>
-            <tr><td><strong class="num">Perks</strong></td><td>Half-off count.</td></tr>
+            <tr><td><strong class="num">Perks</strong></td><td>Half days off — extra freebies on top of the quota.</td></tr>
             <tr><td><strong class="num">Off + Bonus</strong></td><td>Total rest days off.</td></tr>
           </tbody>
         </table>
@@ -698,7 +738,7 @@
     </section>
 
     <section id="export">
-      <h2><span class="num-badge">9</span>Exporting &amp; sharing</h2>
+      <h2><span class="num-badge">10</span>Exporting &amp; sharing</h2>
       <h3>Personal calendars</h3>
       <p>
         Choose a resident and click <strong>Download calendar</strong> for a personal
@@ -714,17 +754,32 @@
         Sheets. <strong>Download &amp; open Google Sheets</strong> downloads the same workbook and opens
         a new Sheet; in Sheets, use <strong>File → Import → Upload</strong> to select the download.
       </p>
+      <h3>One solution or all of them</h3>
+      <p>
+        When there is more than one solution, a selector next to the export buttons lets you choose
+        <strong>This solution</strong> (the tab on screen — exactly the exports described above) or
+        <strong>All solutions</strong>:
+      </p>
+      <ul>
+        <li><strong>Spreadsheet</strong> — one workbook with a sheet per solution
+          ("Solution 1", "Solution 2", …). Sheets 2 and up start with the short note on how
+          they differ from Solution 1. <strong>Download &amp; open Google Sheets</strong> uses the
+          same workbook.</li>
+        <li><strong>Calendars</strong> — one ZIP with a folder per solution ("Solution 1/",
+          "Solution 2/", …). If you picked a single resident, each folder holds just their file.</li>
+      </ul>
       <h3>Print</h3>
       <p>
-        Browser print (→ Save as PDF) of the calendar and totals only — the setup controls are
-        hidden automatically.
+        Browser print (→ Save as PDF) of the solution on screen: its calendar, totals and its
+        "how it differs" note. The setup controls and the tabs are hidden automatically.
       </p>
-      <h3>Save / Load Scenario (JSON)</h3>
+      <h3>Save / Open a saved month</h3>
       <p>
-        <strong>Save Scenario</strong> downloads the full setup — team, roster, commitments, PTO,
-        pins, and the last solution — as a <code>.json</code> file. <strong>Load Scenario</strong>
-        reads one back. This is how you carry work between sessions, keep a reusable team
-        template, or share a scenario with a co-chief: send them the JSON, they Load it.
+        Under <strong>Your work</strong> at the bottom of the screen, <strong>Save my month
+        (.json)</strong> downloads the whole month — team, roster, commitments, PTO, pins, and all
+        your solutions — as a <code>.json</code> file. <strong>Open a saved month…</strong> reads
+        one back. This is how you carry work between sessions, keep a reusable team template, or
+        share a month with a co-chief: send them the file, they open it and see the same tabs.
       </p>
       <div class="callout tip">
         <span class="label">Autosave</span>
@@ -735,13 +790,13 @@
       <p>
         Wipes everything — setup, roster, commitments, PTO, pins, and the solved schedule — back to
         an empty app, after a confirmation prompt. Use it to start a fresh month from scratch. It
-        also clears the autosave, so <strong>Save Scenario</strong> first if you might want this
+        also clears the autosave, so <strong>Save my month</strong> first if you might want this
         month back.
       </p>
     </section>
 
     <section id="errors">
-      <h2><span class="num-badge">10</span>Errors glossary <span style="font-weight:400; font-size:.8em; color:var(--text-dim);">— hard, block Solve</span></h2>
+      <h2><span class="num-badge">11</span>Errors glossary <span style="font-weight:400; font-size:.8em; color:var(--text-dim);">— hard, block Solve</span></h2>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Code</th><th>What it means</th><th>How to fix</th></tr></thead>
@@ -794,7 +849,7 @@
     </section>
 
     <section id="warnings">
-      <h2><span class="num-badge">11</span>Potential Issues glossary <span style="font-weight:400; font-size:.8em; color:var(--text-dim);">— soft, schedule stays valid</span></h2>
+      <h2><span class="num-badge">12</span>Potential Issues glossary <span style="font-weight:400; font-size:.8em; color:var(--text-dim);">— soft, schedule stays valid</span></h2>
       <p>
         Each of these means: the schedule is still valid, but check whether it's acceptable for
         your team, and pin to override if it isn't.
@@ -842,15 +897,129 @@
       </div>
     </section>
 
+    <section id="report">
+      <h2><span class="num-badge">13</span>Report a problem</h2>
+      <p>
+        If a schedule looks wrong, the app says something confusing, or you have an idea, press the
+        amber <strong>Report a problem</strong> button at the top of the screen. You can also use the
+        <strong>Send this month to us</strong> links that appear next to a "No feasible schedule"
+        message, under Potential Issues, and when the checker finds a broken rule.
+      </p>
+      <p><strong>What gets sent</strong> — and only this, only when you press Send:</p>
+      <ul>
+        <li>your message,</li>
+        <li>the app version, and</li>
+        <li>your month (setup, roster, pins and your solutions) <em>if the box
+          "Attach my schedule (recommended)" is ticked</em>. It is ticked by default because it lets us
+          see exactly what you see. Untick it to send just your message.</li>
+      </ul>
+      <p>Nothing else is sent anywhere, and nothing is sent unless you press Send.</p>
+    </section>
+
+    <section id="download">
+      <h2><span class="num-badge">14</span>Get the app</h2>
+      <p>
+        The <strong>Download</strong> button at the top gets you the newest version so you can run it
+        offline on your own computer — no install, no account, nothing uploaded.
+      </p>
+      <ul>
+        <li><strong>Download the app (one HTML file)</strong> — the whole app as a single file. Save
+          it anywhere and double-click to open it in your browser. You always get the newest version.</li>
+        <li><strong>Starter kit (.zip)</strong> — the app plus this guide and a few example months,
+          with a one-click "Click me" launcher.</li>
+      </ul>
+      <p>
+        The app never checks for updates on its own. To see whether you are current, compare the
+        version next to the title (click it to see what's new) with the latest release linked from
+        the Download window. If you opened the downloaded file, the window shows which version you have.
+      </p>
+    </section>
+
+    <section id="whatsnew">
+      <h2><span class="num-badge">15</span>What's new</h2>
+      <p>Newest first. The same list opens when you click the version number at the top of the app.</p>
+      <h3>1.0.0 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">· 2026-10-06</span></h3>
+      <ul>
+        <li>Every Solve now gives up to 5 different schedules that all follow the rules — flip between them with the Solution tabs; each tab says how it differs from Solution 1</li>
+        <li>Export one solution or all of them (one spreadsheet with a sheet per solution; calendars in one zip)</li>
+        <li>Save my month keeps all your solutions in the file, so you can reopen it or send it to a co-chief</li>
+        <li>Bigger “Report a problem” button that sends us your schedule</li>
+        <li>Download button now gets you the newest app file directly</li>
+        <li>This What’s new list</li>
+        <li>Two seniors + one intern: the intern strictly alternates call nights (never back-to-back, and it picks up from last month’s last night); in a 31-day month one senior takes a second night</li>
+        <li>Half days off are now extra freebies — they never count toward anyone's days off</li>
+        <li>A half day off can no longer sit on top of a clinic in the same half, counts as missing didactics if it lands on them, and shows correctly in calendar files</li>
+      </ul>
+      <h3>0.9.0 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">· 2026-10-06</span></h3>
+      <ul>
+        <li>Weekend short call no longer needs a senior — seniors can take those days off</li>
+        <li>New setting: Allow seniors off on short-call days (for months when interns admit on their own)</li>
+        <li>New setting: Have a senior present on the 1st</li>
+        <li>Two-person teams (1 intern + 1 senior) now work: one resident runs the day while the other is off</li>
+      </ul>
+      <h3>0.8.0 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">· 2026-08-27</span></h3>
+      <ul>
+        <li>Download each resident’s schedule as a calendar file (works with Google/Apple/Outlook calendars)</li>
+        <li>Cleaner spreadsheets, plus a button to open in Google Sheets</li>
+      </ul>
+      <h3>0.7.0 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">· 2026-08-19</span></h3>
+      <ul>
+        <li>Nobody is listed for didactics on call or post-call days</li>
+        <li>Interns are kept off the pager during their own didactics whenever a senior can cover</li>
+      </ul>
+      <h3>0.6.0 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">· 2026-08-19</span></h3>
+      <ul>
+        <li>Everyone’s didactics are protected, not just the senior’s</li>
+        <li>Pager, clinic and didactics afternoons are shared fairly</li>
+        <li>One-click “Attending covers the pager” when nobody else is free</li>
+        <li>Months saved under older rules update automatically when you press Solve</li>
+      </ul>
+      <h3>0.5.0 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">· 2026-07-20</span></h3>
+      <ul>
+        <li>Everyone always gets their full days off</li>
+        <li>Morning Report days keep enough people on</li>
+        <li>Days off land on the lightest days of the cycle</li>
+      </ul>
+      <h3>0.4.6 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">· 2026-07-20</span></h3>
+      <ul>
+        <li>Morning Report days are marked on the calendar and spreadsheet</li>
+      </ul>
+      <h3>0.4.5 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">· 2026-07-20</span></h3>
+      <ul>
+        <li>Clear scenario button</li>
+        <li>Clearer resident-type labels</li>
+      </ul>
+      <h3>0.4.4 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">· 2026-07-18</span></h3>
+      <ul>
+        <li>Feedback button</li>
+      </ul>
+      <h3>0.4.0–0.4.3 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">· 2026-07-18</span></h3>
+      <ul>
+        <li>Didactics day fills in automatically from each resident’s type</li>
+        <li>Roster fits on screen</li>
+        <li>Guide links fixed</li>
+      </ul>
+      <h3>0.3.0–0.3.1 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">· 2026-07-17</span></h3>
+      <ul>
+        <li>Days off never land on clinic days</li>
+        <li>Seniors steered away from being off on the 1st</li>
+        <li>One-click “Click me” launcher in the download</li>
+      </ul>
+      <h3>0.2.0 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">· 2026-07-17</span></h3>
+      <ul>
+        <li>New look, built-in user guide, and a “Load example” month</li>
+      </ul>
+    </section>
+
     <section id="tips">
-      <h2><span class="num-badge">12</span>Tips &amp; troubleshooting</h2>
+      <h2><span class="num-badge">16</span>Tips &amp; troubleshooting</h2>
       <ul>
         <li>Set <strong>Month</strong> and <strong>Anchor</strong> first — a wrong anchor shifts every call day in the month.</li>
         <li>Fix all <strong>Errors</strong> before Solve will do anything.</li>
-        <li>Use <strong>Load example</strong> to see a complete, working month before building your own.</li>
+        <li>Use <strong>Load the example month</strong> to see a complete, working month before building your own.</li>
         <li>Iterate with <strong>freeze</strong> so approved weeks stay put while you tweak the rest.</li>
         <li>Colors on screen = colors in the xlsx = colors when you print. One language, everywhere.</li>
-        <li>Everything is local: no data leaves your machine. The JSON scenario file is your save file.</li>
+        <li>Everything is local: no data leaves your machine unless you press Send on a problem report. The file from <strong>Save my month</strong> is your save file.</li>
       </ul>
     </section>
 

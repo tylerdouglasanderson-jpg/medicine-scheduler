@@ -1,0 +1,111 @@
+{
+  "team": "F",
+  "month": "2032-02",
+  "anchorType": "sc2",
+  "carryIn": null,
+  "options": {
+    "offQuota": 4,
+    "goldenWeekend": false
+  },
+  "residents": [
+    {
+      "name": "Tennant",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2032-02-01",
+      "serviceEnd": "2032-02-29",
+      "didactics": {
+        "dow": 2,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2032-02-02",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2032-02-05",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2032-02-12",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2032-02-19",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Underhill",
+      "role": "intern",
+      "kind": "categorical",
+      "serviceStart": "2032-02-01",
+      "serviceEnd": "2032-02-29",
+      "didactics": {
+        "dow": 4,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2032-02-11",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2032-02-18",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2032-02-25",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Vane",
+      "role": "intern",
+      "kind": "psych",
+      "serviceStart": "2032-02-01",
+      "serviceEnd": "2032-02-29",
+      "didactics": {
+        "dow": 2,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2032-02-06",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2032-02-13",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2032-02-20",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    }
+  ],
+  "pins": [],
+  "notes": [],
+  "attendingPagerDays": [],
+  "lastSolution": null
+}

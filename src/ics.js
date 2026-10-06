@@ -103,7 +103,15 @@ function allDayEvent(person, date, kind, summary, now, index) {
   ];
 }
 
-function dutyEvent(person, date, dd, now, index) {
+// Both pinned halves for this person and date. validate() guarantees a half off is
+// never on a call or post-call day, never over a commitment in the same half, and a PM half-off is
+// never the pager holder.
+function halfOffOf(scenario, person, date) {
+  const pins = (scenario.pins ?? []).filter(x => x.person === person && x.date === date && x.type === 'halfOff');
+  return ['AM', 'PM'].filter(half => pins.some(p => p.half === half));
+}
+
+function dutyEvent(person, date, dd, now, index, halfOff = []) {
   const working = dd.working?.includes(person);
   if (dd.type === 'call') {
     if (!working) return null;
@@ -130,6 +138,10 @@ function dutyEvent(person, date, dd, now, index) {
 
   if (!working) return null;
   const pager = dd.pager === person;
+  // AM half off: no morning duty at all; a pager holder's afternoon is still an event.
+  if (halfOff.includes('AM'))
+    return pager && !halfOff.includes('PM')
+      ? timedEvent(person, date, 'pager', 'Pager Duty', '1300', date, '1700', null, now, index) : null;
   let summary = 'Rounding';
   let start = '0700';
   if (dd.type === 'sc1') summary = `Short Call 1${isWeekend(date) ? ' — No Call' : ''}`;
@@ -137,9 +149,9 @@ function dutyEvent(person, date, dd, now, index) {
     summary = `Short Call 2${isWeekend(date) ? ' — No Call' : ''}`;
     start = isWeekend(date) ? '0700' : '0600';
   }
-  if (pager) summary += ', Pager Duty';
+  if (pager && !halfOff.includes('PM')) summary += ', Pager Duty';
   return timedEvent(person, date, `duty-${dd.type}`, summary, start, date,
-    pager ? '1700' : '1300', null, now, index);
+    pager && !halfOff.includes('PM') ? '1700' : '1300', null, now, index);
 }
 
 function postCallEvent(person, callDate, callDay, nextDay, now, index) {
@@ -153,14 +165,22 @@ function postCallEvent(person, callDate, callDay, nextDay, now, index) {
     '0600', date, '1700', null, now, index);
 }
 
-function obligationEvents(scenario, schedule, resident, date, now, startIndex) {
+function obligationEvents(scenario, schedule, resident, date, now, startIndex, halfOff = []) {
   const events = [];
   const dd = schedule.days[date];
   const pager = dd?.pager === resident.name;
   let index = startIndex;
 
+  if (dd?.working?.includes(resident.name) && !['call', 'postcall'].includes(dd.type)) {
+    for (const half of halfOff) {
+      const am = half === 'AM';
+      events.push(timedEvent(resident.name, date, `half-off-${half}`, `Half day off (${half})`,
+        am ? '0700' : '1300', date, am ? '1300' : '1700', null, now, index++));
+    }
+  }
+
   for (const c of resident.commitments ?? []) {
-    if (c.date !== date) continue;
+    if (c.date !== date || halfOff.includes(c.half)) continue;
     const isPm = c.half === 'PM';
     events.push(timedEvent(resident.name, date, `commitment-${index}`,
       `${c.label || 'Commitment'}${pager ? ', Pager Duty' : ''}`,
@@ -172,7 +192,8 @@ function obligationEvents(scenario, schedule, resident, date, now, startIndex) {
     && onService(resident, date)
     && !['call', 'postcall'].includes(dd?.type)
     && !(resident.pto ?? []).includes(date)
-    && !(dd?.off ?? []).includes(resident.name);
+    && !(dd?.off ?? []).includes(resident.name)
+    && !halfOff.includes(resident.didactics.half ?? 'PM');     // a half day off over it is a miss
   if (attendsDidactics) {
     const isPm = resident.didactics.half === 'PM';
     events.push(timedEvent(resident.name, date, 'didactics',
@@ -181,7 +202,7 @@ function obligationEvents(scenario, schedule, resident, date, now, startIndex) {
   }
 
   const morningReport = dd?.type === 'precall' && [2, 4].includes(dow(date))
-    && dd.working?.includes(resident.name);
+    && dd.working?.includes(resident.name) && !halfOff.includes('AM');
   if (morningReport) {
     events.push(timedEvent(resident.name, date, 'morning-report', 'Morning Report',
       '1100', date, '1130', 'This team presents; overlaps morning rounding.', now, index++));
@@ -210,14 +231,15 @@ export function buildResidentCalendar(scenario, schedule, person, { now = new Da
     // post-call day's `working` list deliberately omits the night sleeper and may omit someone
     // whose service window ended on the call date. Only use current-day data for a month-start
     // carry-in, where the preceding call day is outside this schedule.
+    const halfOff = halfOffOf(scenario, person, date);
     const duty = dd.type === 'postcall' && postCallFromVisibleCall.has(date)
-      ? null : dutyEvent(person, date, dd, now, index++);
+      ? null : dutyEvent(person, date, dd, now, index++, halfOff);
     if (duty) events.push(duty);
     if (dd.type === 'call' && dd.working?.includes(person)) {
       const nextDate = addDays(date, 1);
       events.push(postCallEvent(person, date, dd, schedule.days[nextDate], now, index++));
     }
-    const obligations = obligationEvents(scenario, schedule, resident, date, now, index);
+    const obligations = obligationEvents(scenario, schedule, resident, date, now, index, halfOff);
     events.push(...obligations);
     index += obligations.length;
   }
@@ -268,6 +290,20 @@ export async function buildCalendarsZip(scenario, schedule, options = {}) {
   return zip.generateAsync({ type: 'uint8array' });
 }
 
+// Every solution's calendars in one ZIP, a folder each ("Solution 1/…ics"), in tab order.
+// `person` narrows every folder to that one resident; null = everyone.
+export async function buildAllSolutionsCalendarsZip(scenario, schedules, { person = null, ...options } = {}) {
+  const zip = new JSZip();
+  const filenames = calendarFilenames(scenario);
+  schedules.forEach((schedule, k) => {
+    const folder = zip.folder(`Solution ${k + 1}`);
+    for (const [index, resident] of scenario.residents.entries())
+      if (!person || resident.name === person)
+        folder.file(filenames[index], buildResidentCalendar(scenario, schedule, resident.name, options));
+  });
+  return zip.generateAsync({ type: 'uint8array' });
+}
+
 function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -288,4 +324,10 @@ export async function downloadCalendarsZip(scenario, schedule) {
   const bytes = await buildCalendarsZip(scenario, schedule);
   downloadBlob(new Blob([bytes], { type: 'application/zip' }),
     `${scenario.team || 'medicine'}-${scenario.month}-calendars.zip`);
+}
+
+export async function downloadAllSolutionsCalendarsZip(scenario, schedules, person = null) {
+  const bytes = await buildAllSolutionsCalendarsZip(scenario, schedules, { person });
+  downloadBlob(new Blob([bytes], { type: 'application/zip' }),
+    `${scenario.team || 'medicine'}-${scenario.month}-all-solutions-calendars.zip`);
 }

@@ -28,6 +28,16 @@ function labeled(labelText, input, hint) {
   return wrap;
 }
 
+// A standard inline checkbox: box first, then a label you can click.
+function checkLabel(labelText, input) {
+  const wrap = document.createElement('label');
+  wrap.className = 'check';
+  const span = document.createElement('span');
+  span.textContent = labelText;
+  wrap.append(input, span);
+  return wrap;
+}
+
 function selectEl(name, options, value, labelFor, onSet, title) {
   const sel = document.createElement('select');
   sel.name = name;
@@ -56,7 +66,7 @@ export function render(container, scenario, onChange) {
   if (!scenario.month) {
     const hint = document.createElement('p');
     hint.className = 'empty-state';
-    hint.textContent = 'Pick a month below — it drives the whole calendar.';
+    hint.textContent = 'Pick a month — it drives the whole calendar.';
     container.appendChild(hint);
   }
 
@@ -64,9 +74,11 @@ export function render(container, scenario, onChange) {
   row.className = 'row';
   container.appendChild(row);
 
-  row.appendChild(labeled('Team', selectEl('team', TEAMS, scenario.team, null,
+  const teamSel = selectEl('team', TEAMS, scenario.team, null,
     v => onChange({ ...scenario, team: v }),
-    'Which inpatient team this schedule is for (A–F). Med C has senior-only call rules.')));
+    'Which inpatient team this schedule is for (A–F). Med C has senior-only call rules.');
+  teamSel.className = 'team-select';
+  row.appendChild(labeled('Team', teamSel));
 
   const month = document.createElement('input');
   month.type = 'month';
@@ -93,6 +105,16 @@ export function render(container, scenario, onChange) {
   row.appendChild(labeled('Off quota', quota,
     'Days off per person the model solves for (pro-rated by days on service).'));
 
+  const prefs = document.createElement('div');
+  prefs.className = 'prefs';
+  prefs.setAttribute('role', 'group');
+  const prefsH = document.createElement('h3');
+  prefsH.className = 'prefs-heading';
+  prefsH.id = 'prefs-heading';
+  prefsH.textContent = 'Preferences';
+  prefs.setAttribute('aria-labelledby', prefsH.id);
+  prefs.appendChild(prefsH);
+
   const golden = document.createElement('input');
   golden.type = 'checkbox';
   golden.name = 'goldenWeekend';
@@ -101,7 +123,7 @@ export function render(container, scenario, onChange) {
   golden.addEventListener('change', () => onChange({
     ...scenario, options: { ...scenario.options, goldenWeekend: golden.checked },
   }));
-  row.appendChild(labeled('Attempt golden weekend', golden));
+  prefs.appendChild(checkLabel('Attempt golden weekend', golden));
 
   const scOff = document.createElement('input');
   scOff.type = 'checkbox';
@@ -112,7 +134,7 @@ export function render(container, scenario, onChange) {
   scOff.addEventListener('change', () => onChange({
     ...scenario, options: { ...scenario.options, seniorsOffShortCall: scOff.checked },
   }));
-  row.appendChild(labeled('Allow seniors off on short-call days', scOff));
+  prefs.appendChild(checkLabel('Allow seniors off on short-call days', scOff));
 
   const firstDay = document.createElement('input');
   firstDay.type = 'checkbox';
@@ -123,7 +145,7 @@ export function render(container, scenario, onChange) {
   firstDay.addEventListener('change', () => onChange({
     ...scenario, options: { ...scenario.options, seniorFirstDay: firstDay.checked },
   }));
-  row.appendChild(labeled('Have a senior present on the 1st', firstDay));
+  prefs.appendChild(checkLabel('Have a senior present on the 1st', firstDay));
 
   // carryIn required only when the month anchors on a post-call day (Solve gate: validate.js CARRYIN_REQUIRED)
   if (scenario.anchorType === 'postcall') {
@@ -144,4 +166,5 @@ export function render(container, scenario, onChange) {
       carryRow.appendChild(labeled(label, sel));
     }
   }
+  container.appendChild(prefs);   // after the carry-in row: required inputs first, soft preferences last
 }

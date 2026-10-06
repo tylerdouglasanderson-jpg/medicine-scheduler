@@ -1,0 +1,152 @@
+{
+  "team": "D",
+  "month": "2026-10",
+  "anchorType": "call",
+  "carryIn": null,
+  "options": {
+    "offQuota": 4,
+    "goldenWeekend": false
+  },
+  "residents": [
+    {
+      "name": "Jessup",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2026-10-01",
+      "serviceEnd": "2026-10-31",
+      "didactics": {
+        "dow": 2,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2026-10-05",
+          "half": "PM",
+          "label": "Clinic SM"
+        },
+        {
+          "date": "2026-10-09",
+          "half": "PM",
+          "label": "Clinic SM"
+        },
+        {
+          "date": "2026-10-12",
+          "half": "PM",
+          "label": "Clinic SM"
+        },
+        {
+          "date": "2026-10-15",
+          "half": "PM",
+          "label": "Clinic SM"
+        },
+        {
+          "date": "2026-10-16",
+          "half": "PM",
+          "label": "Clinic SM"
+        },
+        {
+          "date": "2026-10-22",
+          "half": "PM",
+          "label": "Clinic SM"
+        },
+        {
+          "date": "2026-10-23",
+          "half": "PM",
+          "label": "Clinic SM"
+        },
+        {
+          "date": "2026-10-29",
+          "half": "PM",
+          "label": "Clinic SM"
+        },
+        {
+          "date": "2026-10-30",
+          "half": "PM",
+          "label": "Clinic SM"
+        }
+      ],
+      "pto": [
+        "2026-10-18"
+      ]
+    },
+    {
+      "name": "Kestrel",
+      "role": "intern",
+      "kind": "categorical",
+      "serviceStart": "2026-10-01",
+      "serviceEnd": "2026-10-31",
+      "didactics": {
+        "dow": 4,
+        "half": "PM",
+        "hard": true
+      },
+      "commitments": [
+        {
+          "date": "2026-10-16",
+          "half": "PM",
+          "label": "Clinic FHC"
+        },
+        {
+          "date": "2026-10-23",
+          "half": "PM",
+          "label": "Clinic FHC"
+        },
+        {
+          "date": "2026-10-27",
+          "half": "PM",
+          "label": "Clinic FHC"
+        },
+        {
+          "date": "2026-10-30",
+          "half": "PM",
+          "label": "Clinic FHC"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Larkin",
+      "role": "intern",
+      "kind": "psych",
+      "serviceStart": "2026-10-01",
+      "serviceEnd": "2026-10-15",
+      "didactics": {
+        "dow": 2,
+        "half": "PM",
+        "hard": true
+      },
+      "commitments": [],
+      "pto": []
+    },
+    {
+      "name": "Maddox",
+      "role": "intern",
+      "kind": "categorical",
+      "serviceStart": "2026-10-16",
+      "serviceEnd": "2026-10-31",
+      "didactics": {
+        "dow": 4,
+        "half": "PM",
+        "hard": true
+      },
+      "commitments": [
+        {
+          "date": "2026-10-21",
+          "half": "PM",
+          "label": "Clinic FHC"
+        },
+        {
+          "date": "2026-10-30",
+          "half": "PM",
+          "label": "Clinic FHC"
+        }
+      ],
+      "pto": []
+    }
+  ],
+  "pins": [],
+  "notes": [],
+  "attendingPagerDays": [],
+  "lastSolution": null
+}

@@ -18,9 +18,17 @@ export function initFeedback(opts = {}) {
   ensureDialog();
 }
 
-export function openFeedback() {
+// openFeedback({ type: 'problem' | 'idea', prefill }) — `prefill` seeds the message box so a contextual
+// "Send this month to us" prompt can hand over what the app just showed. Callable as a bare click handler.
+export function openFeedback(opts) {
   ensureDialog();
   resetForm();
+  const { type, prefill } = opts && typeof opts === 'object' && !('target' in opts) ? opts : {};
+  if (type === 'problem' || type === 'idea') {
+    const radio = dialogEl.querySelector(`input[name="fb-type"][value="${type}"]`);
+    if (radio) radio.checked = true;
+  }
+  if (typeof prefill === 'string') els.message.value = prefill;
   if (!dialogEl.open) dialogEl.showModal();
 }
 
@@ -29,30 +37,38 @@ function ensureDialog() {
 
   dialogEl = document.createElement('dialog');
   dialogEl.id = 'feedback-dialog';
+  dialogEl.setAttribute('aria-labelledby', 'feedback-title');
+  dialogEl.setAttribute('aria-describedby', 'feedback-subtitle');
   dialogEl.innerHTML = `
     <div class="feedback-dialog-inner">
       <div class="feedback-header">
-        <h2>Report a problem or idea</h2>
-        <button type="button" class="btn-ghost" data-close title="Close">×</button>
+        <div class="feedback-heading">
+          <h2 id="feedback-title">Report a problem or idea</h2>
+          <p class="feedback-subtitle" id="feedback-subtitle">We'll see exactly what you see.</p>
+        </div>
+        <button type="button" class="btn-ghost" data-close title="Close" aria-label="Close">×</button>
       </div>
       <form novalidate>
-        <fieldset class="feedback-type">
-          <label><input type="radio" name="fb-type" value="problem" checked> Problem</label>
-          <label><input type="radio" name="fb-type" value="idea"> Idea</label>
+        <fieldset class="feedback-type segmented">
+          <legend class="visually-hidden">What are you sending?</legend>
+          <input type="radio" name="fb-type" id="fb-type-problem" value="problem" checked>
+          <label for="fb-type-problem">Problem</label>
+          <input type="radio" name="fb-type" id="fb-type-idea" value="idea">
+          <label for="fb-type-idea">Idea</label>
         </fieldset>
-        <label>Your name (optional)
+        <label class="feedback-field">Your name (optional)
           <input type="text" data-name maxlength="80" autocomplete="name">
         </label>
-        <label>What happened, or your idea
+        <label class="feedback-field">What happened, or your idea
           <textarea data-message maxlength="4000" required
             placeholder="Describe the problem or share your idea…"></textarea>
         </label>
-        <label class="feedback-attach">
+        <label class="check feedback-attach">
           <input type="checkbox" data-attach checked>
-          Attach my current setup so the issue can be reproduced
+          <span>Attach my schedule (recommended)</span>
         </label>
-        <p class="field-hint">This is the only thing the app sends anywhere — just what you type here,
-          plus your current setup if that box is checked.</p>
+        <p class="field-hint">This is the only thing the app sends anywhere — what you type here, the app
+          version, and your month (roster, pins and all your solutions) if that box is ticked.</p>
         <div class="feedback-hp" aria-hidden="true">
           <label>Leave this empty<input type="text" data-hp tabindex="-1" autocomplete="off"></label>
         </div>

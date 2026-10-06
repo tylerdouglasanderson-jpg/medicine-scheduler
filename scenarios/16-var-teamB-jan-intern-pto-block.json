@@ -1,0 +1,127 @@
+{
+  "team": "B",
+  "month": "2027-01",
+  "anchorType": "call",
+  "carryIn": null,
+  "options": {
+    "offQuota": 4,
+    "goldenWeekend": false
+  },
+  "residents": [
+    {
+      "name": "Garrow",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2027-01-01",
+      "serviceEnd": "2027-01-31",
+      "didactics": {
+        "dow": 2,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2027-01-04",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-01-11",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-01-18",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-01-21",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-01-28",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Hollis",
+      "role": "intern",
+      "kind": "categorical",
+      "serviceStart": "2027-01-01",
+      "serviceEnd": "2027-01-31",
+      "didactics": {
+        "dow": 4,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2027-01-06",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-01-15",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-01-22",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-01-27",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-01-29",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": [
+        "2027-01-12"
+      ]
+    },
+    {
+      "name": "Ingram",
+      "role": "intern",
+      "kind": "TY",
+      "serviceStart": "2027-01-01",
+      "serviceEnd": "2027-01-31",
+      "didactics": {
+        "dow": 3,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2027-01-05",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-01-12",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": [
+        "2027-01-18",
+        "2027-01-21",
+        "2027-01-22"
+      ]
+    }
+  ],
+  "pins": [],
+  "notes": [],
+  "attendingPagerDays": [],
+  "lastSolution": null
+}

@@ -1,0 +1,92 @@
+{
+  "team": "F",
+  "month": "2026-02",
+  "anchorType": "ppc",
+  "carryIn": null,
+  "options": {
+    "offQuota": 4,
+    "goldenWeekend": false
+  },
+  "residents": [
+    {
+      "name": "Pemberton",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2026-02-01",
+      "serviceEnd": "2026-02-28",
+      "didactics": {
+        "dow": 2,
+        "half": "PM",
+        "hard": true
+      },
+      "commitments": [
+        {
+          "date": "2026-02-09",
+          "half": "AM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Quill",
+      "role": "intern",
+      "kind": "categorical",
+      "serviceStart": "2026-02-01",
+      "serviceEnd": "2026-02-28",
+      "didactics": {
+        "dow": 4,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [],
+      "pto": []
+    },
+    {
+      "name": "Rook",
+      "role": "intern",
+      "kind": "TY",
+      "serviceStart": "2026-02-01",
+      "serviceEnd": "2026-02-28",
+      "didactics": {
+        "dow": 3,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [],
+      "pto": []
+    }
+  ],
+  "pins": [
+    {
+      "person": "Pemberton",
+      "date": "2026-02-10",
+      "type": "halfOff",
+      "half": "PM",
+      "note": "half off over hard didactics"
+    },
+    {
+      "person": "Quill",
+      "date": "2026-02-19",
+      "type": "halfOff",
+      "half": "PM",
+      "note": "half off over didactics"
+    },
+    {
+      "person": "Rook",
+      "date": "2026-02-10",
+      "type": "halfOff",
+      "half": "AM",
+      "note": "AM half off on a Morning Report day"
+    },
+    {
+      "person": "Pemberton",
+      "date": "2026-02-09",
+      "type": "halfOff",
+      "half": "PM",
+      "note": "PM half off after an AM clinic"
+    }
+  ],
+  "notes": [],
+  "attendingPagerDays": []
+}

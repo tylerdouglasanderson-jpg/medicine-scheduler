@@ -1,0 +1,181 @@
+{
+  "team": "D",
+  "month": "2026-12",
+  "anchorType": "ppc",
+  "carryIn": null,
+  "options": {
+    "offQuota": 4,
+    "goldenWeekend": false
+  },
+  "residents": [
+    {
+      "name": "Quimby",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2026-12-01",
+      "serviceEnd": "2026-12-31",
+      "didactics": {
+        "dow": 2,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2026-12-03",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-07",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-10",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-21",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Rutledge",
+      "role": "intern",
+      "kind": "categorical",
+      "serviceStart": "2026-12-01",
+      "serviceEnd": "2026-12-31",
+      "didactics": {
+        "dow": 4,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2026-12-02",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-09",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-16",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Sutcliffe",
+      "role": "intern",
+      "kind": "TY",
+      "serviceStart": "2026-12-01",
+      "serviceEnd": "2026-12-31",
+      "didactics": {
+        "dow": 3,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2026-12-04",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-25",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    }
+  ],
+  "pins": [
+    {
+      "half": null,
+      "note": "",
+      "person": "Sutcliffe",
+      "date": "2026-12-03",
+      "type": "pager"
+    },
+    {
+      "half": null,
+      "note": "",
+      "person": "Rutledge",
+      "date": "2026-12-07",
+      "type": "work"
+    },
+    {
+      "half": null,
+      "note": "",
+      "person": "Quimby",
+      "date": "2026-12-05",
+      "type": "dayCall"
+    },
+    {
+      "half": null,
+      "note": "",
+      "person": "Rutledge",
+      "date": "2026-12-11",
+      "type": "nightCall"
+    },
+    {
+      "half": null,
+      "note": "",
+      "person": "Quimby",
+      "date": "2026-12-13",
+      "type": "offCounted"
+    },
+    {
+      "half": null,
+      "note": "",
+      "person": "Sutcliffe",
+      "date": "2026-12-14",
+      "type": "offFree"
+    },
+    {
+      "half": "AM",
+      "note": "",
+      "person": "Rutledge",
+      "date": "2026-12-19",
+      "type": "halfOff"
+    },
+    {
+      "half": "PM",
+      "note": "",
+      "person": "Rutledge",
+      "date": "2026-12-19",
+      "type": "halfOff"
+    },
+    {
+      "half": "PM",
+      "note": "",
+      "person": "Sutcliffe",
+      "date": "2026-12-21",
+      "type": "halfOff"
+    },
+    {
+      "half": "AM",
+      "note": "",
+      "person": "Sutcliffe",
+      "date": "2026-12-26",
+      "type": "halfOff"
+    }
+  ],
+  "notes": [],
+  "attendingPagerDays": [
+    "2026-12-02",
+    "2026-12-10",
+    "2026-12-22"
+  ],
+  "lastSolution": null
+}

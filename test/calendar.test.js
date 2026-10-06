@@ -55,12 +55,13 @@ describe('calendar render (feb-2026 solved)', () => {
       .not.toContain('MORNING REPORT');
   });
 
-  it('totals table: columns + 0.5-increment formatting + audit-consistent off counts', () => {
+  it('totals table: columns + whole-number / 0.5-increment formatting + audit-consistent off counts', () => {
     const t = renderTotals(schedule);
     expect(t.querySelectorAll('thead th').length).toBe(10);
     expect(t.textContent).toContain('Intern1');
-    const anaelleOff = t.querySelector('[data-name="Intern1"][data-col="off"]').textContent;
-    expect(anaelleOff).toBe('2.0');
+    const intern1Off = t.querySelector('[data-name="Intern1"][data-col="off"]').textContent;
+    expect(intern1Off).toBe('2');
+    for (const td of t.querySelectorAll('tbody td')) expect(td.textContent).not.toMatch(/^\d+\.0$/);   // whole numbers drop the .0
   });
 
   it('warnings panel mirrors audit output', () => {

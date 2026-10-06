@@ -1,0 +1,153 @@
+{
+  "team": "F",
+  "month": "2027-03",
+  "anchorType": "call",
+  "carryIn": null,
+  "options": {
+    "offQuota": 4,
+    "goldenWeekend": false
+  },
+  "residents": [
+    {
+      "name": "Kimball",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2027-03-01",
+      "serviceEnd": "2027-03-31",
+      "didactics": {
+        "dow": 2,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2027-03-10",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-03-17",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-03-24",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": [
+        "2027-03-03",
+        "2027-03-04",
+        "2027-03-05",
+        "2027-03-06"
+      ]
+    },
+    {
+      "name": "Lockhart",
+      "role": "intern",
+      "kind": "categorical",
+      "serviceStart": "2027-03-01",
+      "serviceEnd": "2027-03-31",
+      "didactics": {
+        "dow": 4,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2027-03-04",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-03-18",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": [
+        "2027-03-09",
+        "2027-03-10",
+        "2027-03-11",
+        "2027-03-12",
+        "2027-03-15"
+      ]
+    },
+    {
+      "name": "Merrow",
+      "role": "intern",
+      "kind": "TY",
+      "serviceStart": "2027-03-01",
+      "serviceEnd": "2027-03-31",
+      "didactics": {
+        "dow": 3,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2027-03-09",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-03-23",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-03-30",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": [
+        "2027-03-16",
+        "2027-03-17",
+        "2027-03-18",
+        "2027-03-21"
+      ]
+    },
+    {
+      "name": "Nuttall",
+      "role": "intern",
+      "kind": "psych",
+      "serviceStart": "2027-03-01",
+      "serviceEnd": "2027-03-31",
+      "didactics": {
+        "dow": 2,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2027-03-03",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-03-10",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-03-17",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": [
+        "2027-03-23",
+        "2027-03-24",
+        "2027-03-27",
+        "2027-03-28",
+        "2027-03-29"
+      ]
+    }
+  ],
+  "pins": [],
+  "notes": [],
+  "attendingPagerDays": [],
+  "lastSolution": null
+}

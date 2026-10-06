@@ -1,0 +1,171 @@
+{
+  "team": "D",
+  "month": "2026-11",
+  "anchorType": "ppc",
+  "carryIn": null,
+  "options": {
+    "offQuota": 4,
+    "goldenWeekend": false
+  },
+  "residents": [
+    {
+      "name": "Dunstan",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2026-11-01",
+      "serviceEnd": "2026-11-30",
+      "didactics": {
+        "dow": 2,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2026-11-02",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-11-03",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-11-04",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-11-08",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-11-09",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-11-10",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-11-14",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-11-15",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-11-16",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-11-20",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-11-21",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-11-22",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-11-26",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-11-27",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-11-28",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Eckersley",
+      "role": "intern",
+      "kind": "categorical",
+      "serviceStart": "2026-11-01",
+      "serviceEnd": "2026-11-30",
+      "didactics": {
+        "dow": 4,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2026-11-04",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-11-13",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-11-20",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-11-25",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-11-27",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Fitzroy",
+      "role": "intern",
+      "kind": "TY",
+      "serviceStart": "2026-11-01",
+      "serviceEnd": "2026-11-30",
+      "didactics": {
+        "dow": 3,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2026-11-03",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-11-10",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    }
+  ],
+  "pins": [],
+  "notes": [],
+  "attendingPagerDays": [],
+  "lastSolution": null
+}

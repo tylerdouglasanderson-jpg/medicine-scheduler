@@ -1,0 +1,77 @@
+{
+  "team": "C",
+  "month": "2026-09",
+  "anchorType": "sc2",
+  "carryIn": null,
+  "options": {
+    "offQuota": 4,
+    "goldenWeekend": false
+  },
+  "residents": [
+    {
+      "name": "Aldous",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2026-09-01",
+      "serviceEnd": "2026-09-30",
+      "didactics": {
+        "dow": 2,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2026-09-07",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-09-24",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": [
+        "2026-09-14",
+        "2026-09-17",
+        "2026-09-18",
+        "2026-09-19",
+        "2026-09-20"
+      ]
+    },
+    {
+      "name": "Brannock",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2026-09-01",
+      "serviceEnd": "2026-09-30",
+      "didactics": {
+        "dow": 2,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2026-09-18",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-09-25",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-09-30",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    }
+  ],
+  "pins": [],
+  "notes": [],
+  "attendingPagerDays": [],
+  "lastSolution": null
+}

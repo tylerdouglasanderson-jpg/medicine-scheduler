@@ -6,6 +6,7 @@ import { parseScenario, deriveCycle, quotaFor, solutionIsCurrent, RULES_VERSION 
 import feb from '../fixtures/feb-2026.json';
 import oct from '../fixtures/oct-2026-didactics.json';
 import stale from '../fixtures/oct-2026-stale-solution.json';
+import halfOne from '../scenarios/33-single-halfoff-pin.json';
 
 const CALLS = ['2026-02-05', '2026-02-11', '2026-02-17', '2026-02-23'];
 const nextDate = d => { const [y, m, dd] = d.split('-').map(Number);
@@ -362,4 +363,31 @@ describe('scenario normalization', () => {
     expect(parseScenario({ ...oct, lastSolution: { ...stale.lastSolution, totals: { Ghost: {} } } }).lastSolution).toBeNull();
     expect(feb2.lastSolution).toBeNull();                      // the golden fixture ships unsolved
   });
+});
+
+// Half days off are FREEBIES (program rule, 2026-10): a halfOff pin never counts toward the off quota,
+// however many there are. Before v1.0.0 each credited 0.5, so an odd number left a half-integer
+// quota and the month was INFEASIBLE (scenario 33).
+describe('halfOff pins never count toward the quota', () => {
+  const run = async pins => {
+    const raw = structuredClone(halfOne);
+    raw.pins = pins;
+    const s = parseScenario(raw);
+    expect(validate(s)).toEqual([]);
+    const r = await solve(s);
+    expect(r.infeasible).toBeFalsy();
+    expect(audit(s, r.schedule).violations).toEqual([]);
+    for (const p of s.residents) {
+      const whole = Object.values(r.schedule.days).filter(d => d.off.includes(p.name)).length;
+      expect(whole).toBe(quotaFor(p, s));                        // full quota in WHOLE days
+      expect(r.schedule.totals[p.name].off).toBe(quotaFor(p, s));
+      expect(r.schedule.totals[p.name].perks).toBe(pins.filter(x => x.person === p.name).length);
+    }
+    for (const x of pins) expect(r.schedule.days[x.date].working).toContain(x.person);
+    return r;
+  };
+  const pin = (date, half = 'AM') => ({ person: 'Quarrel', date, type: 'halfOff', half, note: '' });
+
+  it('one pin (scenario 33): solves, everyone at their full whole-day quota', () => run(halfOne.pins), 60000);
+  it('three pins: likewise', () => run([...halfOne.pins, pin('2027-02-16', 'PM'), pin('2027-02-21')]), 60000);
 });

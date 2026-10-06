@@ -1,0 +1,104 @@
+{
+  "team": "F",
+  "month": "2027-02",
+  "anchorType": "ppc",
+  "carryIn": null,
+  "options": {
+    "offQuota": 4,
+    "goldenWeekend": false
+  },
+  "residents": [
+    {
+      "name": "Oldfield",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2027-02-01",
+      "serviceEnd": "2027-02-28",
+      "didactics": {
+        "dow": 2,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2027-02-08",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-02-15",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-02-22",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Pickering",
+      "role": "intern",
+      "kind": "categorical",
+      "serviceStart": "2027-02-01",
+      "serviceEnd": "2027-02-28",
+      "didactics": {
+        "dow": 4,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2027-02-03",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-02-10",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Quarrel",
+      "role": "intern",
+      "kind": "TY",
+      "serviceStart": "2027-02-01",
+      "serviceEnd": "2027-02-28",
+      "didactics": {
+        "dow": 3,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2027-02-19",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-02-26",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    }
+  ],
+  "pins": [
+    {
+      "person": "Quarrel",
+      "date": "2027-02-09",
+      "type": "halfOff",
+      "half": "AM",
+      "note": ""
+    }
+  ],
+  "notes": [],
+  "attendingPagerDays": [],
+  "lastSolution": null
+}

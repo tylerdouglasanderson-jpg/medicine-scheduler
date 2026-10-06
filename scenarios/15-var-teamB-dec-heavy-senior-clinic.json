@@ -1,0 +1,166 @@
+{
+  "team": "B",
+  "month": "2026-12",
+  "anchorType": "sc1",
+  "carryIn": null,
+  "options": {
+    "offQuota": 4,
+    "goldenWeekend": false
+  },
+  "residents": [
+    {
+      "name": "Dunmore",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2026-12-01",
+      "serviceEnd": "2026-12-31",
+      "didactics": {
+        "dow": 2,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2026-12-01",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-03",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-07",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-08",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-14",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-15",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-18",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-21",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-24",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-25",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-31",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-30",
+          "half": "PM",
+          "label": "ITE"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Ellery",
+      "role": "intern",
+      "kind": "categorical",
+      "serviceStart": "2026-12-01",
+      "serviceEnd": "2026-12-31",
+      "didactics": {
+        "dow": 4,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2026-12-02",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-07",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-09",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-14",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-21",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-30",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Fenwick",
+      "role": "intern",
+      "kind": "TY",
+      "serviceStart": "2026-12-01",
+      "serviceEnd": "2026-12-31",
+      "didactics": {
+        "dow": 3,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2026-12-01",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-08",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-15",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    }
+  ],
+  "pins": [],
+  "notes": [],
+  "attendingPagerDays": [],
+  "lastSolution": null
+}

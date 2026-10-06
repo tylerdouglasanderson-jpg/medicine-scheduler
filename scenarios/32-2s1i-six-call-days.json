@@ -1,0 +1,151 @@
+{
+  "team": "E",
+  "month": "2026-12",
+  "anchorType": "call",
+  "carryIn": null,
+  "options": {
+    "offQuota": 4,
+    "goldenWeekend": false
+  },
+  "residents": [
+    {
+      "name": "Calloway",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2026-12-01",
+      "serviceEnd": "2026-12-31",
+      "didactics": {
+        "dow": 2,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2026-12-04",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-09",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-11",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-16",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-21",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-23",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-28",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-30",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Dalby",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2026-12-01",
+      "serviceEnd": "2026-12-31",
+      "didactics": {
+        "dow": 2,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2026-12-03",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-10",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-15",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-17",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-22",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-24",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-29",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Eastman",
+      "role": "intern",
+      "kind": "categorical",
+      "serviceStart": "2026-12-01",
+      "serviceEnd": "2026-12-31",
+      "didactics": {
+        "dow": 4,
+        "half": "PM",
+        "hard": true
+      },
+      "commitments": [
+        {
+          "date": "2026-12-04",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-11",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2026-12-18",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    }
+  ],
+  "pins": [],
+  "notes": [],
+  "attendingPagerDays": [],
+  "lastSolution": null
+}

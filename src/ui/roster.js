@@ -63,7 +63,7 @@ export function render(container, scenario, onChange) {
   if (scenario.residents.length === 0) {
     const empty = document.createElement('p');
     empty.className = 'empty-state';
-    empty.textContent = 'No residents yet — add your team, or load the example scenario above.';
+    empty.textContent = 'No residents yet — add your team, or press “Load the example month” at the top of the page.';
     container.appendChild(empty);
   } else {
     const table = document.createElement('table');

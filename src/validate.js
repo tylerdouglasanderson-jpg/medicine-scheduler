@@ -1,4 +1,5 @@
 import { deriveCycle, onService, monthDates } from './model.js';
+import { wholeMonth2S1I } from './milp.js';
 
 const OFFISH = ['offCounted', 'offFree', 'halfOff'];
 const CONFLICTS = [['work', OFFISH], ['pager', ['offCounted', 'offFree']], ['dayCall', ['nightCall']]];
@@ -35,6 +36,15 @@ export function validate(scenario) {
       err('CONTRADICTORY_PINS', p.person, p.date, `Off pin on a ${t} day (${p.date})`);
     if (['offCounted', 'offFree'].includes(p.type) && r.commitments.some(c => c.date === p.date))
       err('OFF_ON_COMMITMENT', p.person, p.date, `${p.person} is pinned off on ${p.date} but has a commitment (clinic) that day — an off day must be free`);
+    // A half day off may not overlap the obligation it would excuse (Astra review 2026-10-06).
+    if (p.type === 'halfOff') {
+      const c = r.commitments.find(c => c.date === p.date && c.half === p.half);
+      if (c) {
+        const what = c.label || 'clinic';
+        err('HALFOFF_ON_COMMITMENT', p.person, p.date,
+          `${p.person} has a ${what} that ${p.half === 'AM' ? 'morning' : 'afternoon'} — remove the half-day off or the ${what} (${p.date})`);
+      }
+    }
     if (['dayCall', 'nightCall'].includes(p.type) && t !== 'call')
       err('CONTRADICTORY_PINS', p.person, p.date, `${p.type} pin on a non-call day (${p.date})`);
   }
@@ -44,7 +54,8 @@ export function validate(scenario) {
     const a = scenario.pins[i], b = scenario.pins[j];
     if (a.date !== b.date) continue;
     if (a.person === b.person) {
-      if (CONFLICTS.some(([x, ys]) =>
+      const pmHalfOffPager = [a, b].some(x => x.type === 'pager') && [a, b].some(x => x.type === 'halfOff' && x.half === 'PM');
+      if (pmHalfOffPager || CONFLICTS.some(([x, ys]) =>
         (a.type === x && ys.includes(b.type)) || (b.type === x && ys.includes(a.type))))
         err('CONTRADICTORY_PINS', a.person, a.date, `${a.person} has contradictory ${a.type} + ${b.type} pins on ${a.date}`);
     } else if (a.type === b.type && ['nightCall', 'pager'].includes(a.type)) {
@@ -69,13 +80,45 @@ export function validate(scenario) {
     const svc = dates.filter(d => onService(r, d));
     if (!svc.length) continue;
     const quota = Math.floor(scenario.options.offQuota * svc.length / dates.length + 0.5);
-    const halfCredit = 0.5 * scenario.pins.filter(p => p.person === r.name && p.type === 'halfOff').length;
     const eligible = svc.filter(d =>
       !r.pto.includes(d) && !['call', 'postcall'].includes(types.get(d))
       && !r.commitments.some(c => c.date === d)).length;
-    if (eligible < quota - halfCredit)
+    if (eligible < quota)   // half days off are freebies: no quota credit
       err('QUOTA_IMPOSSIBLE', r.name, null,
         `${r.name} needs ${quota} days off but only has ${eligible} eligible day(s) — every other day is call, post-call, PTO, or a commitment. Free up a day or lower the off quota.`);
+  }
+
+  // Whole-month 2S+1I: the intern takes EXACTLY every other call night (chief resident 2026-10-06).
+  // Night/day-call pins that force a different pattern can't be scheduled — say which, up front.
+  const alt = wholeMonth2S1I(scenario);
+  if (alt) {
+    const I = alt.intern.name;
+    const crew = [I, ...alt.seniors.map(s => s.name)];
+    const involved = [];
+    const must = [], never = [];                       // per call index: the intern must / can't take it
+    alt.callDays.forEach((c, j) => {
+      let can = crew;
+      for (const p of scenario.pins.filter(x => x.date === c && crew.includes(x.person))) {
+        if (p.type === 'nightCall') { can = can.filter(n => n === p.person); involved.push(p); }
+        if (p.type === 'dayCall') { can = can.filter(n => n !== p.person); involved.push(p); }
+      }
+      if (can.length === 1 && can[0] === I) must.push(j);
+      if (can.length && !can.includes(I)) never.push(j);
+    });
+    const fits = q => must.every(j => j % 2 === q) && never.every(j => j % 2 !== q);
+    const options = alt.parity === null ? [0, 1] : [alt.parity];
+    if (!options.some(fits)) {
+      const pattern = q => alt.callDays.filter((_, j) => j % 2 === q).join(', ');
+      const allowed = options.map(pattern).map(x => `[${x}]`).join(' or ');
+      const carryNote = scenario.anchorType === 'postcall' && scenario.carryIn?.nightPerson
+        ? (scenario.carryIn.nightPerson === I
+          ? ` ${I} came in post-call from last month's last night, so cannot take the first call night.`
+          : ` A senior took last month's last night, so ${I} takes the first call night.`)
+        : '';
+      const pins = involved.map(p => `${p.type} ${p.person} ${p.date}`).join('; ');
+      err('NIGHT_ALTERNATION_IMPOSSIBLE', I, null,
+        `With two seniors and one intern all month, ${I} takes every other call night — never two in a row, and the seniors never two in a row either — so ${I}'s nights must be ${allowed}.${carryNote} These pins can't all hold: ${pins}. Remove or change one of them.`);
+    }
   }
 
   for (const c of callDays) {

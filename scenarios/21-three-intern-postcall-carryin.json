@@ -1,0 +1,140 @@
+{
+  "team": "F",
+  "month": "2027-05",
+  "anchorType": "postcall",
+  "carryIn": {
+    "nightPerson": "Wren",
+    "dayCallIntern": "Yardley",
+    "dayCallSenior": "Vickers"
+  },
+  "options": {
+    "offQuota": 4,
+    "goldenWeekend": false
+  },
+  "residents": [
+    {
+      "name": "Vickers",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2027-05-01",
+      "serviceEnd": "2027-05-31",
+      "didactics": {
+        "dow": 2,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2027-05-03",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-05-10",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-05-17",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-05-20",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-05-27",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Wren",
+      "role": "intern",
+      "kind": "categorical",
+      "serviceStart": "2027-05-01",
+      "serviceEnd": "2027-05-31",
+      "didactics": {
+        "dow": 4,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2027-05-05",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-05-26",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Yardley",
+      "role": "intern",
+      "kind": "TY",
+      "serviceStart": "2027-05-01",
+      "serviceEnd": "2027-05-31",
+      "didactics": {
+        "dow": 3,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2027-05-04",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-05-11",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Zephyr",
+      "role": "intern",
+      "kind": "psych",
+      "serviceStart": "2027-05-01",
+      "serviceEnd": "2027-05-31",
+      "didactics": {
+        "dow": 2,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2027-05-14",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-05-21",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-05-28",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    }
+  ],
+  "pins": [],
+  "notes": [],
+  "attendingPagerDays": [],
+  "lastSolution": null
+}

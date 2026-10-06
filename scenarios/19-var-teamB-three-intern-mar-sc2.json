@@ -1,0 +1,156 @@
+{
+  "team": "B",
+  "month": "2027-03",
+  "anchorType": "sc2",
+  "carryIn": null,
+  "options": {
+    "offQuota": 4,
+    "goldenWeekend": false,
+    "seniorsOffShortCall": true
+  },
+  "residents": [
+    {
+      "name": "Penrose",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2027-03-01",
+      "serviceEnd": "2027-03-31",
+      "didactics": {
+        "dow": 2,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2027-03-01",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-03-08",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-03-11",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-03-18",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-03-25",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-03-29",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-03-24",
+          "half": "PM",
+          "label": "ITE"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Quill",
+      "role": "intern",
+      "kind": "categorical",
+      "serviceStart": "2027-03-01",
+      "serviceEnd": "2027-03-31",
+      "didactics": {
+        "dow": 4,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2027-03-12",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-03-19",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-03-24",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-03-26",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-03-31",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Rowan",
+      "role": "intern",
+      "kind": "TY",
+      "serviceStart": "2027-03-01",
+      "serviceEnd": "2027-03-31",
+      "didactics": {
+        "dow": 3,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2027-03-19",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-03-23",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-03-26",
+          "half": "PM",
+          "label": "clinic"
+        },
+        {
+          "date": "2027-03-30",
+          "half": "PM",
+          "label": "clinic"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Sterling",
+      "role": "intern",
+      "kind": "psych",
+      "serviceStart": "2027-03-01",
+      "serviceEnd": "2027-03-31",
+      "didactics": {
+        "dow": 2,
+        "half": "PM",
+        "hard": true
+      },
+      "commitments": [],
+      "pto": []
+    }
+  ],
+  "pins": [],
+  "notes": [],
+  "attendingPagerDays": [],
+  "lastSolution": null
+}

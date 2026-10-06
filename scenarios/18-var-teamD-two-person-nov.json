@@ -1,0 +1,86 @@
+{
+  "team": "D",
+  "month": "2026-11",
+  "anchorType": "call",
+  "carryIn": null,
+  "options": {
+    "offQuota": 4,
+    "goldenWeekend": false
+  },
+  "residents": [
+    {
+      "name": "Norwood",
+      "role": "senior",
+      "kind": "categorical",
+      "serviceStart": "2026-11-01",
+      "serviceEnd": "2026-11-30",
+      "didactics": {
+        "dow": 2,
+        "half": "PM",
+        "hard": false
+      },
+      "commitments": [
+        {
+          "date": "2026-11-05",
+          "half": "PM",
+          "label": "Clinic SM"
+        },
+        {
+          "date": "2026-11-09",
+          "half": "PM",
+          "label": "Clinic SM"
+        },
+        {
+          "date": "2026-11-12",
+          "half": "PM",
+          "label": "Clinic SM"
+        },
+        {
+          "date": "2026-11-23",
+          "half": "PM",
+          "label": "Clinic SM"
+        },
+        {
+          "date": "2026-11-27",
+          "half": "PM",
+          "label": "Clinic SM"
+        },
+        {
+          "date": "2026-11-30",
+          "half": "PM",
+          "label": "Clinic SM"
+        }
+      ],
+      "pto": []
+    },
+    {
+      "name": "Oakley",
+      "role": "intern",
+      "kind": "categorical",
+      "serviceStart": "2026-11-01",
+      "serviceEnd": "2026-11-30",
+      "didactics": {
+        "dow": 4,
+        "half": "PM",
+        "hard": true
+      },
+      "commitments": [
+        {
+          "date": "2026-11-06",
+          "half": "PM",
+          "label": "Clinic FHC"
+        },
+        {
+          "date": "2026-11-27",
+          "half": "PM",
+          "label": "Clinic FHC"
+        }
+      ],
+      "pto": []
+    }
+  ],
+  "pins": [],
+  "notes": [],
+  "attendingPagerDays": [],
+  "lastSolution": null
+}
