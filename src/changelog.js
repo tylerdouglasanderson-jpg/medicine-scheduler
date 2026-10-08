@@ -4,6 +4,12 @@
 // The first entry's version must equal package.json's version.
 export const CHANGELOG = [
   {
+    version: '1.1.1', date: '2026-10-07',
+    items: [
+      'User guide: the post-call pager section now explains who holds it when the day-call intern has just rotated off the team',
+    ],
+  },
+  {
     version: '1.1.0', date: '2026-10-07',
     items: [
       'New “PM off” number: afternoons off per resident — days they round in the morning with nothing in the afternoon (no pager, clinic, didactics or other block). Weekends count; call and post-call days never do. It is shown in the totals table, the solution comparison and the spreadsheet, for information only — the scheduler does not solve for it',
