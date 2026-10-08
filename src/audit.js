@@ -177,9 +177,19 @@ export function audit(scenario, schedule) {
       if (intern) {
         if (nd.pager !== intern)
           V('A_POSTCALL_PAGER', `Post-call pager on ${next} must be the day-call intern ${intern}`, nd.pager, next);
-      } else if (!nd.pager || nd.pager === 'ATTENDING'
-                 || byName[nd.pager]?.role !== 'senior' || !nd.working.includes(nd.pager)) {
-        V('A_POSTCALL_PAGER', `Post-call pager on ${next} must be a working senior (no day-call intern on ${d})`, nd.pager, next);
+      } else {
+        // v1.1.0 (program rule, 2026-10): no day-call intern on service → a working, awake intern pages if one can
+        // (e.g. the incoming intern on a handoff day); a senior only when no intern can hold it that afternoon.
+        const pinned = name => (scenario.pins ?? []).some(x => x.person === name && x.date === next && x.type === 'pager');
+        const canPage = q => byName[q]?.role === 'intern' && nd.working.includes(q) && (pinned(q) || !(
+          (byName[q].commitments ?? []).some(x => x.date === next && x.half === 'PM')
+          || (scenario.pins ?? []).some(x => x.person === q && x.date === next && x.type === 'halfOff' && x.half === 'PM')));
+        const internCan = nd.working.some(canPage);
+        const holder = nd.pager && nd.pager !== 'ATTENDING' && nd.working.includes(nd.pager) ? byName[nd.pager] : null;
+        if (internCan && holder?.role !== 'intern')
+          V('A_POSTCALL_PAGER', `Post-call pager on ${next} must be a working intern (the day-call intern from ${d} is off service)`, nd.pager, next);
+        else if (!internCan && holder?.role !== 'senior')
+          V('A_POSTCALL_PAGER', `Post-call pager on ${next} must be a working senior (no day-call intern on ${d})`, nd.pager, next);
       }
     }
   });

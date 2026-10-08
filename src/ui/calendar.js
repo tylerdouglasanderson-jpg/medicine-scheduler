@@ -22,10 +22,21 @@ function hasHalfOff(scenario, person, date) {
 function isBonusOff(scenario, person, date) {
   return (scenario.pins ?? []).some(p => p.type === 'offFree' && p.person === person && p.date === date);
 }
+// v1.1.0: the CLINIC row also carries non-clinic commitments (ITE, …). Any label that doesn't start with
+// "clinic" is named inline with its own label — "Smith (ITE)", "Smith (Conference)" — the same way DIDACTICS
+// tags "(pager)". No new row. A blank label reads "(other commitment)".
+function clinicLabel(r, date) {
+  const cs = (r.commitments ?? []).filter(c => c.date === date);
+  const name = c => (c.label ?? '').trim() || 'other commitment';
+  const other = [...new Set(cs.map(name).filter(l => !/^clinic/i.test(l)))];
+  if (!other.length) return r.name;
+  const hasClinic = cs.some(c => /^clinic/i.test(name(c)));
+  return `${r.name} (${hasClinic ? 'clinic + ' : ''}${other.join(', ')})`;
+}
 function clinicNames(scenario, date) {
   return scenario.residents
     .filter(r => (r.commitments ?? []).some(c => c.date === date))
-    .map(r => r.name);
+    .map(r => clinicLabel(r, date));
 }
 function ptoNames(scenario, date) {
   return scenario.residents.filter(r => (r.pto ?? []).includes(date)).map(r => r.name);
@@ -170,7 +181,7 @@ export function renderCalendar(scenario, schedule) {
 const TOTALS_COLS = [
   ['Resident', 'name'], ['Shifts', 'shifts'], ['Pager', 'pager'], ['Clinic', 'clinic'],
   ['Didactics', 'didactics'], ['Off', 'off'], ['PTO', 'pto'], ['Bonus', 'bonus'],
-  ['Perks', 'perks'], ['Off + Bonus', 'offBonus'],
+  ['Perks', 'perks'], ['Off + Bonus', 'offBonus'], ['PM off', 'pmOff'],   // PM off: v1.1.0
 ];
 // Plain-words meaning of each column (mirrors solve.js totals and the guide's "Totals table").
 export const TOTALS_HELP = {
@@ -185,6 +196,8 @@ export const TOTALS_HELP = {
   bonus: 'Extra free whole days off (pinned as free / bonus). They do not count toward the quota.',
   perks: 'Half days off. Each one is an extra freebie: never counted in Off, and two halves do not make a day off.',
   offBonus: 'All whole days off: counted offs plus bonus days. Half days are not included.',
+  pmOff: 'Afternoons off: days they rounded in the morning with nothing in the afternoon (no pager, clinic, ' +
+    'didactics or other PM block). Weekends count; call and post-call days never do. For information only.',
 };
 const NO_DIDACTICS_TIP = 'No didactics sessions they could attend this month (call, post-call, PTO or off service)';
 
@@ -235,7 +248,8 @@ export function renderTotals(schedule) {
           td.textContent = t.didacticsOf == null ? String(t.didactics) : `${t.didactics} / ${t.didacticsOf}`;
           if (t.didacticsPager) td.title = `${t.didacticsPager} of those attended while holding the pager`;
         }
-      } else td.textContent = Number.isInteger(row[col]) ? String(row[col]) : row[col].toFixed(1);   // half-days keep one decimal
+      } else if (row[col] == null) td.textContent = '—';
+      else td.textContent = Number.isInteger(row[col]) ? String(row[col]) : row[col].toFixed(1);   // half-days keep one decimal
       tr.appendChild(td);
     }
     tbody.appendChild(tr);

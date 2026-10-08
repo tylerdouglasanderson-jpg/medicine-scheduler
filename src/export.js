@@ -17,7 +17,7 @@ const FILLS = {
 const TOTALS_COLS = [
   ['Resident', 'name'], ['Shifts', 'shifts'], ['Pager', 'pager'], ['Clinic', 'clinic'],
   ['Didactics', 'didactics'], ['Off', 'off'], ['PTO', 'pto'], ['Bonus', 'bonus'],
-  ['Perks', 'perks'], ['Off + Bonus', 'offBonus'],
+  ['Perks', 'perks'], ['Off + Bonus', 'offBonus'], ['PM off', 'pmOff'],   // PM off: v1.1.0
 ];
 const TOTALS_START_COL = 10; // column J
 const MR_FONT = 'FF7030A0';  // Morning-Report label — matches the app's --cal-mr
@@ -49,8 +49,19 @@ function rounderLines(date, type, dd, scenario) {
   for (const note of scenario.notes ?? []) if (note.date === date) lines.push(note.text);
   return lines;
 }
+// v1.1.0: the CLINIC row also carries non-clinic commitments (ITE, …). Any label that doesn't start with
+// "clinic" is named inline with its own label — "Smith (ITE)", "Smith (Conference)" — the same way DIDACTICS
+// tags "(pager)". No new row. A blank label reads "(other commitment)".
+function clinicLabel(r, date) {
+  const cs = (r.commitments ?? []).filter(c => c.date === date);
+  const name = c => (c.label ?? '').trim() || 'other commitment';
+  const other = [...new Set(cs.map(name).filter(l => !/^clinic/i.test(l)))];
+  if (!other.length) return r.name;
+  const hasClinic = cs.some(c => /^clinic/i.test(name(c)));
+  return `${r.name} (${hasClinic ? 'clinic + ' : ''}${other.join(', ')})`;
+}
 function clinicNames(scenario, date) {
-  return scenario.residents.filter(r => (r.commitments ?? []).some(c => c.date === date)).map(r => r.name);
+  return scenario.residents.filter(r => (r.commitments ?? []).some(c => c.date === date)).map(r => clinicLabel(r, date));
 }
 function ptoNames(scenario, date) {
   return scenario.residents.filter(r => (r.pto ?? []).includes(date)).map(r => r.name);
@@ -127,7 +138,7 @@ function writeTotals(ws, schedule, top) {
     const data = { ...t, name, offBonus: t.off + t.bonus };
     TOTALS_COLS.forEach(([, col], i) => {
       ws.getCell(row, TOTALS_START_COL + i).value = col === 'didactics'
-        ? (t.didacticsOf == null ? t.didactics : `${t.didactics} / ${t.didacticsOf}`) : data[col];
+        ? (t.didacticsOf == null ? t.didactics : `${t.didactics} / ${t.didacticsOf}`) : data[col] ?? '—';
     });
     row++;
   }
@@ -160,7 +171,7 @@ function formatSheet(ws) {
   ws.getColumn(1).width = 14;
   for (let col = 2; col <= 8; col++) ws.getColumn(col).width = 22;
   ws.getColumn(9).width = 2;
-  const totalsWidths = [20, 10, 10, 10, 14, 10, 10, 10, 10, 14];
+  const totalsWidths = [20, 10, 10, 10, 14, 10, 10, 10, 10, 14, 10];
   totalsWidths.forEach((width, i) => { ws.getColumn(TOTALS_START_COL + i).width = width; });
 
   ws.views = [{ state: 'frozen', xSplit: 1, ySplit: 1, topLeftCell: 'B2', activeCell: 'B2' }];

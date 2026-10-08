@@ -7,7 +7,7 @@ import { downloadXlsx, downloadAllXlsx } from '../export.js';
 import { downloadResidentCalendar, downloadCalendarsZip, downloadAllSolutionsCalendarsZip } from '../ics.js';
 import { solveAlternatives, initHighs } from '../solve.js';
 import { describeDifference } from '../compare.js';
-import { onService, monthDates, parseScenario, solutionIsCurrent } from '../model.js';
+import { onService, monthDates, parseScenario, solutionIsCurrent, afternoonsOffDates } from '../model.js';
 import { renderCalendar, renderTotals, renderWarnings } from './calendar.js';
 import * as setup from './setup.js';
 import * as roster from './roster.js';
@@ -690,6 +690,7 @@ function compareSolutions(total) {
     ['solution', 'Solution'], ['quality', 'Quality vs Solution 1'], ['issues', 'Potential issues'],
     ['moves', 'Days off moved'], ['nights', 'Nights per person'],
     ['weekend', 'Weekend days off per person'], ['pager', 'Pager per person'],
+    ['pmoff', 'Afternoons off per person'],   // v1.1.0
   ];
   // Identical sub-grids in headers and cells keep each count under its resident's short name.
   const perPerson = values => {
@@ -761,6 +762,7 @@ function compareSolutions(total) {
           p.person === n && p.date === date && p.type === 'offFree');
       }).length),
       pager: names.map(n => schedule.totals[n]?.pager ?? 0),
+      pmoff: names.map(n => schedule.totals[n]?.pmOff ?? afternoonsOffDates(scenario, schedule, n).length),
     };
     for (const [metric] of columns.slice(1)) {
       const cell = row.insertCell();

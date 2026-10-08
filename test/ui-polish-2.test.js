@@ -89,7 +89,7 @@ describe('totals table', () => {
   it('every column header carries a plain-words tooltip and an accessible description', () => {
     const t = renderTotals(solved.lastSolution);
     const ths = [...t.querySelectorAll('thead th')];
-    expect(ths.length).toBe(10);
+    expect(ths.length).toBe(11);
     for (const th of ths) {
       expect(th.title.length, th.textContent).toBeGreaterThan(5);
       const desc = th.querySelector(`#${th.getAttribute('aria-describedby')}`);

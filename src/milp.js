@@ -275,6 +275,19 @@ export function buildModel(scenario, freezeDate = null,
     } else {
       seniors.forEach(s => leq1(s, 's')); // Med C: coverage picks a working senior
     }
+    // v1.1.0 (program rule, 2026-10): the post-call pager is an intern's job whenever any intern can hold it —
+    // including an intern who starts that day because the day-call intern rotated off. For every intern
+    // with a pager var on the post-call day: sum(senior pagers) <= night[i,c] (0 when they can't be the
+    // night). So a senior pages only if every pager-eligible intern is the sleeper. Rows above already
+    // cover the c-roster; this adds people whose service starts on the post-call day.
+    const seniorPv = people.filter(p => p.role === 'senior')
+      .map(p => pagerName.get(p.name + '|' + next)).filter(Boolean);
+    if (seniorPv.length) people.filter(p => p.role === 'intern').forEach(i => {
+      const pv = pagerName.get(i.name + '|' + next);
+      if (!pv) return;
+      const nv = nightName.get(i.name + '|' + c);
+      cons.push(`pci_${people.indexOf(i)}_${ci}: ` + lin([...seniorPv.map(v => T(1, v)), ...(nv ? [T(-1, nv)] : [])]) + ' <= 0');
+    });
   });
 
   // (6) pager coverage on every non-call day

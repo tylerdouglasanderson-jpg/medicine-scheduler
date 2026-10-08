@@ -2,7 +2,7 @@
 // solve() is pure (no DOM, no storage) and does not audit — the UI composes them.
 // solveAlternatives() does audit: the independent auditor is its acceptance gate for alternatives.
 import { buildModel, NO_DIDACTICS, ALT_SLACK } from './milp.js';
-import { deriveCycle, onService, RULES_VERSION, solutionIsCurrent } from './model.js';
+import { deriveCycle, onService, RULES_VERSION, solutionIsCurrent, afternoonsOffDates } from './model.js';
 import { validate } from './validate.js';
 import { audit } from './audit.js';
 
@@ -355,6 +355,9 @@ function extract(scenario, vars, cols) {
       perks: halfPins.length,         // half days off (halfOff pins) — extra freebies, outside Off
     };
   }
+
+  // v1.1.0: afternoons off need the finished days (pager holders), so they fill in once every resident is done.
+  for (const p of people) totals[p.name].pmOff = afternoonsOffDates(scenario, { days }, p.name).length;
 
   // ---- warnings from slack primals + derived didactics/carry-out ----
   const warnings = [];

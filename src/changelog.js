@@ -4,6 +4,14 @@
 // The first entry's version must equal package.json's version.
 export const CHANGELOG = [
   {
+    version: '1.1.0', date: '2026-10-07',
+    items: [
+      'New “PM off” number: afternoons off per resident — days they round in the morning with nothing in the afternoon (no pager, clinic, didactics or other block). Weekends count; call and post-call days never do. It is shown in the totals table, the solution comparison and the spreadsheet, for information only — the scheduler does not solve for it',
+      'A commitment that isn’t clinic is now named in the CLINIC row with its own label — “Smith (ITE)”, or “(other commitment)” if it has no label — instead of looking like clinic',
+      'Fixed: on a post-call day when the day-call intern has just rotated off the team, the incoming intern now holds the pager (it used to hand it to the wrong person and flag its own schedule as broken)',
+    ],
+  },
+  {
     version: '1.0.1', date: '2026-10-06',
     items: [
       'The downloaded app no longer includes the website’s anonymous visit counter — it sends nothing unless you use Report a problem',

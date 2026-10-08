@@ -57,7 +57,7 @@ describe('calendar render (feb-2026 solved)', () => {
 
   it('totals table: columns + whole-number / 0.5-increment formatting + audit-consistent off counts', () => {
     const t = renderTotals(schedule);
-    expect(t.querySelectorAll('thead th').length).toBe(10);
+    expect(t.querySelectorAll('thead th').length).toBe(11);
     expect(t.textContent).toContain('Intern1');
     const intern1Off = t.querySelector('[data-name="Intern1"][data-col="off"]').textContent;
     expect(intern1Off).toBe('2');

@@ -53,12 +53,34 @@ export function defaultDidactics(role, kind) {
   return dow === null ? null : { dow, half: 'PM', hard: false };
 }
 
+// v1.1.0 — Afternoons off (program rule, 2026-10): reported, never solved for. A resident rounds in the morning and
+// has nothing in the afternoon — not the pager, no PM commitment (clinic, ITE…), no PM didactics.
+// Call and post-call days never count: the day team and the sleeper's supervising senior are there all
+// day, the night person's call day is the daylight before the night, and the sleeper is not working.
+// Weekends count. A PM half day off counts (they rounded and left); an AM half day off does not.
+export function afternoonsOffDates(scenario, schedule, name) {
+  const p = scenario.residents.find(r => r.name === name);
+  if (!p || !schedule?.days) return [];
+  const [y, m] = scenario.month.split('-').map(Number);
+  const pins = scenario.pins.filter(x => x.person === name && x.type === 'halfOff');
+  return Object.keys(schedule.days).sort().filter(d => {
+    const day = schedule.days[d];
+    if (day.type === 'call' || day.type === 'postcall') return false;
+    if (!day.working.includes(name) || day.pager === name) return false;
+    if (pins.some(x => x.date === d && x.half === 'AM')) return false;
+    if (pins.some(x => x.date === d && x.half === 'PM')) return true;
+    if (p.commitments.some(c => c.date === d && c.half === 'PM')) return false;
+    const dow = new Date(y, m - 1, Number(d.slice(8))).getDay();
+    return !(p.didactics && p.didactics.dow === dow && (p.didactics.half ?? 'PM') === 'PM');
+  });
+}
+
 // Bump ONLY when the solver's or auditor's SEMANTICS change (a new/removed/reweighted rule) —
 // not for UI, packaging, or bug fixes with no effect on what an optimal schedule looks like.
 // solve() stamps every schedule it produces with this. A saved solution carrying a different stamp
 // is not used to anchor re-solve stability, so a scenario file built under older rules re-solves to
 // the NEW optimum without being cleared and re-typed first.
-export const RULES_VERSION = '1.0.1';
+export const RULES_VERSION = '1.1.0';   // v1.1.0: post-call pager across a handoff
 
 export function parseScenario(json) {
   for (const k of ['team', 'month', 'anchorType', 'residents'])
@@ -96,6 +118,11 @@ function normalize(s) {
     && Object.keys(sch.days).every(inMonth)
     && Object.keys(sch.totals ?? {}).every(n => names.has(n));
   if (!covers(s.lastSolution)) s.lastSolution = null;
+  // v1.1.0: afternoons off are a report, not a rule: fill them in for schedules saved before they existed.
+  const withPmOff = sch => {
+    for (const r of s.residents) if (sch.totals?.[r.name] && sch.totals[r.name].pmOff == null)
+      sch.totals[r.name].pmOff = afternoonsOffDates(s, sch, r.name).length;
+  };
 
   // Alternatives (docs/RULES.md §12): the tab set, in order. Each must be this month's AND built by
   // the current rules. Solution 1 is what every other tab's header compares against, and the chosen
@@ -110,11 +137,13 @@ function normalize(s) {
     s.activeSolution = 0;
     s.alternativesReason = null;
   } else {
+    ok.forEach(withPmOff);
     s.alternatives = ok;
     s.activeSolution = Number.isInteger(s.activeSolution) && ok[s.activeSolution] && sameDays(ok[s.activeSolution])
       ? s.activeSolution : active;
     if (typeof s.alternativesReason !== 'string') s.alternativesReason = null;
   }
+  if (s.lastSolution) withPmOff(s.lastSolution);
   return s;
 }
 
