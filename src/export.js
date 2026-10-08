@@ -131,17 +131,155 @@ function writeCalendar(ws, scenario, schedule, types, dates, firstDow, mrDays, t
   return row; // first row after the calendar
 }
 
+// Totals sit on top of the bonus grid (v1.2.0). Shifts / Bonus / Perks / Off + Bonus are live formulas over
+// the grid's tick boxes (green headers); every other column is the solved, static number.
+const LIVE_COLS = new Set(['shifts', 'bonus', 'perks', 'offBonus']);
+const LIVE_FILL = 'FFC6E0B4';
+const BAND_FILL = 'FFD6E7F5';
+const CONFLICT_FILL = 'FFFF0000';
+const THIN = { style: 'thin', color: { argb: 'FF7F7F7F' } };
+const BORDER = { top: THIN, left: THIN, bottom: THIN, right: THIN };
+const DOW3 = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const totalsCol = key => TOTALS_START_COL + TOTALS_COLS.findIndex(([, k]) => k === key);
+function colLetter(col) {
+  let s = '';
+  for (let n = col; n > 0; n = Math.floor((n - 1) / 26)) s = String.fromCharCode(65 + ((n - 1) % 26)) + s;
+  return s;
+}
+const colRef = (col, row) => `${colLetter(col)}${row}`;
+function styleBox(cell, { bold = false, argb = null, align = 'center' } = {}) {
+  cell.border = BORDER;
+  cell.alignment = { horizontal: align, vertical: 'middle', wrapText: true };
+  if (bold) cell.font = { ...(cell.font ?? {}), bold: true };
+  if (argb) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb } };
+}
+
 function writeTotals(ws, schedule, top) {
-  TOTALS_COLS.forEach(([label], i) => { ws.getCell(top, TOTALS_START_COL + i).value = label; });
+  TOTALS_COLS.forEach(([label, key], i) => {
+    const cell = ws.getCell(top, TOTALS_START_COL + i);
+    cell.value = label;
+    styleBox(cell, { bold: true, argb: LIVE_COLS.has(key) ? LIVE_FILL : FILLS.TYPE });
+  });
   let row = top + 1;
   for (const [name, t] of Object.entries(schedule.totals)) {
     const data = { ...t, name, offBonus: t.off + t.bonus };
     TOTALS_COLS.forEach(([, col], i) => {
-      ws.getCell(row, TOTALS_START_COL + i).value = col === 'didactics'
+      const cell = ws.getCell(row, TOTALS_START_COL + i);
+      cell.value = col === 'didactics'
         ? (t.didacticsOf == null ? t.didactics : `${t.didactics} / ${t.didacticsOf}`) : data[col] ?? '—';
+      styleBox(cell, col === 'name' ? { bold: true, align: 'left' } : {});
     });
     row++;
   }
+}
+
+// v1.2.0 bonus grid: one row per date, AM / PM / Day tick boxes per resident, under the totals. Ticks are
+// booleans (Google Sheets: select them, Insert > Checkbox); "x" also counts so Excel users can type it.
+// A Day tick = Bonus +1, Shifts -1; an AM/PM tick = Perks +1, Shifts -0.5. Existing offFree / halfOff pins
+// are pre-ticked and added back into the Shifts base, so the untouched sheet shows exactly the solved totals.
+function writeBonusGrid(ws, scenario, schedule, dates, top) {
+  const names = Object.keys(schedule.totals);
+  const byName = new Map(scenario.residents.map(r => [r.name, r]));
+  const pins = scenario.pins ?? [];
+  const titleRow = top + names.length + 2;
+  const head1 = titleRow + 1, head2 = titleRow + 2, first = titleRow + 3, last = first + dates.length - 1;
+  const dateCol = TOTALS_START_COL;
+  const helperCol = dateCol + 1 + 3 * names.length;
+  const keyCol = helperCol + 1;   // hidden "|A|B|" list the conflict rule searches
+  const tick = ref => `OR(${ref}=TRUE,${ref}="x")`;
+  const count = range => `(COUNTIF(${range},TRUE)+COUNTIF(${range},"x"))`;
+
+  ws.mergeCells(titleRow, dateCol, titleRow, helperCol);
+  const title = ws.getCell(titleRow, dateCol);
+  title.value = 'Bonus days given: tick Day = bonus day off, AM / PM = half day (perk). '
+    + 'Totals above update. Google Sheets: select the boxes, Insert > Checkbox.';
+  title.font = { bold: true };
+  title.alignment = { vertical: 'middle', wrapText: true };
+
+  ws.mergeCells(head1, dateCol, head2, dateCol);
+  ws.getCell(head1, dateCol).value = 'Date';
+  ws.mergeCells(head1, helperCol, head2, helperCol);
+  ws.getCell(head1, helperCol).value = 'Already off / PTO';
+
+  dates.forEach((date, i) => {
+    const row = first + i;
+    const dow = dowOf(date);
+    const cell = ws.getCell(row, dateCol);
+    cell.value = `${DOW3[dow]} ${Number(date.slice(5, 7))}/${Number(date.slice(8))}`;
+    styleBox(cell, { align: 'left' });
+    if (dow === 0 || dow === 6) cell.font = { bold: true, italic: true };
+    // Pinned bonus days are pre-ticked below, so they are not "already off" (that tick is the day off itself).
+    const off = (schedule.days[date]?.off ?? []).filter(n => !isBonusOff(scenario, n, date));
+    const pto = ptoNames(scenario, date);
+    const helper = ws.getCell(row, helperCol);
+    helper.value = [...off, ...pto.map(n => `PTO: ${n}`)].join(', ');
+    styleBox(helper, { align: 'left' });
+    helper.font = { italic: true, color: { argb: 'FF595959' } };
+    ws.getCell(row, keyCol).value = `|${[...off, ...pto].join('|')}|`;
+  });
+  ws.getColumn(keyCol).hidden = true;
+
+  names.forEach((name, k) => {
+    const c0 = dateCol + 1 + 3 * k;                                  // AM, PM, Day
+    const band = k % 2 === 1 ? BAND_FILL : null;
+    ws.mergeCells(head1, c0, head1, c0 + 2);
+    ws.getCell(head1, c0).value = name;
+    ['AM', 'PM', 'Day'].forEach((h, j) => { ws.getCell(head2, c0 + j).value = h; });
+
+    const r = byName.get(name);
+    let ticked = 0;                                                  // shift-equivalents pre-ticked from pins
+    dates.forEach((date, i) => {
+      const row = first + i;
+      const mine = pins.filter(p => p.person === name && p.date === date);
+      const on = !r || onService(r, date);
+      const marks = [
+        mine.some(p => p.type === 'halfOff' && (p.half ?? 'PM') === 'AM'),
+        mine.some(p => p.type === 'halfOff' && (p.half ?? 'PM') === 'PM'),
+        mine.some(p => p.type === 'offFree'),
+      ];
+      marks.forEach((m, j) => {
+        const cell = ws.getCell(row, c0 + j);
+        const live = on || m;
+        styleBox(cell, { argb: live ? band : FILLS.BLANK });
+        if (live) cell.value = m;
+        if (m) ticked += j === 2 ? 1 : 0.5;
+      });
+    });
+
+    const range = j => `${colRef(c0 + j, first)}:${colRef(c0 + j, last)}`;
+    const t = schedule.totals[name];
+    const row = top + 1 + k;
+    ws.getCell(row, totalsCol('shifts')).value = {
+      formula: `${t.shifts + ticked}-${count(range(2))}-0.5*(${count(range(0))}+${count(range(1))})`,
+      result: t.shifts,
+    };
+    ws.getCell(row, totalsCol('bonus')).value = { formula: count(range(2)), result: t.bonus };
+    ws.getCell(row, totalsCol('perks')).value =
+      { formula: `${count(range(0))}+${count(range(1))}`, result: t.perks };
+    ws.getCell(row, totalsCol('offBonus')).value = {
+      formula: `${colRef(totalsCol('off'), row)}+${colRef(totalsCol('bonus'), row)}`, result: t.off + t.bonus,
+    };
+
+    // Red flag: a tick on a day this resident is already off / on PTO, or Day plus a half day on one date.
+    const tl = colRef(c0, first);
+    const key = `$${colLetter(keyCol)}${first}`;
+    const lit = `"|${name.replace(/"/g, '""')}|"`;
+    const [am, pm, day] = [0, 1, 2].map(j => `$${colLetter(c0 + j)}${first}`);
+    const style = { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: CONFLICT_FILL } } };
+    ws.addConditionalFormatting({
+      ref: `${tl}:${colRef(c0 + 2, last)}`,
+      rules: [
+        { type: 'expression', priority: 1, formulae: [`AND(${tick(tl)},ISNUMBER(SEARCH(${lit},${key})))`], style },
+        { type: 'expression', priority: 2,
+          formulae: [`AND(${tick(tl)},${tick(day)},OR(${tick(am)},${tick(pm)}))`], style },
+      ],
+    });
+  });
+  for (let c = dateCol; c <= helperCol; c++) for (const r of [head1, head2]) {
+    const cell = ws.getCell(r, c);
+    styleBox(cell, { bold: true, argb: FILLS.TYPE });
+  }
+  return { helperCol, keyCol };
 }
 
 function writeNotes(ws, scenario, auditResult, startRow) {
@@ -167,12 +305,14 @@ function writeNotes(ws, scenario, auditResult, startRow) {
     line(w.date ? `${w.date}: ${w.message}` : w.message);
 }
 
-function formatSheet(ws) {
+function formatSheet(ws, grid) {
   ws.getColumn(1).width = 14;
   for (let col = 2; col <= 8; col++) ws.getColumn(col).width = 22;
   ws.getColumn(9).width = 2;
   const totalsWidths = [20, 10, 10, 10, 14, 10, 10, 10, 10, 14, 10];
   totalsWidths.forEach((width, i) => { ws.getColumn(TOTALS_START_COL + i).width = width; });
+  for (let col = TOTALS_START_COL + totalsWidths.length; col < grid.helperCol; col++) ws.getColumn(col).width = 8;
+  ws.getColumn(grid.helperCol).width = 22;
 
   ws.views = [{ state: 'frozen', xSplit: 1, ySplit: 1, topLeftCell: 'B2', activeCell: 'B2' }];
   ws.pageSetup = {
@@ -181,7 +321,8 @@ function formatSheet(ws) {
   };
   ws.getRow(1).height = 24;
   ws.getCell(1, 1).font = { bold: true, size: 14 };
-  ws.eachRow(row => row.eachCell(cell => {
+  ws.eachRow(row => row.eachCell((cell, col) => {
+    if (col >= TOTALS_START_COL) return;   // totals + bonus grid set their own centred alignment
     cell.alignment = { ...cell.alignment, vertical: 'top', wrapText: true };
   }));
 }
@@ -207,12 +348,20 @@ function fillSheet(ws, scenario, schedule, auditResult, version, headerLines = [
   const afterCalendar = writeCalendar(ws, scenario, schedule, types, dates, firstDow,
     new Set(morningReportDays), top);
   writeTotals(ws, schedule, top);
+  const grid = writeBonusGrid(ws, scenario, schedule, dates, top);
   writeNotes(ws, scenario, auditResult, afterCalendar);
-  formatSheet(ws);
+  formatSheet(ws, grid);
+}
+
+// The live totals carry cached results; still have Excel recompute them on open.
+function newWorkbook() {
+  const wb = new ExcelJS.Workbook();
+  wb.calcProperties = { ...wb.calcProperties, fullCalcOnLoad: true };
+  return wb;
 }
 
 export async function buildWorkbook(scenario, schedule, auditResult, version) {
-  const wb = new ExcelJS.Workbook();
+  const wb = newWorkbook();
   fillSheet(wb.addWorksheet(scenario.anchorType || 'Schedule'), scenario, schedule, auditResult, version);
   return wb;
 }
@@ -220,7 +369,7 @@ export async function buildWorkbook(scenario, schedule, auditResult, version) {
 // Every solution in one workbook, a sheet each ("Solution 1".."Solution N"), in tab order.
 // entries: [{ schedule, auditResult, headerLines }] — headerLines empty for Solution 1.
 export async function buildAllSolutionsWorkbook(scenario, entries, version) {
-  const wb = new ExcelJS.Workbook();
+  const wb = newWorkbook();
   entries.forEach(({ schedule, auditResult, headerLines }, i) =>
     fillSheet(wb.addWorksheet(`Solution ${i + 1}`), scenario, schedule, auditResult, version, headerLines));
   return wb;

@@ -755,6 +755,24 @@
         Sheets. <strong>Download &amp; open Google Sheets</strong> downloads the same workbook and opens
         a new Sheet; in Sheets, use <strong>File → Import → Upload</strong> to select the download.
       </p>
+      <h3>Bonus days given</h3>
+      <p>
+        Under the totals is a grid with one row per day and three boxes per resident:
+        <strong>AM</strong> and <strong>PM</strong> (a half day off) and <strong>Day</strong> (a whole
+        bonus day off). Tick a box and that resident's totals update on their own: a Day adds 1 to
+        <strong>Bonus</strong> and to <strong>Off + Bonus</strong> and takes 1 off <strong>Shifts</strong>;
+        an AM or PM adds 1 to <strong>Perks</strong> and takes ½ off <strong>Shifts</strong>. The columns
+        that move have <strong>green</strong> headers; Off, PTO, Pager and the rest stay as solved.
+        Bonus and half days you pinned before solving are already ticked.
+      </p>
+      <ul>
+        <li>The <strong>Already off / PTO</strong> column lists who is off that day. A box turns
+          <strong>red</strong> if you tick someone who is already off, or tick both a half and the whole day.</li>
+        <li>Grey boxes are days that resident isn't on the team.</li>
+        <li><strong>Google Sheets:</strong> the boxes arrive as TRUE / FALSE. Select the grid, then
+          <strong>Insert → Checkbox</strong> once. To clear a tick, click the box — don't press Delete,
+          which removes the checkbox itself. In Excel, type <code>x</code> (or TRUE) to tick.</li>
+      </ul>
       <h3>One solution or all of them</h3>
       <p>
         When there is more than one solution, a selector next to the export buttons lets you choose
@@ -943,6 +961,11 @@
     <section id="whatsnew">
       <h2><span class="num-badge">15</span>What's new</h2>
       <p>Newest first. The same list opens when you click the version number at the top of the app.</p>
+      <h3>1.2.0 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">· 2026-10-08</span></h3>
+      <ul>
+        <li>Spreadsheet: a “bonus days given” grid under the totals — tick Day (bonus day off) or AM / PM (half day) for anyone, and their Shifts, Bonus, Perks and Off + Bonus totals update by themselves. Days the scheduler already gave are pre-ticked; a box turns red if that person is already off that day, or if both a half and the whole day are ticked</li>
+        <li>Spreadsheet totals are boxed and colour-coded: green headers are the numbers the grid changes</li>
+      </ul>
       <h3>1.1.1 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">· 2026-10-07</span></h3>
       <ul>
         <li>User guide: the post-call pager section now explains who holds it when the day-call intern has just rotated off the team</li>

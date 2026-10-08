@@ -4,6 +4,13 @@
 // The first entry's version must equal package.json's version.
 export const CHANGELOG = [
   {
+    version: '1.2.0', date: '2026-10-08',
+    items: [
+      'Spreadsheet: a “bonus days given” grid under the totals — tick Day (bonus day off) or AM / PM (half day) for anyone, and their Shifts, Bonus, Perks and Off + Bonus totals update by themselves. Days the scheduler already gave are pre-ticked; a box turns red if that person is already off that day, or if both a half and the whole day are ticked',
+      'Spreadsheet totals are boxed and colour-coded: green headers are the numbers the grid changes',
+    ],
+  },
+  {
     version: '1.1.1', date: '2026-10-07',
     items: [
       'User guide: the post-call pager section now explains who holds it when the day-call intern has just rotated off the team',
