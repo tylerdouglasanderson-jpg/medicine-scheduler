@@ -381,7 +381,7 @@ input[type="checkbox"] { accent-color: var(--accent); min-height: auto; width: a
 /* ---- one-time "save my month" hint + "send it to us" prompts ---- */
 .save-hint {
   display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem;
-  background: var(--accent-weak); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+  background: var(--accent-weak); border: 1px solid var(--accent);
   border-radius: 8px; padding: 0.6rem 0.85rem; margin-bottom: 0.9rem;
 }
 .save-hint p { margin: 0; flex: 1 1 22rem; color: var(--ink); }
@@ -510,7 +510,7 @@ dialog#feedback-dialog::backdrop { background: oklch(0.2 0.02 255 / 0.5); }
 .totals-scroll { margin-bottom: 0.75rem; }
 .totals-scroll .totals-table { margin-bottom: 0; }
 .warnings-panel {
-  background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--warn-border);
+  background: var(--surface); border: 1px solid var(--warn-border);
   border-radius: 10px; padding: 1rem 1.15rem; margin-bottom: 1rem;
 }
 .warnings-panel h2 { font-size: var(--fs-h2); margin: 0 0 0.4rem; }
@@ -531,7 +531,6 @@ dialog#feedback-dialog::backdrop { background: oklch(0.2 0.02 255 / 0.5); }
 .warnings-panel li.warning.violation { color: var(--danger); font-weight: 500; }
 .stale-rules {
   border: 1px solid var(--warn);
-  border-left-width: 3px;
   border-radius: var(--radius);
   padding: 0.6rem 0.8rem;
   margin-bottom: 0.9rem;
@@ -597,7 +596,7 @@ dialog#feedback-dialog::backdrop { background: oklch(0.2 0.02 255 / 0.5); }
 .solution-progress { margin-left: 0.5rem; font-size: var(--fs-small); color: var(--muted); }
 .solution-reason { margin: 0 0 0.75rem; font-size: var(--fs-small); color: var(--ink-2); }
 .solution-header {
-  background: var(--accent-weak); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+  background: var(--accent-weak); border: 1px solid var(--accent);
   border-radius: 6px; padding: 0.5rem 0.8rem; margin-bottom: 0.9rem;
 }
 .solution-header p { margin: 0; font-size: var(--fs-small); color: var(--ink); }
