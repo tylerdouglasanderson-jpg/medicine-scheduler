@@ -179,23 +179,23 @@ export function renderCalendar(scenario, schedule) {
 }
 
 const TOTALS_COLS = [
-  ['Resident', 'name'], ['Shifts', 'shifts'], ['Pager', 'pager'], ['Clinic', 'clinic'],
-  ['Didactics', 'didactics'], ['Off', 'off'], ['PTO', 'pto'], ['Bonus', 'bonus'],
-  ['Perks', 'perks'], ['Off + Bonus', 'offBonus'], ['PM off', 'pmOff'],   // PM off: v1.1.0
+  ['Resident', 'name'], ['Shifts', 'shifts'], ['Pager', 'pager'], ['Clinic/Obligation', 'clinic'],
+  ['Didactics', 'didactics'], ['Off', 'off'], ['PTO', 'pto'], ['Days', 'bonus'],   // v1.3.0: Bonus -> Days (whole days off)
+  ['Perks (half days)', 'perks'], ['Off + Bonus', 'offBonus'], ['PM off', 'pmOff'],   // PM off: v1.1.0
 ];
 // Plain-words meaning of each column (mirrors solve.js totals and the guide's "Totals table").
 export const TOTALS_HELP = {
   name: 'The resident.',
   shifts: 'Days they worked on the team this month. A day with a half day off counts as half a shift.',
   pager: 'Days they held the team pager.',
-  clinic: 'Clinic commitments that fell on a day they were working, so they went.',
+  clinic: 'Clinic and other obligations (ITE, conference…) that fell on a day they were working, so they went.',
   didactics: 'Didactics sessions attended out of the sessions they could attend. Call, post-call and PTO days ' +
     'are left out. Holding the pager still counts as attending.',
   off: 'Whole days off that count toward their quota. Bonus days and half days are not in this number.',
   pto: 'Leave days that fall while they are on the team.',
   bonus: 'Extra free whole days off (pinned as free / bonus). They do not count toward the quota.',
   perks: 'Half days off. Each one is an extra freebie: never counted in Off, and two halves do not make a day off.',
-  offBonus: 'All whole days off: counted offs plus bonus days. Half days are not included.',
+  offBonus: 'All days off: counted offs plus bonus days plus half days (Perks) at half a day each.',
   pmOff: 'Afternoons off: days they rounded in the morning with nothing in the afternoon (no pager, clinic, ' +
     'didactics or other PM block). Weekends count; call and post-call days never do. For information only.',
 };
@@ -227,7 +227,7 @@ export function renderTotals(schedule) {
 
   const tbody = document.createElement('tbody');
   for (const [name, t] of Object.entries(schedule.totals)) {
-    const row = { ...t, name, offBonus: t.off + t.bonus };
+    const row = { ...t, name, offBonus: t.off + t.bonus + 0.5 * t.perks };
     const tr = document.createElement('tr');
     for (const [, col] of TOTALS_COLS) {
       const td = document.createElement('td');

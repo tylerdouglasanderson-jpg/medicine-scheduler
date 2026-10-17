@@ -15,9 +15,9 @@ const FILLS = {
   CLINIC: 'FFFFE699', DIDACTICS: 'FFF8CBAD', PTO: 'FFFFC000', OFF: 'FFF4B8C1', BLANK: 'FF595959',
 };
 const TOTALS_COLS = [
-  ['Resident', 'name'], ['Shifts', 'shifts'], ['Pager', 'pager'], ['Clinic', 'clinic'],
-  ['Didactics', 'didactics'], ['Off', 'off'], ['PTO', 'pto'], ['Bonus', 'bonus'],
-  ['Perks', 'perks'], ['Off + Bonus', 'offBonus'], ['PM off', 'pmOff'],   // PM off: v1.1.0
+  ['Resident', 'name'], ['Shifts', 'shifts'], ['Pager', 'pager'], ['Clinic/Obligation', 'clinic'],
+  ['Didactics', 'didactics'], ['Off', 'off'], ['PTO', 'pto'], ['Days', 'bonus'],   // v1.3.0: Bonus -> Days
+  ['Perks (half days)', 'perks'], ['Off + Bonus', 'offBonus'], ['PM off', 'pmOff'],   // PM off: v1.1.0
 ];
 const TOTALS_START_COL = 10; // column J
 const MR_FONT = 'FF7030A0';  // Morning-Report label — matches the app's --cal-mr
@@ -30,8 +30,14 @@ function fill(cell, argb) {
   cell.alignment = { vertical: 'top', wrapText: true };
 }
 
-function hasHalfOff(scenario, person, date) {
-  return (scenario.pins ?? []).some(p => p.type === 'halfOff' && p.person === person && p.date === date);
+function halfOffPins(scenario, person, date) {
+  return (scenario.pins ?? []).filter(p => p.type === 'halfOff' && p.person === person && p.date === date);
+}
+// AM and PM both pinned the same day: one line, tagged so the Perks formula can count the second half.
+const BOTH_HALVES = ' (AM+PM)';
+function halfOffTag(scenario, person, date) {
+  const halves = new Set(halfOffPins(scenario, person, date).map(p => p.half ?? 'PM'));
+  return halves.size === 0 ? '' : ` - 1/2 off${halves.size > 1 ? BOTH_HALVES : ''}`;
 }
 function isBonusOff(scenario, person, date) {
   return (scenario.pins ?? []).some(p => p.type === 'offFree' && p.person === person && p.date === date);
@@ -44,7 +50,7 @@ function rounderLines(date, type, dd, scenario) {
   } else if (type === 'postcall') {
     for (const n of dd.working) lines.push(`${n} (postcall)`);
   } else {
-    for (const n of dd.working) lines.push(hasHalfOff(scenario, n, date) ? `${n} - 1/2 off` : n);
+    for (const n of dd.working) lines.push(`${n}${halfOffTag(scenario, n, date)}`);
   }
   for (const note of scenario.notes ?? []) if (note.date === date) lines.push(note.text);
   return lines;
@@ -131,15 +137,20 @@ function writeCalendar(ws, scenario, schedule, types, dates, firstDow, mrDays, t
   return row; // first row after the calendar
 }
 
-// Totals sit on top of the bonus grid (v1.2.0). Shifts / Bonus / Perks / Off + Bonus are live formulas over
-// the grid's tick boxes (green headers); every other column is the solved, static number.
-const LIVE_COLS = new Set(['shifts', 'bonus', 'perks', 'offBonus']);
+// v1.3.0: every number in the totals box is a live formula. Counts read the calendar block above (so a hand
+// edit to a cell moves them) and the Days / Perks columns also add the AM / PM / Day tick boxes in the grid.
+// Resident names are matched with SEARCH, so one name inside another would double count; fillSheet warns.
 const LIVE_FILL = 'FFC6E0B4';
+const INPUT_FILL = 'FFFFE699';
 const BAND_FILL = 'FFD6E7F5';
 const CONFLICT_FILL = 'FFFF0000';
+const TODAY_DATE_FILL = 'FFB4A7D6';  // today's DATE cell (lavender, bold; echoes the Morning Report purple)
+const TODAY_DAY_FILL = 'FFD9D2E9';   // the rest of today's column (pale, keeps the text legible)
 const THIN = { style: 'thin', color: { argb: 'FF7F7F7F' } };
 const BORDER = { top: THIN, left: THIN, bottom: THIN, right: THIN };
 const DOW3 = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAY_LIST = '{"Sun","Mon","Tue","Wed","Thu","Fri","Sat"}';
+const DAY_HELPER_COL = TOTALS_START_COL + TOTALS_COLS.length;   // "Didactics day" input, one past PM off
 const totalsCol = key => TOTALS_START_COL + TOTALS_COLS.findIndex(([, k]) => k === key);
 function colLetter(col) {
   let s = '';
@@ -154,44 +165,126 @@ function styleBox(cell, { bold = false, argb = null, align = 'center' } = {}) {
   if (argb) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb } };
 }
 
-function writeTotals(ws, schedule, top) {
+// Where the grid sits: under the header, one row per resident and a blank row.
+function gridGeometry(n, top, nDates) {
+  const titleRow = top + n + 2;
+  const first = titleRow + 3;
+  return { titleRow, head1: titleRow + 1, head2: titleRow + 2, first, last: first + nDates - 1 };
+}
+const tickCol = (k, j) => TOTALS_START_COL + 1 + 3 * k + j;   // j: 0 AM, 1 PM, 2 Day
+
+// Names that sit inside another name (SEARCH would count them twice).
+export function nameOverlaps(names) {
+  const out = [];
+  for (const a of names) for (const b of names)
+    if (a !== b && a.trim() && a.toLowerCase().includes(b.trim().toLowerCase())) out.push(`${b} is inside ${a}`);
+  return out;
+}
+
+// Formulas for one resident's row. `cal` is the calendar's first / last row; calendar rows run
+// DATE TYPE ROUNDERS PAGER CLINIC DIDACTICS PTO OFF, so TYPE = a+1 ... and the other rows are fixed offsets.
+function residentFormulas(cal, geo, row, k, { hasDidactics, didacticsOf = null }) {
+  const { a, z } = cal;
+  const name = `$${colLetter(TOTALS_START_COL)}${row}`;
+  const day = `$${colLetter(DAY_HELPER_COL)}${row}`;
+  const labels = `$A$${a}:$A$${z}`;
+  const rng = (lo, hi) => `$B$${lo}:$H$${hi}`;
+  const count = (label, tag = '') =>
+    `SUMPRODUCT((${labels}="${label}")*ISNUMBER(SEARCH(${name}${tag ? `&"${tag}"` : ''},${rng(a, z)})))`;
+  const ticks = j => {
+    const L = colLetter(tickCol(k, j));
+    const rg = `${L}$${geo.first}:${L}$${geo.last}`;
+    return `(COUNTIF(${rg},TRUE)+COUNTIF(${rg},"x"))`;
+  };
+  const dayIs = (lo, hi) => `COLUMN(${rng(lo, hi)})-1`;
+  const dayIdx = `MATCH(${day},${DAY_LIST},0)`;
+  const typeRows = [a + 1, z - 6];                       // TYPE rows, B..H
+  const typeCell = `${rng(...typeRows)}`;
+  const notCall = `(${typeCell}<>"CALL")*(${typeCell}<>"PC")`;
+  const attended = count('DIDACTICS');
+  // The "of N" counts the weekday's days on service; the calendar cannot show a split-seat window, so a
+  // resident who is not on service all month gets the solver's N as a constant.
+  const didactics = !hasDidactics ? attended : didacticsOf != null
+    ? `${attended}&" / "&${didacticsOf}`
+    : `${attended}&" / "&SUMPRODUCT(($A$${a + 1}:$A$${z - 6}="TYPE")`
+      + `*(${typeCell}<>"")*${notCall}*(${dayIs(...typeRows)}=${dayIdx})`
+      + `*(1-ISNUMBER(SEARCH(${name},${rng(a + 6, z - 1)}))))`;
+  const pmOff = `SUMPRODUCT((${`$A$${a + 2}:$A$${z - 5}`}="ROUNDERS")*ISNUMBER(SEARCH(${name},${rng(a + 2, z - 5)}))`
+    + `*${notCall}*(1-ISNUMBER(SEARCH(${name},${rng(a + 3, z - 4)})))*(1-ISNUMBER(SEARCH(${name},${rng(a + 4, z - 3)})))`
+    + `${hasDidactics ? `*(${dayIs(a + 2, z - 5)}<>${dayIdx})` : ''})`;
+  const offCol = colRef(totalsCol('off'), row), bonusCol = colRef(totalsCol('bonus'), row), perksCol = colRef(totalsCol('perks'), row);
+  return {
+    shifts: `${count('ROUNDERS')}-0.5*${count('ROUNDERS', ' - 1/2 off')}-${ticks(2)}-0.5*(${ticks(0)}+${ticks(1)})`,
+    pager: count('PAGER'),
+    clinic: count('CLINIC'),
+    didactics,
+    off: `${count('OFF')}-${count('OFF', ' (bonus)')}`,
+    pto: count('PTO'),
+    bonus: `${ticks(2)}+${count('OFF', ' (bonus)')}`,
+    perks: `${ticks(0)}+${ticks(1)}+${count('ROUNDERS', ' - 1/2 off')}+${count('ROUNDERS', ` - 1/2 off${BOTH_HALVES}`)}`,
+    offBonus: `${offCol}+${bonusCol}+0.5*${perksCol}`,   // a half day counts as half
+    pmOff,
+  };
+}
+
+function writeTotals(ws, scenario, schedule, dates, top, cal, geo) {
   TOTALS_COLS.forEach(([label, key], i) => {
     const cell = ws.getCell(top, TOTALS_START_COL + i);
     cell.value = label;
-    styleBox(cell, { bold: true, argb: LIVE_COLS.has(key) ? LIVE_FILL : FILLS.TYPE });
+    styleBox(cell, { bold: true, argb: key === 'name' ? FILLS.TYPE : LIVE_FILL });
   });
-  let row = top + 1;
-  for (const [name, t] of Object.entries(schedule.totals)) {
-    const data = { ...t, name, offBonus: t.off + t.bonus };
-    TOTALS_COLS.forEach(([, col], i) => {
-      const cell = ws.getCell(row, TOTALS_START_COL + i);
-      cell.value = col === 'didactics'
-        ? (t.didacticsOf == null ? t.didactics : `${t.didactics} / ${t.didacticsOf}`) : data[col] ?? '—';
-      styleBox(cell, col === 'name' ? { bold: true, align: 'left' } : {});
-    });
-    row++;
-  }
+  // "Bonus/Off" sits over the two columns that come from the grid (Days = full days, Perks = half days).
+  ws.mergeCells(top - 1, totalsCol('bonus'), top - 1, totalsCol('perks'));
+  const over = ws.getCell(top - 1, totalsCol('bonus'));
+  over.value = 'Bonus/Off';
+  styleBox(over, { bold: true, argb: FILLS.TYPE });
+  const dh = ws.getCell(top, DAY_HELPER_COL);
+  dh.value = 'Didactics day';
+  styleBox(dh, { bold: true, argb: INPUT_FILL });
+
+  const byName = new Map(scenario.residents.map(r => [r.name, r]));
+  const names = Object.keys(schedule.totals);
+  names.forEach((name, k) => {
+    const t = schedule.totals[name];
+    const r = byName.get(name);
+    const row = top + 1 + k;
+    const fullMonth = !r || (r.serviceStart <= dates[0] && r.serviceEnd >= dates.at(-1));
+    const f = residentFormulas(cal, geo, row, k,
+      { hasDidactics: !!r?.didactics, didacticsOf: fullMonth ? null : t.didacticsOf });
+    ws.getCell(row, TOTALS_START_COL).value = name;
+    styleBox(ws.getCell(row, TOTALS_START_COL), { bold: true, align: 'left' });
+    const values = {
+      shifts: t.shifts, pager: t.pager, clinic: t.clinic, off: t.off, pto: t.pto, bonus: t.bonus,
+      perks: t.perks, offBonus: t.off + t.bonus + 0.5 * t.perks, pmOff: t.pmOff ?? 0,
+      didactics: t.didacticsOf == null ? t.didactics : `${t.didactics} / ${t.didacticsOf}`,
+    };
+    for (const [key, formula] of Object.entries(f)) {
+      const cell = ws.getCell(row, totalsCol(key));
+      cell.value = { formula, result: values[key] };
+      styleBox(cell);
+    }
+    const day = ws.getCell(row, DAY_HELPER_COL);
+    day.value = r?.didactics ? DOW3[r.didactics.dow] : '';
+    styleBox(day, { argb: INPUT_FILL });
+  });
 }
 
-// v1.2.0 bonus grid: one row per date, AM / PM / Day tick boxes per resident, under the totals. Ticks are
-// booleans (Google Sheets: select them, Insert > Checkbox); "x" also counts so Excel users can type it.
-// A Day tick = Bonus +1, Shifts -1; an AM/PM tick = Perks +1, Shifts -0.5. Existing offFree / halfOff pins
-// are pre-ticked and added back into the Shifts base, so the untouched sheet shows exactly the solved totals.
-function writeBonusGrid(ws, scenario, schedule, dates, top) {
+// Bonus grid: one row per date, AM / PM / Day tick boxes per resident, under the totals. Ticks are booleans
+// (Google Sheets: select them, Insert > Checkbox); "x" also counts so Excel users can type it. A Day tick adds
+// a Days (bonus day off) and takes a Shift; an AM/PM tick adds a Perk (half day) and takes half a Shift. The
+// grid starts empty: days already given are in the calendar as "(bonus)" / "1/2 off" and counted from there.
+function writeBonusGrid(ws, scenario, schedule, dates, geo) {
   const names = Object.keys(schedule.totals);
   const byName = new Map(scenario.residents.map(r => [r.name, r]));
-  const pins = scenario.pins ?? [];
-  const titleRow = top + names.length + 2;
-  const head1 = titleRow + 1, head2 = titleRow + 2, first = titleRow + 3, last = first + dates.length - 1;
+  const { titleRow, head1, head2, first } = geo;
   const dateCol = TOTALS_START_COL;
   const helperCol = dateCol + 1 + 3 * names.length;
-  const keyCol = helperCol + 1;   // hidden "|A|B|" list the conflict rule searches
+  const keyCol = Math.max(helperCol, DAY_HELPER_COL) + 1;   // hidden "|A|B|" list the conflict rule searches
   const tick = ref => `OR(${ref}=TRUE,${ref}="x")`;
-  const count = range => `(COUNTIF(${range},TRUE)+COUNTIF(${range},"x"))`;
 
   ws.mergeCells(titleRow, dateCol, titleRow, helperCol);
   const title = ws.getCell(titleRow, dateCol);
-  title.value = 'Bonus days given: tick Day = bonus day off, AM / PM = half day (perk). '
+  title.value = 'Bonus days given: tick Day = bonus day off (Days), AM / PM = half day (Perks). '
     + 'Totals above update. Google Sheets: select the boxes, Insert > Checkbox.';
   title.font = { bold: true };
   title.alignment = { vertical: 'middle', wrapText: true };
@@ -208,8 +301,7 @@ function writeBonusGrid(ws, scenario, schedule, dates, top) {
     cell.value = `${DOW3[dow]} ${Number(date.slice(5, 7))}/${Number(date.slice(8))}`;
     styleBox(cell, { align: 'left' });
     if (dow === 0 || dow === 6) cell.font = { bold: true, italic: true };
-    // Pinned bonus days are pre-ticked below, so they are not "already off" (that tick is the day off itself).
-    const off = (schedule.days[date]?.off ?? []).filter(n => !isBonusOff(scenario, n, date));
+    const off = schedule.days[date]?.off ?? [];
     const pto = ptoNames(scenario, date);
     const helper = ws.getCell(row, helperCol);
     helper.value = [...off, ...pto.map(n => `PTO: ${n}`)].join(', ');
@@ -220,45 +312,22 @@ function writeBonusGrid(ws, scenario, schedule, dates, top) {
   ws.getColumn(keyCol).hidden = true;
 
   names.forEach((name, k) => {
-    const c0 = dateCol + 1 + 3 * k;                                  // AM, PM, Day
+    const c0 = tickCol(k, 0);                                        // AM, PM, Day
     const band = k % 2 === 1 ? BAND_FILL : null;
     ws.mergeCells(head1, c0, head1, c0 + 2);
     ws.getCell(head1, c0).value = name;
     ['AM', 'PM', 'Day'].forEach((h, j) => { ws.getCell(head2, c0 + j).value = h; });
 
     const r = byName.get(name);
-    let ticked = 0;                                                  // shift-equivalents pre-ticked from pins
     dates.forEach((date, i) => {
       const row = first + i;
-      const mine = pins.filter(p => p.person === name && p.date === date);
       const on = !r || onService(r, date);
-      const marks = [
-        mine.some(p => p.type === 'halfOff' && (p.half ?? 'PM') === 'AM'),
-        mine.some(p => p.type === 'halfOff' && (p.half ?? 'PM') === 'PM'),
-        mine.some(p => p.type === 'offFree'),
-      ];
-      marks.forEach((m, j) => {
+      for (let j = 0; j < 3; j++) {
         const cell = ws.getCell(row, c0 + j);
-        const live = on || m;
-        styleBox(cell, { argb: live ? band : FILLS.BLANK });
-        if (live) cell.value = m;
-        if (m) ticked += j === 2 ? 1 : 0.5;
-      });
+        styleBox(cell, { argb: on ? band : FILLS.BLANK });
+        if (on) cell.value = false;
+      }
     });
-
-    const range = j => `${colRef(c0 + j, first)}:${colRef(c0 + j, last)}`;
-    const t = schedule.totals[name];
-    const row = top + 1 + k;
-    ws.getCell(row, totalsCol('shifts')).value = {
-      formula: `${t.shifts + ticked}-${count(range(2))}-0.5*(${count(range(0))}+${count(range(1))})`,
-      result: t.shifts,
-    };
-    ws.getCell(row, totalsCol('bonus')).value = { formula: count(range(2)), result: t.bonus };
-    ws.getCell(row, totalsCol('perks')).value =
-      { formula: `${count(range(0))}+${count(range(1))}`, result: t.perks };
-    ws.getCell(row, totalsCol('offBonus')).value = {
-      formula: `${colRef(totalsCol('off'), row)}+${colRef(totalsCol('bonus'), row)}`, result: t.off + t.bonus,
-    };
 
     // Red flag: a tick on a day this resident is already off / on PTO, or Day plus a half day on one date.
     const tl = colRef(c0, first);
@@ -267,7 +336,7 @@ function writeBonusGrid(ws, scenario, schedule, dates, top) {
     const [am, pm, day] = [0, 1, 2].map(j => `$${colLetter(c0 + j)}${first}`);
     const style = { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: CONFLICT_FILL } } };
     ws.addConditionalFormatting({
-      ref: `${tl}:${colRef(c0 + 2, last)}`,
+      ref: `${tl}:${colRef(c0 + 2, geo.last)}`,
       rules: [
         { type: 'expression', priority: 1, formulae: [`AND(${tick(tl)},ISNUMBER(SEARCH(${lit},${key})))`], style },
         { type: 'expression', priority: 2,
@@ -282,7 +351,7 @@ function writeBonusGrid(ws, scenario, schedule, dates, top) {
   return { helperCol, keyCol };
 }
 
-function writeNotes(ws, scenario, auditResult, startRow) {
+function writeNotes(ws, scenario, auditResult, startRow, overlaps = []) {
   let row = startRow + 1;
   const line = (value, bold = false) => {
     ws.mergeCells(row, 1, row, 8);
@@ -299,6 +368,7 @@ function writeNotes(ws, scenario, auditResult, startRow) {
     const stop = r.didactics.hard ? 'hard stop' : 'soft stop';
     line(`${r.name}: ${DOW_NAMES[r.didactics.dow]} didactics (${stop})`);
   }
+  if (overlaps.length) line(`Name overlap (the live totals match names as text and will double count): ${overlaps.join('; ')}`);
   row++;
   line('Potential Issues', true);
   for (const w of auditResult.warnings)
@@ -309,7 +379,7 @@ function formatSheet(ws, grid) {
   ws.getColumn(1).width = 14;
   for (let col = 2; col <= 8; col++) ws.getColumn(col).width = 22;
   ws.getColumn(9).width = 2;
-  const totalsWidths = [20, 10, 10, 10, 14, 10, 10, 10, 10, 14, 10];
+  const totalsWidths = [20, 10, 10, 14, 14, 10, 10, 10, 14, 14, 10, 12];
   totalsWidths.forEach((width, i) => { ws.getColumn(TOTALS_START_COL + i).width = width; });
   for (let col = TOTALS_START_COL + totalsWidths.length; col < grid.helperCol; col++) ws.getColumn(col).width = 8;
   ws.getColumn(grid.helperCol).width = 22;
@@ -325,6 +395,23 @@ function formatSheet(ws, grid) {
     if (col >= TOTALS_START_COL) return;   // totals + bonus grid set their own centred alignment
     cell.alignment = { ...cell.alignment, vertical: 'top', wrapText: true };
   }));
+}
+
+// Conditional format: today's day in the calendar (the DATE cell darker and bold, the rest of that day's
+// 8-row column pale). Live formulas, so the highlight moves each day; only the month shown in A1 lights up.
+// Excel and Google Sheets both ignore a conditional border here, so shading is the only marker.
+function highlightToday(ws, top, last) {
+  const thisMonth = 'LEFT($A$1,LEN(TEXT(TODAY(),"MMMM YYYY")))=TEXT(TODAY(),"MMMM YYYY")';
+  const dayOf = `IFERROR(VALUE(INDEX($B$1:$H$${last},ROW()-MOD(ROW()-${top},8),COLUMN()-1)&""),0)=DAY(TODAY())`;
+  const style = argb => ({ fill: { type: 'pattern', pattern: 'solid', bgColor: { argb } } });
+  ws.addConditionalFormatting({
+    ref: `B${top}:H${last}`,
+    rules: [
+      { type: 'expression', priority: 1, formulae: [`AND(MOD(ROW()-${top},8)=0,${thisMonth},${dayOf})`],
+        style: { ...style(TODAY_DATE_FILL), font: { bold: true } } },
+      { type: 'expression', priority: 2, formulae: [`AND(${thisMonth},${dayOf})`], style: style(TODAY_DAY_FILL) },
+    ],
+  });
 }
 
 // One schedule onto one worksheet. `headerLines` (an alternative's "how it differs from Solution 1")
@@ -347,9 +434,12 @@ function fillSheet(ws, scenario, schedule, auditResult, version, headerLines = [
 
   const afterCalendar = writeCalendar(ws, scenario, schedule, types, dates, firstDow,
     new Set(morningReportDays), top);
-  writeTotals(ws, schedule, top);
-  const grid = writeBonusGrid(ws, scenario, schedule, dates, top);
-  writeNotes(ws, scenario, auditResult, afterCalendar);
+  const cal = { a: top, z: afterCalendar - 1 };
+  highlightToday(ws, top, afterCalendar - 1);
+  const geo = gridGeometry(Object.keys(schedule.totals).length, top, dates.length);
+  writeTotals(ws, scenario, schedule, dates, top, cal, geo);
+  const grid = writeBonusGrid(ws, scenario, schedule, dates, geo);
+  writeNotes(ws, scenario, auditResult, afterCalendar, nameOverlaps(Object.keys(schedule.totals)));
   formatSheet(ws, grid);
 }
 

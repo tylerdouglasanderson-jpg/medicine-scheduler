@@ -4,6 +4,15 @@
 // The first entry's version must equal package.json's version.
 export const CHANGELOG = [
   {
+    version: '1.3.0', date: '2026-10-17',
+    items: [
+      'Spreadsheet: every total in the box is now a live formula over the calendar — Shifts, Pager, Clinic/Obligation, Didactics, Off, PTO, Days, Perks (half days), Off + Bonus and PM off — so editing the calendar by hand keeps the totals right',
+      'Spreadsheet: today is highlighted on the calendar (the date cell darker and bold, the rest of that day pale) and moves on by itself each day',
+      'Spreadsheet: Bonus is now Days and Perks is Perks (half days) under a shared Bonus/Off header; Clinic is renamed Clinic/Obligation; Off + Bonus counts each half day (Perks) as half a day',
+      'Spreadsheet: the bonus-days grid now starts empty (days the scheduler already gave are counted from the calendar, shown as “(bonus)” and “1/2 off”)',
+    ],
+  },
+  {
     version: '1.2.0', date: '2026-10-08',
     items: [
       'Spreadsheet: a “bonus days given” grid under the totals — tick Day (bonus day off) or AM / PM (half day) for anyone, and their Shifts, Bonus, Perks and Off + Bonus totals update by themselves. Days the scheduler already gave are pre-ticked; a box turns red if that person is already off that day, or if both a half and the whole day are ticked',

@@ -90,7 +90,7 @@ describe('afternoons off on a solved month (feb-2026)', () => {
     ws.eachRow((row, n) => row.eachCell((c, col) => { if (c.value === 'PM off') hit = { n, col }; }));
     expect(hit).not.toBeNull();
     const r = s.residents[0].name;
-    expect(ws.getCell(hit.n + 1, hit.col).value).toBe(sched.totals[r].pmOff);
+    expect(ws.getCell(hit.n + 1, hit.col).value.result).toBe(sched.totals[r].pmOff);   // formula, cached result
   });
 });
 

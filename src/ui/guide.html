@@ -724,12 +724,12 @@
           <tbody>
             <tr><td><strong class="num">Shifts</strong></td><td>Days worked; a half-off day counts as 0.5.</td></tr>
             <tr><td><strong class="num">Pager</strong></td><td>Days holding the pager.</td></tr>
-            <tr><td><strong class="num">Clinic</strong></td><td>Committed half-days actually worked.</td></tr>
+            <tr><td><strong class="num">Clinic/Obligation</strong></td><td>Committed half-days (clinic, ITE, other obligations) actually worked.</td></tr>
             <tr><td><strong class="num">Didactics</strong></td><td>Sessions attended, over the sessions this month could offer them — e.g. <strong>3 / 4</strong>. The denominator drops call days and PTO, which nothing can fix. Holding the pager still counts as attended (they go and step out if needed); hover the cell to see how many were like that.</td></tr>
             <tr><td><strong class="num">Off</strong></td><td>Counted whole days off — this is what meets the quota. Half days never count here.</td></tr>
             <tr><td><strong class="num">PTO</strong></td><td>Leave days.</td></tr>
-            <tr><td><strong class="num">Bonus</strong></td><td>Free/bonus offs that don't count against quota.</td></tr>
-            <tr><td><strong class="num">Perks</strong></td><td>Half days off — extra freebies on top of the quota.</td></tr>
+            <tr><td><strong class="num">Days</strong></td><td>Free/bonus whole days off (the Bonus days) that don't count against quota.</td></tr>
+            <tr><td><strong class="num">Perks (half days)</strong></td><td>Half days off — extra freebies on top of the quota.</td></tr>
             <tr><td><strong class="num">Off + Bonus</strong></td><td>Total rest days off.</td></tr>
             <tr><td><strong class="num">PM off</strong></td><td>Afternoons off: days they rounded in the morning with nothing in the afternoon — no pager, clinic, didactics or other PM block (e.g. an ITE). Weekends count; call and post-call days never do. A PM half day off counts. For information only — the scheduler does not solve for it. Also shown per person in the solution comparison.</td></tr>
           </tbody>
@@ -760,10 +760,16 @@
         Under the totals is a grid with one row per day and three boxes per resident:
         <strong>AM</strong> and <strong>PM</strong> (a half day off) and <strong>Day</strong> (a whole
         bonus day off). Tick a box and that resident's totals update on their own: a Day adds 1 to
-        <strong>Bonus</strong> and to <strong>Off + Bonus</strong> and takes 1 off <strong>Shifts</strong>;
-        an AM or PM adds 1 to <strong>Perks</strong> and takes ½ off <strong>Shifts</strong>. The columns
-        that move have <strong>green</strong> headers; Off, PTO, Pager and the rest stay as solved.
-        Bonus and half days you pinned before solving are already ticked.
+        <strong>Days</strong> and to <strong>Off + Bonus</strong> and takes 1 off <strong>Shifts</strong>;
+        an AM or PM adds 1 to <strong>Perks (half days)</strong> and takes ½ off <strong>Shifts</strong>.
+        <strong>Days</strong> and <strong>Perks (half days)</strong> sit under one <strong>Bonus/Off</strong>
+        header; <strong>Off + Bonus</strong> is every day off: Off + Days + half of Perks (a half day counts as ½). Every total in the box is a live
+        formula over the calendar, so editing a name in the calendar (say, deleting an OFF cell) moves the
+        totals too. The grid starts empty — bonus and
+        half days you pinned before solving are already written into the calendar and counted from there.
+        <strong>PM off</strong> is read from the calendar text, so it can differ slightly from the on-screen
+        number (it cannot see a morning-only commitment). <strong>Didactics day</strong> (the column to the
+        right) is an input: change it if a resident's didactics weekday changes.
       </p>
       <ul>
         <li>The <strong>Already off / PTO</strong> column lists who is off that day. A box turns
@@ -961,6 +967,13 @@
     <section id="whatsnew">
       <h2><span class="num-badge">15</span>What's new</h2>
       <p>Newest first. The same list opens when you click the version number at the top of the app.</p>
+      <h3>1.3.0 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">· 2026-10-17</span></h3>
+      <ul>
+        <li>Spreadsheet: every total in the box is now a live formula over the calendar — Shifts, Pager, Clinic/Obligation, Didactics, Off, PTO, Days, Perks (half days), Off + Bonus and PM off — so editing the calendar by hand keeps the totals right</li>
+        <li>Spreadsheet: today is highlighted on the calendar (the date cell darker and bold, the rest of that day pale) and moves on by itself each day</li>
+        <li>Spreadsheet: Bonus is now Days and Perks is Perks (half days) under a shared Bonus/Off header; Clinic is renamed Clinic/Obligation; Off + Bonus counts each half day (Perks) as half a day</li>
+        <li>Spreadsheet: the bonus-days grid now starts empty (days the scheduler already gave are counted from the calendar, shown as “(bonus)” and “1/2 off”)</li>
+      </ul>
       <h3>1.2.0 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">· 2026-10-08</span></h3>
       <ul>
         <li>Spreadsheet: a “bonus days given” grid under the totals — tick Day (bonus day off) or AM / PM (half day) for anyone, and their Shifts, Bonus, Perks and Off + Bonus totals update by themselves. Days the scheduler already gave are pre-ticked; a box turns red if that person is already off that day, or if both a half and the whole day are ticked</li>

@@ -97,7 +97,7 @@ describe('totals table', () => {
       expect(desc.hidden).toBe(true);
     }
     const byLabel = label => ths.find(th => th.firstChild.textContent === label);
-    expect(byLabel('Perks').title).toMatch(/half days off/i);
+    expect(byLabel('Perks (half days)').title).toMatch(/half days off/i);
     expect(byLabel('Off').title).toMatch(/half days are not/i);
   });
 
