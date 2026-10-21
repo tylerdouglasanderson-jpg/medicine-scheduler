@@ -144,6 +144,16 @@ function buildWeeks(dates, firstDow) {
 function renderWeek(week, scenario, schedule, types, mrDays) {
   const table = document.createElement('table');
   table.className = 'week';
+  const thead = table.createTHead();
+  const hr = thead.insertRow();
+  hr.className = 'dow-head';
+  hr.appendChild(document.createElement('th'));
+  for (const name of DOW_NAMES) {
+    const th = document.createElement('th');
+    th.scope = 'col';
+    th.textContent = name[0] + name.slice(1).toLowerCase();
+    hr.appendChild(th);
+  }
   for (const row of ROWS) {
     const tr = document.createElement('tr');
     const th = document.createElement('th');

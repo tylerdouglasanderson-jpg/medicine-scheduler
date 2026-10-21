@@ -5,7 +5,6 @@ const MODES = [
   ['commitment-PM', 'Commitment (PM)', 'A clinic/obligation that occupies this half-day (PM).'],
   ['pto', 'PTO', 'Vacation day — this resident is off and unavailable to schedule.'],
   ['offCounted', 'Pin: off (counted)', 'Force this assignment: an off day that counts toward their quota.'],
-  ['offFree', 'Pin: off (free/bonus)', 'Force this assignment: a bonus off day that does not count toward quota.'],
   ['work', 'Pin: must work', 'Force this assignment: this resident must work (not off) this day.'],
   ['pager', 'Pin: pager', 'Force this assignment: this resident carries the pager this day.'],
   ['dayCall', 'Pin: day call', 'Force this assignment: this resident takes day call this day.'],
@@ -16,7 +15,9 @@ const MODES = [
 
 const DOW_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-const dowOf = date => { const [y, m, d] = date.split('-').map(Number); return new Date(y, m - 1, d).getDay(); };
+const DOW_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+const dowOf =date => { const [y, m, d] = date.split('-').map(Number); return new Date(y, m - 1, d).getDay(); };
 
 let currentMode = 'pto';   // ephemeral UI state — not scenario data, doesn't need to persist across reloads
 
@@ -116,21 +117,21 @@ export function render(container, scenario, onChange) {
     firstDow = new Date(y, m - 1, 1).getDay();
   }
 
-  const header = document.createElement('div');
-  header.className = 'chip-grid chip-grid-header';
-  for (const dow of DOW_LABELS) {
-    const cell = document.createElement('div');
-    cell.textContent = dow;
-    header.appendChild(cell);
-  }
-  container.appendChild(header);
-
   scenario.residents.forEach((r, i) => {
     const block = document.createElement('div');
     block.className = 'chip-calendar';
     const name = document.createElement('h3');
     name.textContent = r.name;
     block.appendChild(name);
+
+    const dowHead = document.createElement('div');
+    dowHead.className = 'chip-grid chip-grid-header';
+    for (const label of DOW_FULL) {
+      const cell = document.createElement('div');
+      cell.textContent = label;
+      dowHead.appendChild(cell);
+    }
+    block.appendChild(dowHead);
 
     const grid = document.createElement('div');
     grid.className = 'chip-grid';

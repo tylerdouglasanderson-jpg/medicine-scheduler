@@ -322,10 +322,10 @@ describe('all-solutions exports', () => {
     expect(wb.worksheets.length).toBe(n);
 
     const [s1, s2] = wb.worksheets;
-    expect(s1.getCell(2, 1).value).toBe('DATE');               // Solution 1 = the single-sheet layout
+    expect(s1.getCell(3, 1).value).toBe('DATE');               // Solution 1 = the single-sheet layout
     expect(s2.getCell(2, 1).value).toBe('Line one');
     expect(s2.getCell(3, 1).value).toBe('Line two');
-    expect(s2.getCell(4, 1).value).toBe('DATE');               // calendar pushed below the header
+    expect(s2.getCell(5, 1).value).toBe('DATE');               // calendar pushed below the header
     expect(s2.getCell(4, 10).value).toBe('Resident');          // totals aligned with the calendar
 
     // the single export is unchanged by the refactor

@@ -112,6 +112,16 @@ function buildWeeks(dates, firstDow) {
 }
 
 function writeCalendar(ws, scenario, schedule, types, dates, firstDow, mrDays, top) {
+  // Weekday header above the weeks (columns B..H are always Sun..Sat); the calendar proper starts one row down.
+  ws.getRow(top).height = 20;
+  DOW_NAMES.forEach((name, ci) => {
+    const cell = ws.getCell(top, ci + 2);
+    cell.value = name;
+    cell.font = { bold: true };
+    fill(cell, FILLS.TYPE);
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+  });
+  top += 1;
   let row = top;
   for (const week of buildWeeks(dates, firstDow)) {
     for (const label of ROWS) {
@@ -369,10 +379,7 @@ function writeNotes(ws, scenario, auditResult, startRow, overlaps = []) {
     line(`${r.name}: ${DOW_NAMES[r.didactics.dow]} didactics (${stop})`);
   }
   if (overlaps.length) line(`Name overlap (the live totals match names as text and will double count): ${overlaps.join('; ')}`);
-  row++;
-  line('Potential Issues', true);
-  for (const w of auditResult.warnings)
-    line(w.date ? `${w.date}: ${w.message}` : w.message);
+  // Potential Issues stay on the solution page only (program rule, 2026-10); the spreadsheet carries no flags.
 }
 
 function formatSheet(ws, grid) {
@@ -434,8 +441,8 @@ function fillSheet(ws, scenario, schedule, auditResult, version, headerLines = [
 
   const afterCalendar = writeCalendar(ws, scenario, schedule, types, dates, firstDow,
     new Set(morningReportDays), top);
-  const cal = { a: top, z: afterCalendar - 1 };
-  highlightToday(ws, top, afterCalendar - 1);
+  const cal = { a: top + 1, z: afterCalendar - 1 };   // +1: the weekday header row sits at `top`
+  highlightToday(ws, top + 1, afterCalendar - 1);
   const geo = gridGeometry(Object.keys(schedule.totals).length, top, dates.length);
   writeTotals(ws, scenario, schedule, dates, top, cal, geo);
   const grid = writeBonusGrid(ws, scenario, schedule, dates, geo);

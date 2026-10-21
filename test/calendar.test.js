@@ -18,9 +18,11 @@ describe('calendar render (feb-2026 solved)', () => {
 
   it('week blocks are Sun-Sat with the 8 rows in order', () => {
     const block = el.querySelector('.week');
-    expect([...block.querySelectorAll('tr')].map(tr => tr.querySelector('th').textContent))
+    expect([...block.querySelectorAll('thead th')].map(th => th.textContent))
+      .toEqual(['', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']);
+    expect([...block.querySelectorAll(':scope > tr')].map(tr => tr.querySelector('th').textContent))
       .toEqual(ROWS);
-    expect(block.querySelectorAll('tr:first-child td').length).toBe(7);
+    expect(block.querySelector('tr:nth-child(2)').querySelectorAll('td').length).toBe(7);
   });
 
   it('Feb 5 (call): CALL type class, Day-/Night- lines, no pager', () => {

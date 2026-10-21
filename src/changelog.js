@@ -4,6 +4,18 @@
 // The first entry's version must equal package.json's version.
 export const CHANGELOG = [
   {
+    version: '1.4.0', date: '2026-10-21',
+    items: [
+      'Weekday names (Sunday–Saturday) now head every calendar: each resident’s days-off picker, the solved calendar, and the spreadsheet',
+      'The “Off (free / bonus)” pin is gone from the pickers — bonus days can no longer be added by hand. Bonus days the scheduler gives still show in the output',
+      'Spreadsheet: the Potential Issues list is no longer written to the file (it still shows on the solution page)',
+      'User guide: new “6a. How it solves” page — a short list of every rule and priority the solver uses, including how seniors’ days off are prioritized (pre-call first, then PPC and weekend short call, weekday short call last; post-call and call days are never offs)',
+      'New “How it solves” button in the top bar: the same list as a bulleted pop-up',
+      'New “2026 ACGME rules” button in the top bar: the resident work-hour rules (80 hours, 1 day in 7, 24+4, 14 hours after 24, every third night, and more) with a boxed ↗ link on each rule that opens the exact page of the ACGME document',
+      'User guide: the pin table now lists 6 pin types, and the short-call/off-day preference text matches how the solver really behaves',
+    ],
+  },
+  {
     version: '1.3.0', date: '2026-10-17',
     items: [
       'Spreadsheet: every total in the box is now a live formula over the calendar — Shifts, Pager, Clinic/Obligation, Didactics, Off, PTO, Days, Perks (half days), Off + Bonus and PM off — so editing the calendar by hand keeps the totals right',

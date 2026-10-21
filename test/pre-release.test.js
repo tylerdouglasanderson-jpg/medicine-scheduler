@@ -186,6 +186,6 @@ describe('didactics rows respect the pinned half', () => {
   it.each([['PM', false], ['AM', true]])('spreadsheet attendance with a %s half-off is %s', async (half, attends) => {
     const s = didactics(half);
     const wb = await buildWorkbook(s, s.lastSolution, audit(s, s.lastSolution));
-    expect(String(wb.worksheets[0].getCell(15, 4).value).includes('SeniorA')).toBe(attends);
+    expect(String(wb.worksheets[0].getCell(16, 4).value).includes('SeniorA')).toBe(attends);
   });
 });

@@ -191,9 +191,9 @@ describe('xlsx totals box', () => {
     expect(conflict[0].rules.map(r => r.type)).toEqual(['expression', 'expression']);
     expect(conflict[0].rules[0].formulae[0]).toContain('SEARCH("|');
     // today highlight: calendar range, DATE cell (bold) over the pale rest-of-day rule, both keyed to TODAY()
-    expect(today.ref).toMatch(/^B2:H\d+$/);
+    expect(today.ref).toMatch(/^B3:H\d+$/);
     expect(today.rules).toHaveLength(2);
-    expect(today.rules[0].formulae[0]).toMatch(/^AND\(MOD\(ROW\(\)-2,8\)=0,.*DAY\(TODAY\(\)\)\)$/);
+    expect(today.rules[0].formulae[0]).toMatch(/^AND\(MOD\(ROW\(\)-3,8\)=0,.*DAY\(TODAY\(\)\)\)$/);
     expect(today.rules[0].style.font.bold).toBe(true);
     expect(today.rules[1].formulae[0]).toContain('INDEX($B$1:$H$');
     expect(today.rules[1].formulae[0]).toContain('TEXT(TODAY(),"MMMM YYYY")');

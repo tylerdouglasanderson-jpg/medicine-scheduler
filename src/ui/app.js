@@ -14,6 +14,7 @@ import * as roster from './roster.js';
 import * as chips from './chips.js';
 import { initFeedback, openFeedback } from './feedback.js';
 import { CHANGELOG } from '../changelog.js';
+import { CRITERIA, ACGME } from './info.js';
 import guideRaw from './guide.html?raw';
 import feb from '../../fixtures/feb-2026.json';
 
@@ -159,6 +160,24 @@ function topBar() {
   guideBtn.title = 'Open the full user guide.';
   guideBtn.addEventListener('click', () => { if (!dialogEl.open) dialogEl.showModal(); });
   right.appendChild(guideBtn);
+
+  const critBtn = document.createElement('button');
+  critBtn.id = 'criteria-button';
+  critBtn.type = 'button';
+  critBtn.className = 'btn-secondary';
+  critBtn.textContent = 'How it solves';
+  critBtn.title = 'The rules and priorities the solver uses, in short.';
+  critBtn.addEventListener('click', openCriteria);
+  right.appendChild(critBtn);
+
+  const acgmeBtn = document.createElement('button');
+  acgmeBtn.id = 'acgme-button';
+  acgmeBtn.type = 'button';
+  acgmeBtn.className = 'btn-secondary';
+  acgmeBtn.textContent = ACGME.title;
+  acgmeBtn.title = 'ACGME work-hour rules, with links to the exact page of each.';
+  acgmeBtn.addEventListener('click', openAcgme);
+  right.appendChild(acgmeBtn);
 
   const dlBtn = document.createElement('button');
   dlBtn.id = 'download-button';
@@ -1055,7 +1074,7 @@ function resultsEmptyState() {
 // ---- click a rendered cell -> pin popover -> re-solve ----
 const PINNABLE_ROWS = new Set(['OFF', 'PAGER', 'ROUNDERS']);
 const PIN_TYPES = [
-  ['offCounted', 'off (counted)'], ['offFree', 'off (free/bonus)'], ['work', 'must work'],
+  ['offCounted', 'off (counted)'], ['work', 'must work'],
   ['pager', 'pager'], ['dayCall', 'day call'], ['nightCall', 'night call'],
   ['halfOff-AM', 'half off (AM)'], ['halfOff-PM', 'half off (PM)'],
 ];
@@ -1324,6 +1343,61 @@ function openDownload() {
     all.className = 'dialog-small-link';
     all.textContent = 'All versions on GitHub';
     body.appendChild(all);
+  });
+}
+
+function openCriteria() {
+  openAppDialog('criteria-dialog', 'How it solves', body => {
+    for (const group of CRITERIA) {
+      const h = document.createElement('h3');
+      h.textContent = group.heading;
+      body.appendChild(h);
+      const ul = document.createElement('ul');
+      for (const text of group.items) {
+        const li = document.createElement('li');
+        li.textContent = text;
+        ul.appendChild(li);
+      }
+      body.appendChild(ul);
+    }
+  });
+}
+
+function openAcgme() {
+  openAppDialog('acgme-dialog', ACGME.title, body => {
+    const lead = document.createElement('p');
+    lead.textContent = ACGME.intro;
+    body.appendChild(lead);
+    for (const r of ACGME.rules) {
+      const h = document.createElement('h3');
+      h.textContent = `${r.title} `;
+      const a = document.createElement('a');
+      a.href = ACGME.link(r.page);
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.className = 'cite-link';
+      a.textContent = `\u2197 ${r.ref}`;
+      a.title = `Open ACGME requirement ${r.ref} (PDF page ${r.page})`;
+      h.appendChild(a);
+      body.appendChild(h);
+      const p = document.createElement('p');
+      p.textContent = r.text;
+      p.style.margin = '0 0 0.4rem';
+      body.appendChild(p);
+    }
+    const note = document.createElement('p');
+    note.className = 'dialog-note';
+    note.textContent = ACGME.note;
+    body.appendChild(note);
+    for (const src of ACGME.sources) {
+      const a = document.createElement('a');
+      a.href = src.href;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.className = 'dialog-small-link';
+      a.textContent = `\u2197 ${src.label}`;
+      body.appendChild(a);
+    }
   });
 }
 

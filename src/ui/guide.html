@@ -340,6 +340,7 @@
       <li><a href="#roster">4. Roster panel</a></li>
       <li><a href="#chips">5. Commitments · PTO · Pins</a></li>
       <li><a href="#solve">6. Solve</a></li>
+      <li><a href="#criteria">6a. How it solves</a></li>
       <li><a href="#iterate">7. Iterating: pins + freeze</a></li>
       <li><a href="#solutions">8. Trying different versions</a></li>
       <li><a href="#reading">9. Calendar, legend, totals</a></li>
@@ -560,14 +561,13 @@
         Marks a vacation or leave day. Like commitments, <strong>PTO on a call or post-call day
         is a hard error</strong> — move the PTO to a day that isn't call-adjacent.
       </p>
-      <h3>The 7 pin types</h3>
+      <h3>The 6 pin types</h3>
       <p>Pins are your manual override: force a specific assignment for a specific person on a specific day.</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Pin</th><th>Forces</th></tr></thead>
           <tbody>
             <tr><td class="pin-name">Off (counted)</td><td>A day off that counts toward the resident's quota.</td></tr>
-            <tr><td class="pin-name">Off (free / bonus)</td><td>An extra day off that does <strong>not</strong> count against quota — shown as "bonus".</td></tr>
             <tr><td class="pin-name">Must work</td><td>The resident is working that day.</td></tr>
             <tr><td class="pin-name">Pager</td><td>The resident holds the pager that day.</td></tr>
             <tr><td class="pin-name">Day call</td><td>The resident works the call day as day-call, not night.</td></tr>
@@ -604,6 +604,46 @@
         <strong>Potential Issues</strong> — soft warnings from an independent auditor that
         double-checks the solver's work from scratch (see §12).
       </p>
+    </section>
+
+    <section id="criteria">
+      <h2><span class="num-badge">6a</span>How it solves — the criteria</h2>
+      <p>A short list, strongest first. The solver adds up penalties and rewards and picks the schedule with the lowest total; the first group can never be broken.</p>
+      <h3>Never broken (hard rules)</h3>
+      <ul>
+        <li>Exactly one night person per call day; they sleep the next day (no pager, not counted on the team).</li>
+        <li>Everyone on service works the call day. No days off on call or post-call days.</li>
+        <li>Each resident gets exactly their quota of whole days off (pro-rated for part-month seats). Half days and PTO never count toward it.</li>
+        <li>No day off on a day with clinic or another commitment.</li>
+        <li>Exactly one pager holder every non-call day: never someone who is off, on PTO, asleep, or in a PM commitment.</li>
+        <li>Post-call pager goes to the previous day-call intern; a senior only if no intern can.</li>
+        <li>Staffing floor: at least 2 working each day (1 for a Med C or 2-person team).</li>
+        <li>2 seniors + 1 intern for the whole month: the intern takes exactly every other call night.</li>
+        <li>Your pins, PTO, service windows and chosen attending-pager days are always honoured.</li>
+      </ul>
+      <h3>Almost never broken (very heavy penalties)</h3>
+      <ul>
+        <li>No back-to-back call nights for the same person.</li>
+        <li>Don't take someone off a protected ("hard") didactics day.</li>
+        <li>The attending covers the pager only as a last resort (unless you chose that date).</li>
+      </ul>
+      <h3>Balanced as well as possible (fairness)</h3>
+      <ul>
+        <li>Shifts worked, as a share of each person's service days — about one shift is worth more than any placement preference below.</li>
+        <li>Interns split night call and day call evenly.</li>
+        <li>Afternoon load (PM clinic + didactics + pager) spread by person; a senior with heavy clinic gets fewer pager days.</li>
+        <li>Missed didactics spread across the team; an intern holding the pager at their own didactics counts against the schedule more than a senior doing it.</li>
+        <li>About one day off per calendar week.</li>
+      </ul>
+      <h3>Where days off land (preferences)</h3>
+      <ul>
+        <li>Keep seniors present on weekday short-call days (SC1 / SC2) and on day 1 of the month. A senior off then is penalised, not forbidden. The "Seniors may be off on short call" option lifts the short-call preference; weekend short call is not protected.</li>
+        <li>Offs are pushed toward the lightest days: pre-call first, then SC2 (for seniors, weekday SC1/SC2 are the last choice; see above). Call and post-call days can never be offs.</li>
+        <li>Avoid offs on Morning Report days (Tue/Thu pre-call); keep at least 2 people present, a senior and an intern if possible.</li>
+        <li>Avoid two people off the same day.</li>
+        <li>Optional: reward Sat + Sun both off ("Golden weekend").</li>
+        <li>Re-solving changes as little as possible of the schedule you already have.</li>
+      </ul>
     </section>
 
     <section id="iterate">
@@ -967,6 +1007,16 @@
     <section id="whatsnew">
       <h2><span class="num-badge">15</span>What's new</h2>
       <p>Newest first. The same list opens when you click the version number at the top of the app.</p>
+      <h3>1.4.0 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">· 2026-10-21</span></h3>
+      <ul>
+        <li>Weekday names (Sunday–Saturday) now head every calendar: each resident’s days-off picker, the solved calendar, and the spreadsheet</li>
+        <li>The “Off (free / bonus)” pin is gone from the pickers — bonus days can no longer be added by hand. Bonus days the scheduler gives still show in the output</li>
+        <li>Spreadsheet: the Potential Issues list is no longer written to the file (it still shows on the solution page)</li>
+        <li>User guide: new “6a. How it solves” page — a short list of every rule and priority the solver uses, including how seniors’ days off are prioritized (pre-call first, then PPC and weekend short call, weekday short call last; post-call and call days are never offs)</li>
+        <li>New “How it solves” button in the top bar: the same list as a bulleted pop-up</li>
+        <li>New “2026 ACGME rules” button in the top bar: the resident work-hour rules (80 hours, 1 day in 7, 24+4, 14 hours after 24, every third night, and more) with a boxed ↗ link on each rule that opens the exact page of the ACGME document</li>
+        <li>User guide: the pin table now lists 6 pin types, and the short-call/off-day preference text matches how the solver really behaves</li>
+      </ul>
       <h3>1.3.0 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">· 2026-10-17</span></h3>
       <ul>
         <li>Spreadsheet: every total in the box is now a live formula over the calendar — Shifts, Pager, Clinic/Obligation, Didactics, Off, PTO, Days, Perks (half days), Off + Bonus and PM off — so editing the calendar by hand keeps the totals right</li>

@@ -272,6 +272,8 @@ input[type="checkbox"] { accent-color: var(--accent); min-height: auto; width: a
 .chip-calendar h3 { font-size: var(--fs-h3); margin: 0 0 0.4rem; }
 .chip-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
 .chip-grid-header { font-size: var(--fs-small); font-weight: 600; text-align: center; color: var(--muted); margin-bottom: 3px; }
+.chip-grid-header > div { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-micro); }
+.calendar table.week thead th { text-align: center; }
 .chip-day {
   min-height: 4.5rem; border: 1px solid var(--border); border-radius: 6px; padding: 3px;
   font-size: var(--fs-micro); background: var(--surface);
@@ -424,6 +426,8 @@ dialog.app-dialog::backdrop { background: oklch(0.2 0.02 255 / 0.5); }
 .app-dialog-body h3:first-child { margin-top: 0; }
 .app-dialog-body ul { margin: 0; padding-left: 1.1rem; color: var(--ink-2); }
 .app-dialog-body li { margin-bottom: 0.2rem; }
+.app-dialog-body .cite-link { display: inline-block; margin-left: 0.4rem; padding: 0 0.4rem; border: 1px solid var(--accent); border-radius: 4px; font-size: var(--fs-small); font-weight: 500; color: var(--accent); text-decoration: none; vertical-align: middle; }
+.app-dialog-body .cite-link:hover { text-decoration: underline; }
 
 /* ---- feedback dialog: report a problem or idea ---- */
 dialog#feedback-dialog {
