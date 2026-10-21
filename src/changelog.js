@@ -4,6 +4,12 @@
 // The first entry's version must equal package.json's version.
 export const CHANGELOG = [
   {
+    version: '1.4.1', date: '2026-10-21',
+    items: [
+      'The “Fewer than 1 rest day in 7” warning now needs only floor(service days ÷ 7) days off (4 for a full month, 2 for a two-week seat) and counts actual days off only, not PTO',
+    ],
+  },
+  {
     version: '1.4.0', date: '2026-10-21',
     items: [
       'Weekday names (Sunday–Saturday) now head every calendar: each resident’s days-off picker, the solved calendar, and the spreadsheet',

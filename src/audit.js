@@ -237,11 +237,13 @@ export function audit(scenario, schedule) {
     if (counted < quota)
       V('A_QUOTA_SHORT', `${r.name} has ${counted} counted offs; the quota is ${quota} (${svc.length} service days)`, r.name);
 
-    // duty-hour: (offs incl. free + PTO) / serviceDays < 1/7
-    const ptoDays = (r.pto ?? []).filter(d => svc.includes(d)).length;
-    const allOff = svc.filter(d => day(d)?.off.includes(r.name)).length + ptoDays;
-    if (allOff / svc.length < 1 / 7)
-      W('W_DUTY_HOUR', `${r.name}: ${allOff} rest days over ${svc.length} service days (<1 in 7)`, r.name);
+    // duty-hour (1 day in 7, program rule, 2026-10): whole days off actually given (bonus included; PTO and half
+    // days are not) must reach floor(serviceDays / 7) — 4 for a 28-31 day month, 2 for a 14-day half seat.
+    // The leftover days average out into next month's rotation, so 31 days still needs only 4.
+    const actualOff = svc.filter(d => day(d)?.off.includes(r.name)).length;
+    const needOff = Math.floor(svc.length / 7);
+    if (actualOff < needOff)
+      W('W_DUTY_HOUR', `${r.name}: ${actualOff} days off over ${svc.length} service days (needs ${needOff} for 1 in 7)`, r.name);
 
     // long stretch: >6 consecutive service days with no rest (rest = off, PTO, or post-call sleep —
     // matches the solver's worked-expression semantics, not the working-array literally)

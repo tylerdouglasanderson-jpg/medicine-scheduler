@@ -108,3 +108,20 @@ it('A_STAFFING: a two-person team may run a day with one resident', () => {
   expect(staffing).toEqual([]);
 });
 
+
+it('W_DUTY_HOUR: floor(service/7) actual offs is enough; PTO does not count', () => {
+  const fx = structuredClone(valid);
+  const name = fx.scenario.residents[0].name;
+  const dates = Object.keys(fx.schedule.days).sort();
+  const need = Math.floor(dates.length / 7);
+  const offs = dates.filter(d => fx.schedule.days[d].off.includes(name));
+  expect(need).toBeGreaterThan(0);
+  expect(offs.length).toBeGreaterThanOrEqual(need);
+  const setOffs = keep => { for (const d of dates) fx.schedule.days[d].off = fx.schedule.days[d].off.filter(n => n !== name || keep.includes(d)); };
+  const run = () => audit(fx.scenario, fx.schedule).warnings.filter(w => w.code === 'W_DUTY_HOUR' && w.person === name);
+  setOffs(offs.slice(0, need));
+  expect(run()).toHaveLength(0);
+  setOffs(offs.slice(0, need - 1));
+  fx.scenario.residents[0].pto = dates.filter(d => !offs.slice(0, need - 1).includes(d)).slice(0, 3);
+  expect(run()).toHaveLength(1);
+});

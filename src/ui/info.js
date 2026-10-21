@@ -65,6 +65,6 @@ export const ACGME = {
     { label: 'Common Program Requirements (Residency), 2026 PDF', href: CPR },
     { label: 'Internal Medicine requirements, 2026 PDF (section 6.20 on page 62)', href: `${IM}#page=62` },
   ],
-  note: 'The scheduler plans days and call, not clock hours. It guarantees one night person with a sleep day after, an exact off quota, and warns on fewer than 1 rest day in 7 (whole month) or more than 6 days in a row. Weekly hours, 24+4, and 8 hours between shifts depend on your real shift times and are not calculated.',
+  note: 'The scheduler plans days and call, not clock hours. It guarantees one night person with a sleep day after, an exact off quota, and warns when a resident has fewer days off than one in seven of their service days, rounded down (4 for a full month; PTO does not count) or more than 6 days in a row. Weekly hours, 24+4, and 8 hours between shifts depend on your real shift times and are not calculated.',
   link: page => `${CPR}#page=${page}`,
 };
