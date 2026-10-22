@@ -34,6 +34,16 @@ let solveSeq = 0;           // bumped by any input edit, so a solve that outlive
 let exportScope = 'one';    // 'one' = the active tab, 'all' = every solution
 let saveHintPending = false; // set by the first successful Solve; the "save my month" hint shows until dismissed
 let compareOpen = true;
+// "Revise this plan" (v1.10.0): wide screens only. Inputs on the left, results on the right, each scrolling on
+// its own. Not persisted: a reload always opens the one-column page.
+let reviseMode = false;
+let staleSnap = null;       // the scenario as last solved, shown greyed on the right once an input is edited
+let autoResolve = false;    // re-solve ~0.7 s after each edit (a per-viewer preference, see AUTO_KEY)
+let autoTimer = null;
+let flashBase = null;       // the schedule a re-solve replaced; its changed cells are outlined for a few seconds
+let flashTimer = null;
+const AUTO_KEY = 'med-scheduler-auto-resolve';
+try { autoResolve = storage.get(AUTO_KEY) === true; } catch { /* per-viewer convenience only */ }
 // The schedule a pin / attending-day re-solve stays close to (stability). A pin edit
 // clears every displayed and exportable solution — none of them honours the new pin — but the re-solve
 // still anchors on the schedule the chief was looking at. Never rendered, exported or saved; cleared by
@@ -72,6 +82,7 @@ function scrollToResults() {
   if (el && typeof el.scrollIntoView === 'function') el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 function announceResults() {
+  if (reviseMode) return;                // revising side by side: no pop-up, and the panes stay where they are
   let off = false;
   try { off = localStorage.getItem(RESULTS_NOTE_KEY) === '1'; } catch { /* storage may be unavailable */ }
   let dlg = document.getElementById('results-dialog');
@@ -200,14 +211,26 @@ const FIX_EXPORT_TIP = 'Fix the errors above, then Solve';
 
 function onChange(next, { preserveSolution = false } = {}) {
   if (!preserveSolution) {
+    // Revise mode: keep the schedule that was on screen, greyed, and let the next solve stay close to it.
+    if (reviseMode && !staleSnap && scenario.lastSolution) staleSnap = scenario;
     solveSeq++;
-    anchor = null;
+    anchor = reviseMode && staleSnap ? staleSnap.lastSolution : null;
     freezeDate = '';      // freezing needs a schedule to freeze to; a stale date would silently box in the next solve
   }
   scenario = preserveSolution ? next : { ...next, ...NO_SOLUTION };
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => saveScenario(scenario), 300);
   render();
+  if (reviseMode && autoResolve && !preserveSolution) scheduleAutoSolve();
+}
+
+function scheduleAutoSolve() {
+  clearTimeout(autoTimer);
+  autoTimer = setTimeout(() => {
+    if (!reviseMode || !autoResolve) return;
+    if (solving) { scheduleAutoSolve(); return; }          // an older solve is still winding down
+    if (!validate(scenario).length) runSolve();
+  }, 700);
 }
 
 // A pin or attending-day edit: every solution on screen is now invalid (it may break the new input),
@@ -369,6 +392,11 @@ function render() {
   closePopover();
   const comparison = root.querySelector('#compare-solutions');
   if (comparison) compareOpen = comparison.open;
+  // render() rebuilds everything, so each pane's scroll position is carried across by hand.
+  const keepLeft = root.querySelector('.pane-left')?.scrollTop ?? 0;
+  const keepRight = root.querySelector('.pane-right')?.scrollTop ?? 0;
+  if (!reviseMode || scenario.lastSolution) staleSnap = null;   // a current schedule exists again
+  document.body.classList.toggle('revise-on', reviseMode);
   root.innerHTML = '';
 
   root.appendChild(topBar());
@@ -376,28 +404,32 @@ function render() {
   const main = document.createElement('main');
   main.className = 'main';
   root.appendChild(main);
+  const pane = cls => { const d = document.createElement('div'); d.className = `pane ${cls}`; return d; };
+  const left = reviseMode ? pane('pane-left') : main;
+  const right = reviseMode ? pane('pane-right') : main;
+  if (reviseMode) { main.classList.add('revise'); main.append(left, right); }
 
   if (!storage.available) {
     const notice = document.createElement('p');
     notice.className = 'storage-notice';
     notice.textContent = 'autosave unavailable — use “Save my month (.json)” so you don’t lose your work';
-    main.appendChild(notice);
+    left.appendChild(notice);
   }
 
   if (!scenario.residents.length || !scenario.month) {
-    main.appendChild(onboardingHint());
+    left.appendChild(onboardingHint());
   }
 
   const setupSection = section('setup-section');
-  main.appendChild(setupSection);
+  left.appendChild(setupSection);
   setup.render(setupSection, scenario, onChange);
 
   const rosterSection = section('roster-section');
-  main.appendChild(rosterSection);
+  left.appendChild(rosterSection);
   roster.render(rosterSection, scenario, onChange);
 
   const chipsSection = section('chips-section');
-  main.appendChild(chipsSection);
+  left.appendChild(chipsSection);
   chips.render(chipsSection, scenario, onChange);
 
   const errors = validate(scenario);
@@ -409,14 +441,111 @@ function render() {
     notice.textContent = 'Your saved file will keep your setup but not the schedule until these errors are fixed.';
     errorsPanel.appendChild(notice);
   }
-  main.appendChild(errorsPanel);
+  left.appendChild(errorsPanel);
 
-  const resultsPanel = renderResults();
-  main.appendChild(resultsPanel);
+  let resultsPanel;
+  if (staleSnap) {                       // the old schedule, drawn from the scenario it was solved for
+    const live = scenario;
+    scenario = staleSnap;
+    try { resultsPanel = renderResults(); } finally { scenario = live; }
+  } else resultsPanel = renderResults();
+  right.appendChild(resultsPanel);
   for (const p of [setupSection, rosterSection, chipsSection, errorsPanel, resultsPanel]) addCollapse(p);
 
   root.appendChild(actionBar(errors));
+  document.documentElement.style.setProperty('--appbar-h', `${root.querySelector('.app-bar')?.offsetHeight ?? 56}px`);
+  if (reviseMode) {
+    const h = sel => root.querySelector(sel)?.offsetHeight ?? 0;
+    main.style.height = `calc(100dvh - ${h('.app-bar') + h('.action-bar')}px)`;
+    left.scrollTop = keepLeft;
+    right.scrollTop = keepRight;
+  }
   revealActiveTab();
+}
+
+// ---- Revise this plan: slide the results to the right, fade the inputs in on the left (and back) ----
+const SLIDE = { duration: 480, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' };
+function setRevise(on) {
+  if (on === reviseMode) return;
+  const before = document.getElementById('results-section')?.getBoundingClientRect();
+  reviseMode = on;
+  if (!on) { staleSnap = null; clearTimeout(autoTimer); }
+  render();
+  if (on) window.scrollTo(0, 0);
+  else document.getElementById('results-section')?.scrollIntoView({ block: 'start' });
+  const res = document.getElementById('results-section');
+  if (before && res && res.animate) {
+    const after = res.getBoundingClientRect();
+    res.animate([{ transform: `translate(${before.left - after.left}px, ${before.top - after.top}px)` },
+      { transform: 'none' }], SLIDE);
+  }
+  const fading = on ? [root.querySelector('.pane-left')]
+    : [...root.querySelectorAll('#setup-section, #roster-section, #chips-section, #errors-panel')];
+  for (const el of fading) {
+    if (el?.animate) el.animate([{ opacity: 0, transform: 'translateX(-28px)' }, { opacity: 1, transform: 'none' }], SLIDE);
+  }
+}
+
+function startFlash(base) {
+  flashBase = base;
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => { flashBase = null; render(); }, 6000);
+}
+
+function reviseBar() {
+  if (!reviseMode) {
+    if (!scenario.lastSolution) return null;
+    const bar = document.createElement('div');
+    bar.className = 'revise-bar';
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.id = 'revise-button'; btn.className = 'btn-primary revise-btn';
+    btn.textContent = 'Revise this plan';
+    btn.title = 'Put your inputs on the left and this schedule on the right, so you can edit and re-solve side by side';
+    btn.addEventListener('click', () => setRevise(true));
+    bar.appendChild(btn);
+    return bar;
+  }
+  const bar = document.createElement('div');
+  bar.className = 'revise-bar';
+  const done = document.createElement('button');
+  done.type = 'button'; done.id = 'revise-done'; done.className = 'btn-ghost';
+  done.textContent = 'Done';
+  done.title = 'Back to the one-column page';
+  done.addEventListener('click', () => setRevise(false));
+  const label = document.createElement('label');
+  label.className = 'switch';
+  label.title = 'Off: the old schedule stays greyed until you press Solve. On: it re-solves a moment after each edit.';
+  const box = document.createElement('input');
+  box.type = 'checkbox'; box.id = 'auto-resolve'; box.setAttribute('role', 'switch');
+  box.checked = autoResolve;
+  box.addEventListener('change', () => {
+    autoResolve = box.checked;
+    try { storage.set(AUTO_KEY, autoResolve); } catch { /* per-viewer convenience only */ }
+    if (autoResolve && staleSnap && !validate(scenario).length) scheduleAutoSolve();
+  });
+  const lt = document.createElement('span');
+  lt.textContent = 'Re-solve automatically';
+  label.append(box, lt);
+  bar.append(done, label);
+  return bar;
+}
+
+function staleBanner() {
+  const b = document.createElement('div');
+  b.className = 'stale-banner';
+  b.id = 'stale-banner';
+  const t = document.createElement('span');
+  if (solving) { const sp = document.createElement('span'); sp.className = 'spinner'; sp.setAttribute('aria-hidden', 'true'); b.appendChild(sp); }
+  t.textContent = solving ? 'Re-solving with your changes…'
+    : 'Changed since this schedule was solved. It is greyed out until you press Solve.';
+  b.appendChild(t);
+  if (!solving) {
+    const s = document.createElement('button');
+    s.type = 'button'; s.className = 'btn-primary'; s.textContent = 'Solve';
+    s.addEventListener('click', runSolve);
+    b.appendChild(s);
+  }
+  return b;
 }
 
 // On a phone the tab strip scrolls inside itself; every render rebuilds it at scrollLeft 0, so bring
@@ -633,6 +762,7 @@ async function runSolve() {
       if (seq !== solveSeq) return;
       progress = { done, total };
       anchor = null;                                      // a current schedule exists again
+      if (done === 1 && staleSnap?.lastSolution) startFlash(staleSnap.lastSolution);
       const alternatives = done === 1 ? [stored(solution)] : [...scenario.alternatives, stored(solution)];
       const activeSolution = done === 1 ? 0 : scenario.activeSolution;
       scenario = { ...scenario, alternatives, activeSolution, alternativesReason: null,
@@ -731,6 +861,10 @@ function renderResults() {
   help.className = 'panel-help';
   help.textContent = 'The solved calendar, totals, and anything the independent auditor flags.';
   wrap.appendChild(help);
+  if (staleSnap) wrap.classList.add('results-stale');
+  const rb = reviseBar();
+  if (rb) wrap.appendChild(rb);
+  if (staleSnap) wrap.appendChild(staleBanner());
 
   if (solveError) {
     const box = document.createElement('div');
@@ -787,7 +921,8 @@ function renderResults() {
       box.appendChild(table);
     }
     const active = scenario.activeSolution ?? 0;
-    if (active > 0 && scenario.alternatives?.[0] && highlightOn()) markChanges(cal, scenario.alternatives[0], sched);
+    if (flashBase && !staleSnap) markChanges(cal, flashBase, sched, 'Changed by the last re-solve');
+    else if (active > 0 && scenario.alternatives?.[0] && highlightOn()) markChanges(cal, scenario.alternatives[0], sched);
     wrap.appendChild(cal);
     wrap.appendChild(legend());
     wrap.appendChild(scrollBox('totals-scroll', renderTotals(sched)));
@@ -1098,7 +1233,7 @@ function changesLegend() {
 }
 
 // OFF row: the set of people off differs; ROUNDERS: the night person; PAGER: the holder.
-function markChanges(cal, base, sched) {
+function markChanges(cal, base, sched, why = 'Differs from Solution 1') {
   const same = (a, b) => (a ?? null) === (b ?? null);
   const sameSet = (a = [], b = []) => a.length === b.length && [...a].sort().join('|') === [...b].sort().join('|');
   for (const [date, dd] of Object.entries(sched.days)) {
@@ -1112,7 +1247,7 @@ function markChanges(cal, base, sched) {
       const td = cal.querySelector(`td[data-date="${date}"][data-row="${row}"]`);
       if (!td) continue;
       td.classList.add('cell-changed');
-      td.title = 'Differs from Solution 1';
+      td.title = why;
     }
   }
 }
