@@ -65,6 +65,59 @@ export function mount(container) {
   if (!seen) openQuickHowTo();
 }
 
+// "Your results are here": after a good Solve, say so, then gently scroll to the results.
+const RESULTS_NOTE_KEY = 'med-scheduler-results-note-off';
+function scrollToResults() {
+  const el = document.getElementById('results-section');
+  if (el && typeof el.scrollIntoView === 'function') el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function announceResults() {
+  let off = false;
+  try { off = localStorage.getItem(RESULTS_NOTE_KEY) === '1'; } catch { /* storage may be unavailable */ }
+  let dlg = document.getElementById('results-dialog');
+  if (off || typeof HTMLDialogElement === 'undefined' || (dlg ?? document.createElement('dialog')).showModal === undefined) {
+    scrollToResults();
+    return;
+  }
+  if (!dlg) {
+    dlg = document.createElement('dialog');
+    dlg.id = 'results-dialog';
+    dlg.className = 'app-dialog';
+    const header = document.createElement('div');
+    header.className = 'guide-dialog-header';
+    const h = document.createElement('h2');
+    h.textContent = 'Your results are here';
+    const x = document.createElement('button');
+    x.type = 'button'; x.className = 'btn-ghost'; x.textContent = '×'; x.title = 'Close';
+    x.addEventListener('click', () => dlg.close());
+    header.append(h, x);
+    const body = document.createElement('div');
+    body.className = 'app-dialog-body';
+    const p = document.createElement('p');
+    p.textContent = 'The schedule is ready. Closing this takes you down to it.';
+    const tip = document.createElement('p');
+    tip.className = 'dialog-note';
+    tip.textContent = 'To change a single day: go back up to Commitments / PTO / Pins, pick a pin mode, click that day on the person’s calendar to add a pin, then press Solve again. The rest of the month stays as close to this schedule as it can.';
+    const label = document.createElement('label');
+    label.className = 'dialog-note';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.id = 'results-note-off';
+    label.append(cb, document.createTextNode(' Don’t show this again'));
+    const ok = document.createElement('button');
+    ok.type = 'button'; ok.className = 'btn-primary dialog-link'; ok.textContent = 'Show me the results';
+    ok.addEventListener('click', () => dlg.close());
+    body.append(p, tip, label, ok);
+    dlg.append(header, body);
+    dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+    dlg.addEventListener('close', () => {
+      try { if (cb.checked) localStorage.setItem(RESULTS_NOTE_KEY, '1'); } catch { /* ignore */ }
+      scrollToResults();
+    });
+    document.body.appendChild(dlg);
+  }
+  if (!dlg.open) dlg.showModal();
+}
+
 // Quick How-to: shown once on a first visit, and from the header button any time.
 function openQuickHowTo() {
   try { localStorage.setItem(HOWTO_KEY, '1'); } catch { /* viewer storage may be unavailable */ }
@@ -563,6 +616,7 @@ const stored = sol => ({ ...sol.schedule, objective: sol.objective });
 
 // Every Solve — button, pin re-solve, Freeze through, attending pager — rebuilds all the tabs.
 // Solution 1 is anchored on lastSolution, i.e. on whichever tab is selected right now.
+let resultsReady = false;
 async function runSolve() {
   if (solving) return;
   if (validate(scenario).length) { render(); return; }   // Solve gate — show errors, stay unsolved
@@ -597,6 +651,7 @@ async function runSolve() {
         lastSolution: alternatives[activeSolution] };
       saveScenario(scenario);
       saveHintPending = true;                             // first good Solve -> nudge toward Save my month
+      resultsReady = true;
     }
   } catch (e) {
     solveError = e.message;
@@ -604,6 +659,7 @@ async function runSolve() {
     solving = false;
     progress = null;
     render();
+    if (resultsReady) { resultsReady = false; announceResults(); }
   }
 }
 
@@ -1075,6 +1131,7 @@ const ISSUE_GROUPS = [
   ['stretch', 'Long stretches without a day off', ['W_LONG_STRETCH']],
   ['duty', 'Fewer than 1 rest day in 7', ['W_DUTY_HOUR']],
   ['senior-sc', 'Senior off on a short-call day', ['W_SENIOR_OFF_SC']],
+  ['single', 'One person scheduled (you allowed it)', ['W_SINGLE_COVER']],
   ['mr', 'Morning Report coverage', ['W_MR_THIN', 'W_MR_NO_SENIOR', 'W_MR_NO_INTERN']],
   ['pager', 'Pager / didactics', ['W_ATTENDING_PAGER', 'W_DIDACTICS_MISS', 'W_DIDACTICS_PAGER',
     'W_DIDACTICS_PAGER_INTERN', 'W_DIDACTICS_NO_SENIOR_COVER', 'W_DIDACTICS_OFF', 'W_DIDACTICS_NO_DATES']],

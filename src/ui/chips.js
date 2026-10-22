@@ -4,6 +4,7 @@ const MODES = [
   ['commitment-AM', 'Commitment (AM)', 'A clinic/obligation that occupies this half-day (AM).'],
   ['commitment-PM', 'Commitment (PM)', 'A clinic/obligation that occupies this half-day (PM).'],
   ['didactics', 'Didactics (PM)', 'Transitional interns only: click each Wednesday that has didactics (they have it every other week).'],
+  ['single', '1 person OK', 'Day-level, not tied to one resident: the solver may leave just one person working this day. Optionally name who, in the list below the mode buttons.'],
   ['pto', 'PTO', 'Vacation day — this resident is off and unavailable to schedule.'],
   ['offCounted', 'Pin: off (counted)', 'Force this assignment: an off day that counts toward their quota.'],
   ['work', 'Pin: must work', 'Force this assignment: this resident must work (not off) this day.'],
@@ -29,6 +30,14 @@ function patchResident(scenario, i, patch) {
 
 function applyMode(scenario, onChange, i, date) {
   const r = scenario.residents[i];
+
+  if (currentMode === 'single') {
+    const days = scenario.singleDays ?? [];
+    const next = days.some(x => x.date === date) ? days.filter(x => x.date !== date)
+      : [...days, { date, person: '' }].sort((a, b) => a.date.localeCompare(b.date));
+    onChange({ ...scenario, singleDays: next });
+    return;
+  }
 
   if (currentMode === 'pto') {
     const pto = r.pto.includes(date) ? r.pto.filter(d => d !== date) : [...r.pto, date];
@@ -88,6 +97,55 @@ function chip(text, cls, onRemove) {
   return span;
 }
 
+// The "1 person OK" dates as a list: pick who works alone (or leave it to the solver), or remove the date.
+function singleDaysList(scenario, onChange) {
+  const days = scenario.singleDays ?? [];
+  const box = document.createElement('div');
+  box.className = 'single-days';
+  const h = document.createElement('h3');
+  h.textContent = 'Days where one person is enough';
+  box.appendChild(h);
+  const help = document.createElement('p');
+  help.className = 'panel-help';
+  help.textContent = 'Pick the \u201c1 person OK\u201d mode and click a date to add it. The solver may then leave just one person '
+    + 'working that day (normally at least 2 are required). Name who, or leave it to the solver, which prefers a senior. '
+    + 'Use it only when the day truly can run with one person.';
+  box.appendChild(help);
+  if (!days.length) {
+    const none = document.createElement('p');
+    none.className = 'empty-state';
+    none.textContent = 'None picked.';
+    box.appendChild(none);
+    return box;
+  }
+  const set = next => onChange({ ...scenario, singleDays: next });
+  for (const x of days) {
+    const row = document.createElement('div');
+    row.className = 'single-day-row';
+    const label = document.createElement('span');
+    label.textContent = `${DOW_LABELS[dowOf(x.date)]} ${x.date}`;
+    const sel = document.createElement('select');
+    sel.title = 'Who works alone this day. Solver chooses leaves it open and prefers a senior.';
+    sel.setAttribute('aria-label', `Who works alone on ${x.date}`);
+    const open = document.createElement('option');
+    open.value = ''; open.textContent = 'Solver chooses';
+    sel.appendChild(open);
+    for (const r of scenario.residents) {
+      const o = document.createElement('option');
+      o.value = r.name; o.textContent = r.name;
+      sel.appendChild(o);
+    }
+    sel.value = x.person;
+    sel.addEventListener('change', () => set(days.map(y => (y === x ? { ...y, person: sel.value } : y))));
+    const rm = document.createElement('button');
+    rm.type = 'button'; rm.className = 'btn-ghost'; rm.textContent = 'Remove'; rm.title = 'Remove this date';
+    rm.addEventListener('click', () => set(days.filter(y => y !== x)));
+    row.append(label, sel, rm);
+    box.appendChild(row);
+  }
+  return box;
+}
+
 export function render(container, scenario, onChange) {
   container.innerHTML = '';
   const h = document.createElement('h2');
@@ -118,6 +176,8 @@ export function render(container, scenario, onChange) {
     modeRow.appendChild(lbl);
   }
   container.appendChild(modeRow);
+
+  container.appendChild(singleDaysList(scenario, onChange));
 
   const dates = monthDates(scenario.month);
   let firstDow = 0;
@@ -158,6 +218,10 @@ export function render(container, scenario, onChange) {
       dayNum.className = 'day-num';
       dayNum.textContent = date.slice(-2);
       cell.appendChild(dayNum);
+
+      if ((scenario.singleDays ?? []).some(x => x.date === date))
+        cell.appendChild(chip('1 person OK', 'single', () =>
+          onChange({ ...scenario, singleDays: scenario.singleDays.filter(x => x.date !== date) })));
 
       if (r.pto.includes(date))
         cell.appendChild(chip('PTO', 'pto', () =>

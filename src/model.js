@@ -91,13 +91,13 @@ export function afternoonsOffDates(scenario, schedule, name) {
 // solve() stamps every schedule it produces with this. A saved solution carrying a different stamp
 // is not used to anchor re-solve stability, so a scenario file built under older rules re-solves to
 // the NEW optimum without being cleared and re-typed first.
-export const RULES_VERSION = '1.2.0';   // v1.2.0: Transitional every-other-Wednesday didactics dates
+export const RULES_VERSION = '1.3.0';   // v1.3.0: per-date one-person-is-enough staffing exception (singleDays); v1.2.0: Transitional didactics dates
 
 export function parseScenario(json) {
   for (const k of ['team', 'month', 'anchorType', 'residents'])
     if (json[k] == null) throw new Error(`scenario missing ${k}`);
   return normalize({
-    carryIn: null, pins: [], notes: [], attendingPagerDays: [], lastSolution: null,
+    carryIn: null, pins: [], notes: [], attendingPagerDays: [], singleDays: [], lastSolution: null,
     alternatives: [], activeSolution: 0, alternativesReason: null,
     ...json,
     options: {
@@ -118,6 +118,12 @@ function normalize(s) {
   s.pins = (s.pins ?? []).filter(p => p && names.has(p.person) && inMonth(p.date));
   s.notes = (s.notes ?? []).filter(n => n && inMonth(n.date));
   s.attendingPagerDays = [...new Set((s.attendingPagerDays ?? []).filter(inMonth))].sort();
+  // Days the chief says one person is enough: { date, person } - person '' lets the solver choose who.
+  const seenSingle = new Set();
+  s.singleDays = (s.singleDays ?? [])
+    .filter(x => x && inMonth(x.date) && !seenSingle.has(x.date) && seenSingle.add(x.date))
+    .map(x => ({ date: x.date, person: names.has(x.person) ? x.person : '' }))
+    .sort((a, b) => a.date.localeCompare(b.date));
   for (const r of s.residents) {
     r.commitments = (r.commitments ?? []).filter(c => c && inMonth(c.date));
     r.pto = [...new Set((r.pto ?? []).filter(inMonth))].sort();

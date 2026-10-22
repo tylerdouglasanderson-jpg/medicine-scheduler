@@ -21,6 +21,13 @@ export function validate(scenario) {
         err('PTO_ON_CALL', r.name, d, `${r.name} has PTO on a ${types.get(d)} day (${d})`);
   }
 
+  for (const x of scenario.singleDays ?? []) {
+    const r = byName[x.person];
+    if (x.person && (!r || !onService(r, x.date) || r.pto.includes(x.date)))
+      err('SINGLE_DAY_PERSON_UNAVAILABLE', x.person, x.date,
+        `${x.person} is named as the one person working on ${x.date}, but they are on PTO or off service that day`);
+  }
+
   for (const p of scenario.pins) {
     const r = byName[p.person];
     if (!r || !dates.includes(p.date) || !onService(r, p.date)) {

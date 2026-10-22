@@ -33,6 +33,7 @@ export const WEIGHTS = {
   goldenWeekend: 15,       // S10 reward (applied negative) per Sat+Sun off pair
   offPrecall: 6,           // S12 reward per off on a non-Morning-Report pre-call day (lightest day)
   offSc2: 3,               // S12 reward per off on a short-call-2 day (next lightest)
+  singleSenior: 40,        // S14 a chief-allowed one-person day with the person left open: prefer a senior working it
   mrThin: 60,              // S13 fewer than 2 people present on a Morning-Report day
   mrNoSenior: 30,          // S13 no senior present on a Morning-Report day
   mrNoIntern: 20,          // S13 no intern present on a Morning-Report day
@@ -87,6 +88,11 @@ export const ALT_SLACK = 130;
 export function buildModel(scenario, freezeDate = null,
   { elasticQuota = false, stability = true, distinctFrom = [], minOffsMoved = 0, objCap = null,
     categoryCaps = null } = {}) {
+  // A one-person day with a NAMED person is that person's implicit "must work" pin.
+  const namedSingles = (scenario.singleDays ?? []).filter(x => x.person);
+  if (namedSingles.length) scenario = { ...scenario, pins: [...scenario.pins,
+    ...namedSingles.map(x => ({ person: x.person, date: x.date, type: 'work', half: null, note: '' }))] };
+  const singleSet = new Set((scenario.singleDays ?? []).map(x => x.date));
   const { types, callDays, morningReportDays } = deriveCycle(scenario.anchorType, scenario.month);
   const dates = monthDates(scenario.month);
   const di = new Map(dates.map((d, i) => [d, i]));
@@ -322,10 +328,23 @@ export function buildModel(scenario, freezeDate = null,
     const medC = scenario.team === 'C' && availPeople.every(p => p.role === 'senior');
     // a two-person team (1 intern + 1 senior) is run by one resident whenever the other is off or asleep
     const twoPerson = people.filter(p => onService(p, d)).length <= 2;
-    const rhs = Math.min(medC || twoPerson ? 1 : 2, avail - sleeperOut);
+    const rhs = Math.min(medC || twoPerson || singleSet.has(d) ? 1 : 2, avail - sleeperOut);
     let constant = 0; const terms = [];
     people.forEach(p => { const w = wTerm(p, d); constant += w.constant; terms.push(...w.terms); });
     if (terms.length) cons.push(`stf_${di.get(d)}: ` + lin(terms) + ' >= ' + (rhs - constant));
+  });
+
+  // S14 one-person days the chief allowed, person left open: when only one works, prefer a senior.
+  // u = 1 means no senior is working that day (penalized); it never forces anyone.
+  (scenario.singleDays ?? []).forEach(x => {
+    const d = x.date;
+    if (x.person || types.get(d) === 'call') return;
+    let constant = 0; const terms = [];
+    people.filter(p => p.role === 'senior').forEach(p => { const w = wTerm(p, d); constant += w.constant; terms.push(...w.terms); });
+    if (constant >= 1 || (!terms.length && constant === 0)) return;   // a senior always works, or none can
+    const u = cont(`sone_${di.get(d)}`, { kind: 'sone', date: d }, 0, 1);
+    cons.push(`sone_${di.get(d)}_r: ` + lin([...terms, T(1, u)]) + ' >= ' + (1 - constant));
+    addObj(WEIGHTS.singleSenior, u);
   });
 
   // (10) pins as constraint rows (Task 6's staged relaxation drops pin_ rows by group)

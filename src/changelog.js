@@ -4,6 +4,13 @@
 // The first entry's version must equal package.json's version.
 export const CHANGELOG = [
   {
+    version: '1.8.0', date: '2026-10-21',
+    items: [
+      'A new 1 person OK mode in the Commitments calendar lets you mark any date where the schedule may have just one person working (normally at least 2 are needed). Click the date, then optionally name who works alone, or leave it on Solver chooses and it prefers a senior. It only allows it; the solver still uses two or more when it can. The results say “Only X is scheduled on D, as you allowed.” and nothing changes in the Excel file. Days that already drop to one person on their own (Med C, two-person teams, heavy PTO) need no marking',
+      'When a Solve finishes, a pop-up now says your results are here and how to change a single day (add a pin in Commitments / PTO / Pins, then Solve again). Closing it gently scrolls the page down to the results. Tick Don’t show this again to skip the pop-up and just scroll',
+    ],
+  },
+  {
     version: '1.7.0', date: '2026-10-21',
     items: [
       'A Quick How-to pop-up (six short steps) now opens the first time someone visits, and from the new Quick How-to button in the header. The Guide button is now Comprehensive Guide. Each big section (Setup, Roster, Commitments, Errors, Results) has a Collapse button at its top right to minimize it while you work on the rest; your choice is remembered',

@@ -133,9 +133,18 @@ export function audit(scenario, schedule) {
     const dayTeam = t === 'call' ? dd.working.filter(n => n !== dd.night) : dd.working;
     const medCstaff = scenario.team === 'C' && roster.every(r => r.role === 'senior');
     const twoPersonTeam = roster.length <= 2;   // 1 intern + 1 senior: one resident runs it alone
-    const floor = Math.min(medCstaff || twoPersonTeam ? 1 : 2, effAvail);
+    const single = (scenario.singleDays ?? []).find(x => x.date === d);
+    const floor = Math.min(medCstaff || twoPersonTeam || single ? 1 : 2, effAvail);
     if (dayTeam.length < floor)
       V('A_STAFFING', `Only ${dayTeam.length} working the day team on ${d} (floor ${floor})`, null, d);
+    // A day the chief marked "one person is enough": say plainly when only one is scheduled, and hold the
+    // solver to the named person if one was chosen.
+    if (single && t !== 'call') {
+      if (single.person && !dd.working.includes(single.person))
+        V('A_SINGLE_PERSON_IGNORED', `${single.person} was named as the one person working on ${d} but is not working`, single.person, d);
+      if (dayTeam.length === 1)
+        W('W_SINGLE_COVER', `Only ${dayTeam[0]} is scheduled on ${d}, as you allowed.`, dayTeam[0], d);
+    }
 
     // W_MR_THIN / W_MR_NO_SENIOR / W_MR_NO_INTERN — Morning Report = pre-call on Tue/Thu, this
     // team presents: want 2+ on, ideally a senior and an intern. Soft, so these are warnings.

@@ -297,6 +297,10 @@ input[type="checkbox"] { accent-color: var(--accent); min-height: auto; width: a
 .chip-commitment { background: color-mix(in oklch, var(--cal-clinic) 55%, var(--surface)); }
 .chip-pto { background: color-mix(in oklch, var(--cal-pto) 45%, var(--surface)); }
 .chip-pin { background: var(--accent-weak); }
+.chip-single { background: color-mix(in oklch, var(--cal-pto) 30%, var(--accent-weak)); font-weight: 600; }
+.single-days { margin: 0.5rem 0 1rem; }
+.single-days h3 { margin: 0 0 0.2rem; font-size: var(--fs-h3); }
+.single-day-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.3rem; }
 .chip-didactics { background: transparent; border: 1px dashed var(--border); color: var(--muted); }
 .chip-remove {
   border: none; background: none; cursor: pointer; font-size: 0.8rem; line-height: 1; padding: 0;
