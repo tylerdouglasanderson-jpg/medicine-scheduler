@@ -6,7 +6,7 @@
   "options": { "offQuota": 4, "goldenWeekend": false },
   "residents": [
     {
-      "name": "Intern1",
+      "name": "Okafor",
       "role": "intern",
       "kind": "other",
       "serviceStart": "2026-02-01",
@@ -19,7 +19,7 @@
       "pto": []
     },
     {
-      "name": "Intern2",
+      "name": "Reyes",
       "role": "intern",
       "kind": "other",
       "serviceStart": "2026-02-01",
@@ -34,7 +34,7 @@
       "pto": []
     },
     {
-      "name": "Senior1",
+      "name": "Whitfield",
       "role": "senior",
       "kind": "categorical",
       "serviceStart": "2026-02-01",
@@ -53,7 +53,7 @@
       "pto": ["2026-02-20"]
     },
     {
-      "name": "Senior2",
+      "name": "Nakamura",
       "role": "senior",
       "kind": "categorical",
       "serviceStart": "2026-02-01",

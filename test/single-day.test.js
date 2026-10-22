@@ -29,9 +29,9 @@ describe('1 person OK days', () => {
 
   it('normalize keeps singleDays sorted, unique, in-month, with unknown people blanked', () => {
     const s = parseScenario({ ...feb, singleDays: [
-      { date: '2026-02-10', person: 'Nobody' }, { date: '2026-02-03', person: 'Senior1' },
-      { date: '2026-02-10', person: 'Senior1' }, { date: '2026-03-01', person: '' }] });
-    expect(s.singleDays).toEqual([{ date: '2026-02-03', person: 'Senior1' }, { date: '2026-02-10', person: '' }]);
+      { date: '2026-02-10', person: 'Nobody' }, { date: '2026-02-03', person: 'Whitfield' },
+      { date: '2026-02-10', person: 'Whitfield' }, { date: '2026-03-01', person: '' }] });
+    expect(s.singleDays).toEqual([{ date: '2026-02-03', count: 1, person: 'Whitfield' }, { date: '2026-02-10', count: 1, person: '' }]);
     expect(parseScenario(feb).singleDays).toEqual([]);
   });
 
@@ -47,7 +47,7 @@ describe('1 person OK days', () => {
     const a = audit(withSingle, sol.schedule);
     expect(a.violations).toEqual([]);
     expect(a.warnings.map(w => w.code)).toContain('W_SINGLE_COVER');
-    expect(a.warnings.find(w => w.code === 'W_SINGLE_COVER').message).toContain(`${date}, as you allowed`);
+    expect(a.warnings.find(w => w.code === 'W_SINGLE_COVER').message).toContain(`${date}, as you asked`);
     if (plain?.schedule) expect(audit(tight, plain.schedule).warnings.map(w => w.code)).not.toContain('W_SINGLE_COVER');
   });
 
@@ -60,18 +60,44 @@ describe('1 person OK days', () => {
     expect(audit(s, sol.schedule).violations).toEqual([]);
   });
 
-  it('open day prefers a senior when only one works', async () => {
+  it('forced 1: exactly one works, the surplus offs are free (not charged to the quota)', async () => {
     const { s0, date } = await setup();
-    const names = s0.residents.map(r => r.name);
-    const keepSenior = s0.residents.find(r => r.role === 'senior').name;
-    const keepIntern = s0.residents.find(r => r.role === 'intern').name;
-    const tight = { ...pinOff(s0, date, names.filter(n => n !== keepSenior && n !== keepIntern)),
-      singleDays: [{ date, person: '' }] };   // a senior and an intern left
-    const sol = await solve(tight);
-    const a = audit(tight, sol.schedule);
+    const s = { ...s0, singleDays: [{ date, count: 1, person: '' }] };
+    const sol = await solve(s);
+    expect(sol.schedule.days[date].working.length).toBe(1);
+    const a = audit(s, sol.schedule);
     expect(a.violations).toEqual([]);
-    const w = sol.schedule.days[date].working;
-    expect(w).toContain(keepSenior);   // whoever else is on, the senior is never the one dropped
+    expect(Object.values(sol.schedule.totals).every(t => t.off <= 4)).toBe(true);
+  }, 90000);
+
+  it('forced 2: exactly two work', async () => {
+    const { s0, date } = await setup();
+    const s = { ...s0, singleDays: [{ date, count: 2, person: '' }] };
+    const sol = await solve(s);
+    expect(sol.schedule.days[date].working.length).toBe(2);
+    expect(audit(s, sol.schedule).violations).toEqual([]);
+  }, 90000);
+
+  it('auditor flags a forced day with too many working', async () => {
+    const { s0, date } = await setup();
+    const sol = await solve(s0);
+    const n = sol.schedule.days[date].working.length;
+    if (n < 2) return;
+    const a = audit({ ...s0, singleDays: [{ date, count: 1, person: '' }] }, sol.schedule);
+    expect(a.violations.map(v => v.code)).toContain('A_FORCED_STAFFING');
+  }, 90000);
+
+  it('validate refuses a forced day that is a call day, or has more stuck people than the count', async () => {
+    const { s0, date } = await setup();
+    const callDate = Object.entries((await solve(s0)).schedule.days).find(([, d]) => d.type === 'call')[0];
+    expect(validate({ ...s0, singleDays: [{ date: callDate, count: 1, person: '' }] }).map(e => e.code)).toContain('FORCED_DAY_ON_CALL');
+    const pins = s0.residents.slice(0, 2).map(r => ({ person: r.name, date, type: 'work', half: null, note: '' }));
+    expect(validate({ ...s0, pins: [...s0.pins, ...pins], singleDays: [{ date, count: 1, person: '' }] }).map(e => e.code))
+      .toContain('FORCED_DAY_TOO_MANY_STUCK');
+  }, 90000);
+
+  it('allowExtraOffs is off by default and the quota stays a hard equality', () => {
+    expect(parseScenario(feb).options.allowExtraOffs).toBe(false);
   });
 
   it('validate refuses a named person who is on PTO that day', async () => {
@@ -92,26 +118,50 @@ describe('1 person OK days', () => {
   });
 });
 
-describe('1 person OK UI', () => {
+describe('Force One / Two People UI', () => {
   beforeEach(() => { localStorage.clear(); document.body.innerHTML = ''; });
-  it('mode toggles a date, shows a chip on every resident, lists it, and removes it', () => {
+  const pick = id => { $(id).click(); $(id).dispatchEvent(new Event('change', { bubbles: true })); };
+  it('modes toggle a date with no dialog, switch count, name the lone worker, and remove', () => {
     HTMLDialogElement.prototype.showModal ??= function () { this.setAttribute('open', ''); };
     saveScenario(base());
     localStorage.setItem('med-scheduler-howto-seen', '1');
     document.body.innerHTML = '<div id="app"></div>';
     mount($('#app'));
-    expect($('#chips-section').textContent).toContain('None picked.');
-    $('#mode-single').click(); $('#mode-single').dispatchEvent(new Event('change', { bubbles: true }));
+    expect($('#mode-single').labels[0].textContent).toBe('Force One Person Only');
+    expect($('#mode-double').labels[0].textContent).toBe('Force Two People Only');
+    expect($('#chips-section .single-day-row')).toBeNull();
+    pick('#mode-single');
     document.querySelector('#chips-section .chip-day[data-date="2026-02-10"]').click();
     const chips = document.querySelectorAll('#chips-section .chip-single');
     expect(chips.length).toBe(4);                                  // one per resident
+    expect(chips[0].textContent).toContain('ONLY 1 WORKS');
     expect($('#chips-section .single-day-row').textContent).toContain('2026-02-10');
     const sel = $('#chips-section .single-day-row select');
     expect(sel.options[0].textContent).toBe('Solver chooses');
     sel.value = sel.options[1].value; sel.dispatchEvent(new Event('change', { bubbles: true }));
     expect($('#chips-section .single-day-row select').value).toBe(sel.options[1].value);
+    pick('#mode-double');                                          // same date, other mode: switches the count
+    document.querySelector('#chips-section .chip-day[data-date="2026-02-10"]').click();
+    expect($('#chips-section .chip-single').textContent).toContain('ONLY 2 WORK');
+    expect($('#chips-section .single-day-row select')).toBeNull(); // no "who" picker for two
     $('#chips-section .single-day-row button').click();
-    expect($('#chips-section').textContent).toContain('None picked.');
+    expect($('#chips-section .single-day-row')).toBeNull();
+  });
+
+  it('commitment prompt remembers the last label, starting at clinic', () => {
+    saveScenario(base());
+    localStorage.setItem('med-scheduler-howto-seen', '1');
+    document.body.innerHTML = '<div id="app"></div>';
+    mount($('#app'));
+    const seen = [];
+    const answers = ['ITE', 'ITE'];
+    window.prompt = (_msg, def) => { seen.push(def); return answers.shift(); };
+    pick('#mode-commitment-AM');
+    const cells = () => document.querySelectorAll('#chips-section .chip-day[data-date="2026-02-17"]');
+    cells()[0].click();
+    pick('#mode-commitment-PM');
+    cells()[1].click();
+    expect(seen).toEqual(['clinic', 'ITE']);
   });
 });
 

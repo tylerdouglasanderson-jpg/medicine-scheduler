@@ -4,6 +4,20 @@
 // The first entry's version must equal package.json's version.
 export const CHANGELOG = [
   {
+    version: '1.12.0', date: '2026-10-22',
+    items: [
+      'New Force One Person Only and Force Two People Only buttons make a day run with exactly one or exactly two people. Everyone else who is free that day gets a bonus day off that does not count against the quota. Click dates one after another with no dialog; click the same mode again to remove a date. Old 1 person OK days load as Force One Person Only',
+      'Commitment buttons remember the last label you typed (starting at clinic). Pin and mode buttons are renamed in Title Case: PTO Day, PIN:OFF DAY, PIN:Must Work, PIN:Pager, PIN:Day, PIN:Night, PIN:Half Off AM and PIN:Half Off PM',
+      'Setup has a tidier Preferences group. The off quota hint says it is per month and pro-rated (normally leave it at 4), and a new, not advised preference Allow more than the quota of days off lets the solver exceed it only when a month cannot be staffed otherwise',
+      'The roster name column is now Last name, the example month uses sample last names, and interns get Hard didactics ticked automatically',
+      'On a wide screen the first Solve now puts your inputs on the left and the results on the right automatically. The buttons read Return to single-column view and Return to two-column view',
+      'Every control now has a longer, fuller tooltip that was checked against what the code does',
+      'Print / Save as PDF is cleaner: the title reads Final Results, there is no collapse button, byline or Potential Issues, two weeks fit on each landscape page, and tables stay inside the page width',
+      'The Export menu exports one solution at a time, the one on screen by default, and says which. Calendar (.ics) files are for Outlook, Google or Apple Calendar; the Excel spreadsheet is for working through the month or sending to the chief; Print makes a PDF',
+      'Fixed the solver ignoring its preference for a senior when only one person works, and a crash when opening the side-by-side view on a wide screen',
+    ],
+  },
+  {
     version: '1.11.0', date: '2026-10-21',
     items: [
       'Each day box in the Commitments / PTO / Pins calendars now shows the team’s call-cycle day in the top-right corner (SC1, SC2, PRE-C, CALL, PC for post-call, PPC), so you can see what the team is doing while you edit one person',

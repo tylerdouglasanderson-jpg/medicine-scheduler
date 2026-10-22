@@ -17,7 +17,7 @@ const withTY = (dates, hard = false) => {
 
 describe('defaults and helper', () => {
   it('TY intern defaults to a locked Wednesday PM alt rule with no dates', () => {
-    expect(defaultDidactics('intern', 'TY')).toEqual({ dow: 3, half: 'PM', hard: false, alt: true, dates: [] });
+    expect(defaultDidactics('intern', 'TY')).toEqual({ dow: 3, half: 'PM', hard: true, alt: true, dates: [] });
   });
   it('didacticsOn: alt uses only the picked dates, weekly uses the weekday', () => {
     const alt = { didactics: { dow: 3, alt: true, dates: ['2026-10-07'] } };

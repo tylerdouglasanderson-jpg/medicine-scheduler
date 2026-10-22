@@ -20,7 +20,8 @@ function hasHalfOff(scenario, person, date) {
   return (scenario.pins ?? []).some(p => p.type === 'halfOff' && p.person === person && p.date === date);
 }
 function isBonusOff(scenario, person, date) {
-  return (scenario.pins ?? []).some(p => p.type === 'offFree' && p.person === person && p.date === date);
+  return (scenario.pins ?? []).some(p => p.type === 'offFree' && p.person === person && p.date === date)
+    || (scenario.singleDays ?? []).some(x => x.date === date);
 }
 // v1.1.0: the CLINIC row also carries non-clinic commitments (ITE, …). Any label that doesn't start with
 // "clinic" is named inline with its own label — "Smith (ITE)", "Smith (Conference)" — the same way DIDACTICS
@@ -102,7 +103,7 @@ function buildCell(row, date, scenario, schedule, types, mrDays) {
       if (mrDays.has(date)) {
         td.classList.add('type-mr');
         td.dataset.morningReport = 'true';
-        td.title = 'Morning Report — this team presents today.';
+        td.title = 'Morning Report: this team presents today. The scheduler tries to avoid giving offs on these days and to keep a senior and an intern present. This is a preference, not a hard rule, so check the warnings panel for any Morning Report issues.';
         const tag = document.createElement('div');
         tag.className = 'mr-tag';
         tag.textContent = 'MORNING REPORT';
@@ -194,21 +195,21 @@ const TOTALS_COLS = [
 ];
 // Plain-words meaning of each column (mirrors solve.js totals and the guide's "Totals table").
 export const TOTALS_HELP = {
-  name: 'The resident.',
-  shifts: 'Days they worked on the team this month. A day with a half day off counts as half a shift.',
-  pager: 'Days they held the team pager.',
-  clinic: 'Clinic and other obligations (ITE, conference…) that fell on a day they were working, so they went.',
+  name: 'The resident. One row per person on the team this month, in roster order. Every number in the row is that person’s total for the month of the solution on screen.',
+  shifts: 'Days they worked on the team this month. A day with a half day off counts as half a shift. Days off, PTO and days outside their service window are not counted.',
+  pager: 'Days they held the team pager this month. Call days show a dash in the Pager row because the call roles cover them. Compare the numbers to see whether the pager load is balanced.',
+  clinic: 'Clinic and other obligations (ITE, conference…) that fell on a day they were working, so they had to go. Commitments on a day off or PTO are not counted. Use it to see who is losing the most working time to obligations.',
   didactics: 'Didactics sessions attended out of the sessions they could attend. Call, post-call and PTO days ' +
-    'are left out. Holding the pager still counts as attending.',
-  off: 'Whole days off that count toward their quota. Bonus days and half days are not in this number.',
-  pto: 'Leave days that fall while they are on the team.',
-  bonus: 'Extra free whole days off (pinned as free / bonus). They do not count toward the quota.',
-  perks: 'Half days off. Each one is an extra freebie: never counted in Off, and two halves do not make a day off.',
-  offBonus: 'All days off: counted offs plus bonus days plus half days (Perks) at half a day each.',
+    'are left out. Holding the pager still counts as attending. A dash means no sessions were possible.',
+  off: 'Whole days off that count toward their quota (normally 4 for a full month, pro-rated for a part month). Bonus days and half days are not in this number; they are shown in the Days and Perks columns.',
+  pto: 'Vacation or leave days that fall while they are on the team. They are not scheduled and do not count as one of their days off.',
+  bonus: 'Extra free whole days off that do not count toward the quota. This includes bonus days pinned as free, and the surplus people sent home on a Force One Person Only or Force Two People Only day: only one or two residents work that day and everyone else free gets a bonus day off.',
+  perks: 'Half days off, from half-day-off pins. Each one is an extra freebie: never counted in Off, and two halves do not make a day off. They are on top of the quota.',
+  offBonus: 'All the time off this person got: counted offs, plus bonus days, plus half days (Perks) at half a day each. Handy for comparing total rest across residents, since it includes the free days that Off leaves out.',
   pmOff: 'Afternoons off: days they rounded in the morning with nothing in the afternoon (no pager, clinic, ' +
-    'didactics or other PM block). Weekends count; call and post-call days never do. For information only.',
+    'didactics or other PM block). Weekends count; call and post-call days never do. For information only: it is not a quota and the scheduler does not target it.',
 };
-const NO_DIDACTICS_TIP = 'No didactics sessions they could attend this month (call, post-call, PTO or off service)';
+const NO_DIDACTICS_TIP = 'No didactics sessions they could attend this month (call, post-call, PTO or off service), so there is nothing to attend and nothing to count against them.';
 
 export function renderTotals(schedule) {
   const table = document.createElement('table');
@@ -255,7 +256,7 @@ export function renderTotals(schedule) {
           td.setAttribute('aria-label', NO_DIDACTICS_TIP);
         } else {
           td.textContent = t.didacticsOf == null ? String(t.didactics) : `${t.didactics} / ${t.didacticsOf}`;
-          if (t.didacticsPager) td.title = `${t.didacticsPager} of those attended while holding the pager`;
+          if (t.didacticsPager) td.title = `Didactics attended out of the sessions they could attend (call, post-call, PTO and off-service days are left out). ${t.didacticsPager} of those were attended while holding the pager, which still counts as attending.`;
         }
       } else if (row[col] == null) td.textContent = '—';
       else td.textContent = Number.isInteger(row[col]) ? String(row[col]) : row[col].toFixed(1);   // half-days keep one decimal
@@ -298,8 +299,8 @@ export function renderWarnings(auditResult, onAttendingCover) {
       btn.textContent = undo ? 'Give it back to the team' : 'Attending covers the pager';
       btn.dataset.attendingDate = w.date;
       btn.title = undo
-        ? `Take ${w.date} back off the attending and solve again.`
-        : `Hand the pager on ${w.date} to the attending and solve again — the rest of the month is held steady.`;
+        ? `Takes the pager on ${w.date} back from the attending, so the residents cover it again, and solves again. The rest of the month stays as close to the current schedule as possible.`
+        : `Hands the pager on ${w.date} to the attending and solves again. The rest of the month is held steady where it can be. Use it only when no resident is free to take that pager; click the button again to take the day back.`;
       btn.addEventListener('click', () => onAttendingCover(w.date, undo));
       li.appendChild(btn);
     }

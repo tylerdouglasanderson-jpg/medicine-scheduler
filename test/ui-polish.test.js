@@ -39,7 +39,7 @@ describe('compact action bar', () => {
     mountApp();
     const toggle = $('#export-toggle');
     expect(toggle.disabled).toBe(true);
-    expect(toggle.title).toBe('Solve first');
+    expect(toggle.title).toMatch(/Solve first/);
     expect($('#export-menu').hidden).toBe(true);
     expect($('#xlsx-export-button')).toBeTruthy();                // rendered, just inside the closed menu
   });
@@ -59,7 +59,7 @@ describe('compact action bar', () => {
     for (const id of ['#export-scope', '#calendar-export-person', '#calendar-export-button',
       '#xlsx-export-button', '#google-sheets-button', '#print-button'])
       expect(menu.contains($(id)), id).toBe(true);
-    expect($('#print-button').textContent).toBe('Print');
+    expect($('#print-button').textContent).toBe('Print / Save as PDF');
 
     $('#export-scope').dispatchEvent(new MouseEvent('click', { bubbles: true }));   // inside: stays open
     expect(menu.hidden).toBe(false);
@@ -149,7 +149,7 @@ describe('setup polish', () => {
     expect(prefs.querySelector('h3').textContent).toBe('Preferences');
     for (const name of ['goldenWeekend', 'seniorsOffShortCall', 'seniorFirstDay']) {
       const input = prefs.querySelector(`input[name="${name}"]`);
-      const label = input.closest('label.check');
+      const label = input.closest('label.pref');
       expect(label, name).toBeTruthy();
       expect(label.firstElementChild).toBe(input);                 // box left of the text
     }

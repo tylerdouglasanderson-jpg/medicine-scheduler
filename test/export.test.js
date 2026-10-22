@@ -43,7 +43,7 @@ describe('xlsx export (feb-2026, week of Feb 1-7)', () => {
 
   it('totals block lists all four residents with 0.5-increment offs', () => {
     const text = JSON.stringify(ws.getSheetValues());
-    for (const n of ['Intern1', 'Intern2', 'Senior1', 'Senior2']) expect(text).toContain(n);
+    for (const n of ['Okafor', 'Reyes', 'Whitfield', 'Nakamura']) expect(text).toContain(n);
   });
 
   it('persists readable Excel and Google Sheets dimensions through an xlsx round-trip', async () => {

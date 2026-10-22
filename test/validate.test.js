@@ -32,7 +32,7 @@ it('QUOTA_IMPOSSIBLE: clinic on every eligible day leaves nowhere to put the 4 o
     '2026-02-08', '2026-02-09', '2026-02-10', '2026-02-13', '2026-02-14', '2026-02-15',
     '2026-02-16', '2026-02-19', '2026-02-20', '2026-02-21', '2026-02-22', '2026-02-25',
     '2026-02-26', '2026-02-27', '2026-02-28'];   // every non-call, non-post-call day in Feb 2026
-  s.residents = s.residents.map(r => r.name === 'Intern2'
+  s.residents = s.residents.map(r => r.name === 'Reyes'
     ? { ...r, commitments: eligible.map(date => ({ date, half: 'AM', label: 'clinic' })) } : r);
   const errs = validate(s);
   expect(errs.map(e => e.code)).toContain('QUOTA_IMPOSSIBLE');

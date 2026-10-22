@@ -25,7 +25,7 @@ function patchResident(scenario, i, patch) {
 function patchType(scenario, i, patch) {
   const r = scenario.residents[i];
   const def = defaultDidactics(patch.role ?? r.role, patch.kind ?? r.kind);
-  const didactics = def ? { ...def, hard: r.didactics?.hard ?? false } : null;
+  const didactics = def ? { ...def, hard: r.didactics?.hard ?? def.hard } : null;
   if (didactics?.alt && r.didactics?.alt) didactics.dates = r.didactics.dates ?? [];
   return patchResident(scenario, i, { ...patch, didactics });
 }
@@ -43,7 +43,7 @@ function showTransitionalNotice() {
     const h = document.createElement('h2');
     h.textContent = 'Transitional intern didactics';
     const x = document.createElement('button');
-    x.type = 'button'; x.className = 'btn-ghost'; x.textContent = '×'; x.title = 'Close';
+    x.type = 'button'; x.className = 'btn-ghost'; x.textContent = '×'; x.title = 'Closes this note. Nothing about the roster changes.';
     x.addEventListener('click', () => dlg.close());
     header.append(h, x);
     const body = document.createElement('div');
@@ -62,6 +62,7 @@ function showTransitionalNotice() {
     ]) { const li = document.createElement('li'); li.textContent = text; steps.appendChild(li); }
     const ok = document.createElement('button');
     ok.type = 'button'; ok.className = 'btn-primary dialog-link'; ok.textContent = 'Got it';
+    ok.title = 'Closes this note. Next, switch to the Didactics (PM) mode in Commitments / PTO / Pins and click each Wednesday this intern has didactics in their calendar.';
     ok.addEventListener('click', () => dlg.close());
     body.append(p, steps, ok);
     dlg.append(header, body);
@@ -112,7 +113,7 @@ export function render(container, scenario, onChange) {
     const table = document.createElement('table');
     table.className = 'roster-table';
     const thead = document.createElement('thead');
-    thead.innerHTML = '<tr><th>Name</th><th>Role</th><th>Kind</th><th>Start</th><th>End</th>' +
+    thead.innerHTML = '<tr><th>Last name</th><th>Role</th><th>Kind</th><th>Start</th><th>End</th>' +
       '<th>Didactics day</th><th>Half</th><th>Hard</th><th></th></tr>';
     table.appendChild(thead);
 
@@ -129,27 +130,28 @@ export function render(container, scenario, onChange) {
       const nameInput = document.createElement('input');
       nameInput.type = 'text';
       nameInput.value = r.name;
-      nameInput.title = 'This resident’s display name.';
+      nameInput.placeholder = 'Last name';
+      nameInput.title = 'Last name only is fine; it just has to be unique on this team. It labels this resident everywhere on the calendar, totals and exports. Pins are saved under this name, so set it before adding pins: renaming later does not move existing pins.';
       nameInput.addEventListener('change', () => onChange(patchResident(scenario, i, { name: nameInput.value })));
       tr.appendChild(td(nameInput));
 
       tr.appendChild(selectCell(ROLES, r.role, null, v => onChange(patchType(scenario, i, { role: v })),
-        false, 'Intern vs senior — drives call composition. Seniors default to Tue PM didactics.'));
+        false, 'Intern or senior. This drives who can cover which call and pager slots, and which senior-only rules apply to this person. Changing it also resets this resident’s didactics day to the default for the new role and background (seniors default to Tuesday PM), replacing any day or half you picked; the Hard flag is kept.'));
       tr.appendChild(selectCell(KINDS, r.kind, k => KIND_LABELS[k] ?? k,
         v => { onChange(patchType(scenario, i, { kind: v })); if (v === 'TY') showTransitionalNotice(); },
-        false, 'Training background. Sets the default didactics day: Psych → Tue PM, Family → Thu PM. Transitional is Wednesday PM every other week: pick the dates in their calendar with the Didactics (PM) mode.'));
+        false, 'Training background, which sets the default weekly didactics day: Family = Thursday PM, Psych = Tuesday PM, Transitional = every other Wednesday PM (pick the dates in their calendar with the Didactics (PM) mode). Changing it resets the didactics day and half, and for OB/GYN or Other interns removes it until you choose one.'));
 
       const start = document.createElement('input');
       start.type = 'date';
       start.value = r.serviceStart;
-      start.title = 'Service window start — the first date this resident is on the team.';
+      start.title = 'The first day this resident is on the team this month. Days before it are ignored: no work, day off or pager is assigned, and it does not count against their days off. Use it for someone who joins mid-month; their days-off quota is pro-rated by the days they serve.';
       start.addEventListener('change', () => onChange(patchResident(scenario, i, { serviceStart: start.value })));
       tr.appendChild(td(start));
 
       const end = document.createElement('input');
       end.type = 'date';
       end.value = r.serviceEnd;
-      end.title = 'Service window end — the last date this resident is on the team.';
+      end.title = 'The last day this resident is on the team this month. Days after it are ignored: nothing is assigned to them. Make sure it is on or after the start date. Their days-off quota is pro-rated by the days they serve, and Split seat uses this date to start the replacement.';
       end.addEventListener('change', () => onChange(patchResident(scenario, i, { serviceEnd: end.value })));
       tr.appendChild(td(end));
 
@@ -157,21 +159,21 @@ export function render(container, scenario, onChange) {
       const alt = !!r.didactics?.alt;   // Transitional: Wed PM is fixed, the dates are picked in the calendar
       const dowValue = r.didactics ? String(r.didactics.dow) : 'none';
       tr.appendChild(selectCell(dowOptions, dowValue, o => (o === 'none' ? 'None' : DOW_LABELS[Number(o)]), v => {
-        const didactics = v === 'none' ? null : { dow: Number(v), half: r.didactics?.half ?? 'PM', hard: r.didactics?.hard ?? false };
+        const didactics = v === 'none' ? null : { dow: Number(v), half: r.didactics?.half ?? 'PM', hard: r.didactics?.hard ?? (r.role !== 'senior') };
         onChange(patchResident(scenario, i, { didactics }));
-      }, alt, alt ? 'Every other Wednesday — pick the dates in this intern’s calendar (Didactics (PM) mode).'
-        : 'Weekly didactics day — defaulted from role/kind; override here per resident.'));
+      }, alt, alt ? 'Locked: this Transitional intern has didactics on every other Wednesday PM. Pick those Wednesdays in this intern’s calendar with the Didactics (PM) mode.'
+        : 'The weekday this resident has weekly didactics, or None. It is filled in from role and background, and you can override it here. On that day the scheduler tries to keep them off the pager and off days off (strictly if Hard is ticked), and the totals count the sessions attended.'));
 
       tr.appendChild(selectCell(['AM', 'PM'], r.didactics?.half ?? 'PM', null, v => {
         if (!r.didactics) return;
         onChange(patchResident(scenario, i, { didactics: { ...r.didactics, half: v } }));
-      }, !r.didactics || alt, 'AM or PM half for didactics.'));
+      }, !r.didactics || alt, 'Whether the weekly didactics session is in the morning or the afternoon. A half day off on the same half makes them miss that session. Greyed out when there is no didactics day, and for Transitional interns (Wednesday PM is fixed).'));
 
       const hard = document.createElement('input');
       hard.type = 'checkbox';
       hard.checked = !!r.didactics?.hard;
       hard.disabled = !r.didactics;
-      hard.title = 'Protected — must not be scheduled over; a conflict emits a warning.';
+      hard.title = 'Protected didactics. When ticked, the scheduler keeps this resident off the pager and off a day off on their didactics day, and treats breaking that as very costly. It is not an absolute ban: if the month cannot be staffed any other way it will break it, and the warnings panel tells you. Needs a didactics day first.';
       hard.addEventListener('change', () => {
         if (!r.didactics) return;
         onChange(patchResident(scenario, i, { didactics: { ...r.didactics, hard: hard.checked } }));
@@ -183,7 +185,7 @@ export function render(container, scenario, onChange) {
       removeBtn.type = 'button';
       removeBtn.className = 'btn-ghost';
       removeBtn.textContent = 'Remove';
-      removeBtn.title = 'Remove this resident from the roster.';
+      removeBtn.title = 'Deletes this resident’s row from the roster right away, with no confirmation. Their time off and clinic entries go with the row; any pins stay in the month under their name but no longer apply. Press Solve again afterwards.';
       removeBtn.addEventListener('click', () =>
         onChange({ ...scenario, residents: scenario.residents.filter((_, idx) => idx !== i) }));
       actions.appendChild(removeBtn);
@@ -192,7 +194,7 @@ export function render(container, scenario, onChange) {
       splitBtn.type = 'button';
       splitBtn.className = 'btn-secondary';
       splitBtn.textContent = 'Split seat';
-      splitBtn.title = 'Mid-month handoff: duplicate this seat with a replacement starting the day after this resident’s service ends.';
+      splitBtn.title = 'Mid-month handoff. Asks for a replacement’s name and adds a copy of this seat that starts the day after this resident’s end date and runs to the end of the month. The replacement starts with no time off or clinic entries, and pins are not copied. Set this resident’s End date first.';
       splitBtn.addEventListener('click', () => {
         const name = prompt(`Name of the resident replacing ${r.name}?`);
         if (!name) return;
@@ -217,7 +219,7 @@ export function render(container, scenario, onChange) {
   addBtn.type = 'button';
   addBtn.className = 'btn-secondary';
   addBtn.textContent = 'Add resident';
-  addBtn.title = 'Add a new resident row to the roster.';
+  addBtn.title = 'Adds an empty resident row covering the whole month, as an intern with no didactics day. Type a last name first, then set role, background and service dates, and add a didactics day if they have one.';
   addBtn.addEventListener('click', () => {
     const dates = monthDates(scenario.month);
     const blank = {

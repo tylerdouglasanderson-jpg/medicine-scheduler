@@ -114,7 +114,7 @@ describe('xlsx totals box', () => {
         expect(Math.abs(pm - t.pmOff), `${name} PM off ${pm} vs ${t.pmOff}`).toBeLessThanOrEqual(3);
       }
 
-      // no Total / Spread rows (removed at Senior1's request): the row under the last resident is empty
+      // no Total / Spread rows (removed at Whitfield's request): the row under the last resident is empty
       expect(ws.getCell(residents.at(-1).row + 1, 10).value ?? null).toBeNull();
 
       // tick a free Day box and a free PM box on service days

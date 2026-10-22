@@ -11,7 +11,7 @@
     },
     "residents": [
       {
-        "name": "Intern1",
+        "name": "Okafor",
         "role": "intern",
         "kind": "other",
         "serviceStart": "2026-02-01",
@@ -21,7 +21,7 @@
         "pto": []
       },
       {
-        "name": "Intern2",
+        "name": "Reyes",
         "role": "intern",
         "kind": "other",
         "serviceStart": "2026-02-01",
@@ -31,7 +31,7 @@
         "pto": []
       },
       {
-        "name": "Senior1",
+        "name": "Whitfield",
         "role": "senior",
         "kind": "categorical",
         "serviceStart": "2026-02-01",
@@ -41,7 +41,7 @@
         "pto": []
       },
       {
-        "name": "Senior2",
+        "name": "Nakamura",
         "role": "senior",
         "kind": "categorical",
         "serviceStart": "2026-02-01",
@@ -60,186 +60,186 @@
       "2026-02-01": {
         "type": "ppc",
         "working": [
-          "Senior1",
-          "Intern1",
-          "Intern2"
+          "Whitfield",
+          "Okafor",
+          "Reyes"
         ],
         "off": [
-          "Senior2"
+          "Nakamura"
         ],
         "sleeper": null,
-        "pager": "Senior1",
+        "pager": "Whitfield",
         "dayCall": null,
         "night": null
       },
       "2026-02-02": {
         "type": "sc1",
         "working": [
-          "Senior1",
-          "Senior2",
-          "Intern2"
+          "Whitfield",
+          "Nakamura",
+          "Reyes"
         ],
         "off": [
-          "Intern1"
+          "Okafor"
         ],
         "sleeper": null,
-        "pager": "Intern2",
+        "pager": "Reyes",
         "dayCall": null,
         "night": null
       },
       "2026-02-03": {
         "type": "sc2",
         "working": [
-          "Senior1",
-          "Senior2",
-          "Intern1"
+          "Whitfield",
+          "Nakamura",
+          "Okafor"
         ],
         "off": [
-          "Intern2"
+          "Reyes"
         ],
         "sleeper": null,
-        "pager": "Intern1",
+        "pager": "Okafor",
         "dayCall": null,
         "night": null
       },
       "2026-02-04": {
         "type": "precall",
         "working": [
-          "Senior2",
-          "Intern1",
-          "Intern2"
+          "Nakamura",
+          "Okafor",
+          "Reyes"
         ],
         "off": [
-          "Senior1"
+          "Whitfield"
         ],
         "sleeper": null,
-        "pager": "Intern1",
+        "pager": "Okafor",
         "dayCall": null,
         "night": null
       },
       "2026-02-05": {
         "type": "call",
         "working": [
-          "Senior1",
-          "Senior2",
-          "Intern1",
-          "Intern2"
+          "Whitfield",
+          "Nakamura",
+          "Okafor",
+          "Reyes"
         ],
         "off": [],
         "sleeper": null,
         "pager": null,
         "dayCall": {
-          "senior": "Senior1",
-          "intern": "Intern2"
+          "senior": "Whitfield",
+          "intern": "Reyes"
         },
-        "night": "Intern1"
+        "night": "Okafor"
       },
       "2026-02-06": {
         "type": "postcall",
         "working": [
-          "Senior1",
-          "Senior2",
-          "Intern2"
+          "Whitfield",
+          "Nakamura",
+          "Reyes"
         ],
         "off": [],
-        "sleeper": "Intern1",
-        "pager": "Senior1",
+        "sleeper": "Okafor",
+        "pager": "Whitfield",
         "dayCall": null,
         "night": null
       },
       "2026-02-07": {
         "type": "ppc",
         "working": [
-          "Senior1",
-          "Intern1",
-          "Intern2"
+          "Whitfield",
+          "Okafor",
+          "Reyes"
         ],
         "off": [
-          "Senior2"
+          "Nakamura"
         ],
         "sleeper": null,
-        "pager": "Senior1",
+        "pager": "Whitfield",
         "dayCall": null,
         "night": null
       },
       "2026-02-08": {
         "type": "sc1",
         "working": [
-          "Senior1",
-          "Senior2",
-          "Intern2"
+          "Whitfield",
+          "Nakamura",
+          "Reyes"
         ],
         "off": [
-          "Intern1"
+          "Okafor"
         ],
         "sleeper": null,
-        "pager": "Intern2",
+        "pager": "Reyes",
         "dayCall": null,
         "night": null
       },
       "2026-02-09": {
         "type": "sc2",
         "working": [
-          "Senior1",
-          "Senior2",
-          "Intern1"
+          "Whitfield",
+          "Nakamura",
+          "Okafor"
         ],
         "off": [
-          "Intern2"
+          "Reyes"
         ],
         "sleeper": null,
-        "pager": "Intern1",
+        "pager": "Okafor",
         "dayCall": null,
         "night": null
       },
       "2026-02-10": {
         "type": "precall",
         "working": [
-          "Senior2",
-          "Intern1",
-          "Intern2"
+          "Nakamura",
+          "Okafor",
+          "Reyes"
         ],
         "off": [
-          "Senior1"
+          "Whitfield"
         ],
         "sleeper": null,
-        "pager": "Intern1",
+        "pager": "Okafor",
         "dayCall": null,
         "night": null
       },
       "2026-02-11": {
         "type": "call",
         "working": [
-          "Senior1",
-          "Senior2",
-          "Intern1",
-          "Intern2"
+          "Whitfield",
+          "Nakamura",
+          "Okafor",
+          "Reyes"
         ],
         "off": [],
         "sleeper": null,
         "pager": null,
         "dayCall": {
-          "senior": "Senior2",
-          "intern": "Intern1"
+          "senior": "Nakamura",
+          "intern": "Okafor"
         },
-        "night": "Intern2"
+        "night": "Reyes"
       },
       "2026-02-12": {
         "type": "postcall",
         "working": [
-          "Senior1",
-          "Senior2",
-          "Intern1"
+          "Whitfield",
+          "Nakamura",
+          "Okafor"
         ],
         "off": [],
-        "sleeper": "Intern2",
-        "pager": "Intern1",
+        "sleeper": "Reyes",
+        "pager": "Okafor",
         "dayCall": null,
         "night": null
       }
     },
     "totals": {
-      "Intern1": {
+      "Okafor": {
         "shifts": 9,
         "pager": 5,
         "clinic": 0,
@@ -249,7 +249,7 @@
         "bonus": 0,
         "perks": 0
       },
-      "Intern2": {
+      "Reyes": {
         "shifts": 9,
         "pager": 3,
         "clinic": 0,
@@ -259,7 +259,7 @@
         "bonus": 0,
         "perks": 0
       },
-      "Senior1": {
+      "Whitfield": {
         "shifts": 10,
         "pager": 2,
         "clinic": 0,
@@ -269,7 +269,7 @@
         "bonus": 0,
         "perks": 0
       },
-      "Senior2": {
+      "Nakamura": {
         "shifts": 10,
         "pager": 0,
         "clinic": 0,

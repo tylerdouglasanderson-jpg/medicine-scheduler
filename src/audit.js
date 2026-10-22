@@ -134,16 +134,24 @@ export function audit(scenario, schedule) {
     const medCstaff = scenario.team === 'C' && roster.every(r => r.role === 'senior');
     const twoPersonTeam = roster.length <= 2;   // 1 intern + 1 senior: one resident runs it alone
     const single = (scenario.singleDays ?? []).find(x => x.date === d);
-    const floor = Math.min(medCstaff || twoPersonTeam || single ? 1 : 2, effAvail);
+    const floor = Math.min(medCstaff || twoPersonTeam || (single && (single.count ?? 1) === 1) ? 1 : 2, effAvail);
     if (dayTeam.length < floor)
       V('A_STAFFING', `Only ${dayTeam.length} working the day team on ${d} (floor ${floor})`, null, d);
     // A day the chief marked "one person is enough": say plainly when only one is scheduled, and hold the
     // solver to the named person if one was chosen.
+    // Forced count (v1.5.0): no more than N working either, counting a half day off as half a person.
     if (single && t !== 'call') {
+      const n = single.count ?? 1;
+      const halfOffOf = new Set((scenario.pins ?? []).filter(x => x.date === d && x.type === 'halfOff').map(x => x.person));
+      const weighted = dayTeam.reduce((a, nm) => a + (halfOffOf.has(nm) ? 0.5 : 1), 0);
+      if (weighted > n)
+        V('A_FORCED_STAFFING', `${dayTeam.join(', ')} are working on ${d}, but it was forced to ${n} ${n === 1 ? 'person' : 'people'}`, null, d);
+    }
+    if (single && t !== 'call' && (single.count ?? 1) === 1) {
       if (single.person && !dd.working.includes(single.person))
         V('A_SINGLE_PERSON_IGNORED', `${single.person} was named as the one person working on ${d} but is not working`, single.person, d);
       if (dayTeam.length === 1)
-        W('W_SINGLE_COVER', `Only ${dayTeam[0]} is scheduled on ${d}, as you allowed.`, dayTeam[0], d);
+        W('W_SINGLE_COVER', `Only ${dayTeam[0]} is scheduled on ${d}, as you asked.`, dayTeam[0], d);
     }
 
     // W_MR_THIN / W_MR_NO_SENIOR / W_MR_NO_INTERN — Morning Report = pre-call on Tue/Thu, this
@@ -244,6 +252,7 @@ export function audit(scenario, schedule) {
     const quota = Math.floor(scenario.options.offQuota * svc.length / allDates.length + 0.5); // round-half-up
     const pins = scenario.pins ?? [];
     const freeDates = new Set(pins.filter(p => p.person === r.name && p.type === 'offFree').map(p => p.date));
+    for (const x of scenario.singleDays ?? []) freeDates.add(x.date);   // offs on a forced-staffing day are free
     // Half days off (halfOff pins) are freebies: they never count toward the quota (program rule, 2026-10).
     const counted = svc.filter(d => day(d)?.off.includes(r.name) && !freeDates.has(d)).length;
     // Quota is a hard line: the full pro-rated number of whole offs, every person, every month.

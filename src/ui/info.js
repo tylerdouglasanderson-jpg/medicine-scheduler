@@ -13,7 +13,7 @@ export const CRITERIA = [
     'Exact off quota for everyone (pro-rated for part-month seats)',
     '1 pager holder every non-call day, never someone who is off, asleep, or in a PM commitment',
     'Post-call pager goes to the day-call intern (a senior only if no intern can)',
-    'At least 2 working every day',
+    'At least 2 working every day (unless you force a day to exactly 1 or 2)',
     '2 seniors + 1 intern: the intern takes every other night',
     'Your pins, PTO, service windows and chosen attending days are honored',
   ] },

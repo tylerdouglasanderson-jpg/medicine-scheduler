@@ -26,6 +26,17 @@ export function validate(scenario) {
     if (x.person && (!r || !onService(r, x.date) || r.pto.includes(x.date)))
       err('SINGLE_DAY_PERSON_UNAVAILABLE', x.person, x.date,
         `${x.person} is named as the one person working on ${x.date}, but they are on PTO or off service that day`);
+    const n = x.count ?? 1;
+    if (types.get(x.date) === 'call')
+      err('FORCED_DAY_ON_CALL', null, x.date, `${x.date} is a call day: everyone works it, so it cannot be forced to ${n} ${n === 1 ? 'person' : 'people'}`);
+    // Everyone who cannot be sent home (a clinic that day, or a must-work pin) has to fit inside the count.
+    const stuck = scenario.residents.filter(r => onService(r, x.date) && !r.pto.includes(x.date)
+      && (r.commitments.some(c => c.date === x.date)
+        || scenario.pins.some(p => p.person === r.name && p.date === x.date && ['work', 'pager'].includes(p.type))
+        || (n === 1 && x.person === r.name)));
+    if (stuck.length > n)
+      err('FORCED_DAY_TOO_MANY_STUCK', null, x.date,
+        `${x.date} is forced to ${n} ${n === 1 ? 'person' : 'people'}, but ${stuck.map(r => r.name).join(', ')} all have a clinic or must-work pin that day`);
   }
 
   for (const p of scenario.pins) {

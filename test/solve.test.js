@@ -22,9 +22,9 @@ describe('feb-2026 golden solve (Node)', () => {
 
   it('zero audit violations', () => expect(audit(s, schedule).violations).toEqual([]));
 
-  it('off counts = quota EXACTLY for everyone (hard line); Intern1 2 on a half window', () => {
+  it('off counts = quota EXACTLY for everyone (hard line); Okafor 2 on a half window', () => {
     for (const r of s.residents) expect(schedule.totals[r.name].off).toBe(quotaFor(r, s));
-    expect(schedule.totals.Intern1.off).toBe(2);   // Feb 1-15 = 15/28 days -> 4 * 15/28 rounds to 2
+    expect(schedule.totals.Okafor.off).toBe(2);   // Feb 1-15 = 15/28 days -> 4 * 15/28 rounds to 2
     expect(warnings.some(w => w.code === 'W_QUOTA_SHORT')).toBe(false);
   });
 
@@ -37,12 +37,12 @@ describe('feb-2026 golden solve (Node)', () => {
     }
   });
 
-  it('Intern1: nothing after Feb 15; exactly one night across Feb 5+11 (Intern2 the other)', () => {
+  it('Okafor: nothing after Feb 15; exactly one night across Feb 5+11 (Reyes the other)', () => {
     for (const [d, day] of Object.entries(schedule.days))
       if (d > '2026-02-15')
-        expect([...day.working, ...day.off, day.pager, day.night, day.sleeper]).not.toContain('Intern1');
+        expect([...day.working, ...day.off, day.pager, day.night, day.sleeper]).not.toContain('Okafor');
     expect(['2026-02-05', '2026-02-11'].map(d => schedule.days[d].night).sort())
-      .toEqual(['Intern1', 'Intern2']);
+      .toEqual(['Okafor', 'Reyes']);
   });
 
   it('call days: no pager, one night, everyone on service works', () => {
@@ -61,7 +61,7 @@ describe('feb-2026 golden solve (Node)', () => {
       expect(schedule.days[nextDate(c)].pager).toBe(schedule.days[c].dayCall.intern);
     for (const c of ['2026-02-17', '2026-02-23'])
       if (!schedule.days[c].dayCall.intern)
-        expect(['Senior1', 'Senior2']).toContain(schedule.days[nextDate(c)].pager);
+        expect(['Whitfield', 'Nakamura']).toContain(schedule.days[nextDate(c)].pager);
   });
 
   it('Feb 12 is post-call: the day-call intern pages and no didactics warning is raised', () => {
@@ -74,10 +74,10 @@ describe('feb-2026 golden solve (Node)', () => {
       .toBe(false);
   });
 
-  it('Senior1 idle on PTO day Feb 20', () => {
+  it('Whitfield idle on PTO day Feb 20', () => {
     const day = schedule.days['2026-02-20'];
-    expect(day.working).not.toContain('Senior1');
-    expect(day.pager).not.toBe('Senior1');
+    expect(day.working).not.toContain('Whitfield');
+    expect(day.pager).not.toBe('Whitfield');
   });
 
   it('spread + SC properties (expected.md)', () => {
@@ -107,12 +107,12 @@ describe('feb-2026 golden solve (Node)', () => {
 });
 
 describe('variants', () => {
-  it('pin variant: Senior2 offCounted 2026-02-26 honored, violation-free, still 4 offs', async () => {
-    const s = parseScenario({ ...feb, pins: [{ person: 'Senior2', date: '2026-02-26', type: 'offCounted' }] });
+  it('pin variant: Nakamura offCounted 2026-02-26 honored, violation-free, still 4 offs', async () => {
+    const s = parseScenario({ ...feb, pins: [{ person: 'Nakamura', date: '2026-02-26', type: 'offCounted' }] });
     const { schedule } = await solve(s);
-    expect(schedule.days['2026-02-26'].off).toContain('Senior2');
+    expect(schedule.days['2026-02-26'].off).toContain('Nakamura');
     expect(audit(s, schedule).violations).toEqual([]);
-    expect(schedule.totals.Senior2.off).toBe(4);
+    expect(schedule.totals.Nakamura.off).toBe(4);
   });
 
   it('Med C: seniors take nights, sleeper never same-day day-call senior, audit clean', async () => {
@@ -140,7 +140,7 @@ describe('variants', () => {
     const base = parseScenario(feb);
     const first = await solve(base);
     const tweaked = parseScenario(structuredClone({ ...feb, lastSolution: first.schedule }));
-    tweaked.residents.find(r => r.name === 'Intern2').pto.push('2026-02-09');
+    tweaked.residents.find(r => r.name === 'Reyes').pto.push('2026-02-09');
     const second = await solve(tweaked);
     expect(audit(tweaked, second.schedule).violations).toEqual([]);
     let changed = 0;
@@ -185,11 +185,11 @@ describe('variants', () => {
   });
 
   it('contradictory pins produce a staged diagnosis naming culprits', async () => {
-    // individually legal, jointly infeasible: nightCall Intern2 2026-02-05 forces him asleep 2026-02-06,
-    // but pager Intern2 2026-02-06 needs him awake to page (sleeper cannot hold the pager).
+    // individually legal, jointly infeasible: nightCall Reyes 2026-02-05 forces him asleep 2026-02-06,
+    // but pager Reyes 2026-02-06 needs him awake to page (sleeper cannot hold the pager).
     const s = parseScenario({ ...feb, pins: [
-      { person: 'Intern2', date: '2026-02-05', type: 'nightCall' },
-      { person: 'Intern2', date: '2026-02-06', type: 'pager' }] });
+      { person: 'Reyes', date: '2026-02-05', type: 'nightCall' },
+      { person: 'Reyes', date: '2026-02-06', type: 'pager' }] });
     const r = await solve(s);
     expect(r.infeasible.diagnosis).toMatch(/pin/i);
     expect(r.infeasible.culprits.length).toBeGreaterThan(0);
@@ -202,7 +202,7 @@ describe('variants', () => {
     const s = parseScenario({
       ...feb,
       options: { ...feb.options, offQuota: 10 },
-      residents: feb.residents.filter(r => ['Intern2', 'Senior1', 'Senior2'].includes(r.name))
+      residents: feb.residents.filter(r => ['Reyes', 'Whitfield', 'Nakamura'].includes(r.name))
         .map(r => ({ ...r, pto: [], commitments: [], serviceStart: '2026-02-01', serviceEnd: '2026-02-28' })),
     });
     expect(validate(s)).toEqual([]);
@@ -216,7 +216,7 @@ describe('variants', () => {
     // Before v0.9.0 the floor of 2 made every day off impossible and the month was infeasible.
     const s = parseScenario({
       ...feb,
-      residents: feb.residents.filter(r => ['Intern2', 'Senior1'].includes(r.name))
+      residents: feb.residents.filter(r => ['Reyes', 'Whitfield'].includes(r.name))
         .map(r => ({ ...r, pto: [], commitments: [], serviceStart: '2026-02-01', serviceEnd: '2026-02-28' })),
     });
     const r = await solve(s);

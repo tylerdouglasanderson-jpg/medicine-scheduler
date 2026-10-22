@@ -43,8 +43,8 @@ describe('calendar render (feb-2026 solved)', () => {
       .toContain(schedule.days['2026-02-06'].pager);
   });
 
-  it('Feb 20: Senior1 in PTO row; no blank cells in a perfect 4-week month', () => {
-    expect(el.querySelector('[data-date="2026-02-20"][data-row="PTO"]').textContent).toContain('Senior1');
+  it('Feb 20: Whitfield in PTO row; no blank cells in a perfect 4-week month', () => {
+    expect(el.querySelector('[data-date="2026-02-20"][data-row="PTO"]').textContent).toContain('Whitfield');
     expect(el.querySelectorAll('td.blank').length).toBe(0);  // Feb 2026 = exactly 4 Sun-Sat weeks (blanks exercised by any 31-day month via a quick extra render assert)
   });
 
@@ -60,8 +60,8 @@ describe('calendar render (feb-2026 solved)', () => {
   it('totals table: columns + whole-number / 0.5-increment formatting + audit-consistent off counts', () => {
     const t = renderTotals(schedule);
     expect(t.querySelectorAll('thead th').length).toBe(11);
-    expect(t.textContent).toContain('Intern1');
-    const intern1Off = t.querySelector('[data-name="Intern1"][data-col="off"]').textContent;
+    expect(t.textContent).toContain('Okafor');
+    const intern1Off = t.querySelector('[data-name="Okafor"][data-col="off"]').textContent;
     expect(intern1Off).toBe('2');
     for (const td of t.querySelectorAll('tbody td')) expect(td.textContent).not.toMatch(/^\d+\.0$/);   // whole numbers drop the .0
   });

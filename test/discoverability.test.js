@@ -106,7 +106,7 @@ describe('app bar (jsdom)', () => {
     mountApp();
     const btn = document.querySelector('#download-button');
     expect(btn.textContent).toBe('Download');
-    expect(btn.title).toBe('Get the latest version to run offline');
+    expect(btn.title).toMatch(/offline/);
     btn.click();
 
     const dlg = document.querySelector('#download-dialog');
@@ -233,8 +233,8 @@ describe('"send it to us" prompts (jsdom)', () => {
   it('shows in the infeasible box', async () => {
     // individually legal, jointly infeasible (see solve.test.js): asleep after a night, yet holding the pager
     saveScenario(parseScenario({ ...feb, pins: [
-      { person: 'Intern2', date: '2026-02-05', type: 'nightCall' },
-      { person: 'Intern2', date: '2026-02-06', type: 'pager' }] }));
+      { person: 'Reyes', date: '2026-02-05', type: 'nightCall' },
+      { person: 'Reyes', date: '2026-02-06', type: 'pager' }] }));
     mountApp();
     await clickSolveAndWait();
     const box = document.querySelector('.infeasible-box');

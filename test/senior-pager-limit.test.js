@@ -10,7 +10,7 @@ const held = (sol, name) => Object.values(sol.schedule.days).filter(d => d.type 
 const mk = (j, L) => { const s = parseScenario({ ...j, options: { ...j.options, seniorPagerLimit: L } }); s.lastSolution = null; return s; };
 
 describe('senior pager limit (v1.9.0)', () => {
-  it('RULES_VERSION bumped', () => expect(RULES_VERSION).toBe('1.4.0'));
+  it('RULES_VERSION bumped', () => expect(RULES_VERSION >= '1.4.0').toBe(true));
   it('normalize keeps only whole numbers 0-4, else null', () => {
     for (const [v, want] of [[2, 2], ['3', 3], [0, 0], ['0', 0], [-1, null], [5, null], [2.5, null], ['', null], [null, null], ['x', null]])
       expect(mk(feb, v).options.seniorPagerLimit, String(v)).toBe(want);

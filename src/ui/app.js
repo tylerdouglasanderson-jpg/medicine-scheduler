@@ -3,8 +3,8 @@ import './style.css';
 import { loadScenario, saveScenario, blankScenario, exportScenarioJSON, importScenarioJSON, storage } from './state.js';
 import { validate } from '../validate.js';
 import { audit } from '../audit.js';
-import { downloadXlsx, downloadAllXlsx } from '../export.js';
-import { downloadResidentCalendar, downloadCalendarsZip, downloadAllSolutionsCalendarsZip } from '../ics.js';
+import { downloadXlsx } from '../export.js';
+import { downloadResidentCalendar, downloadCalendarsZip } from '../ics.js';
 import { solveAlternatives, initHighs } from '../solve.js';
 import { describeDifference } from '../compare.js';
 import { onService, monthDates, parseScenario, solutionIsCurrent, afternoonsOffDates } from '../model.js';
@@ -31,12 +31,14 @@ let diagnosis = null;       // last infeasible {diagnosis, culprits}
 let solveError = null;      // last thrown-error message
 let progress = null;        // {done, total} while alternatives are still arriving
 let solveSeq = 0;           // bumped by any input edit, so a solve that outlives it is discarded
-let exportScope = 'one';    // 'one' = the active tab, 'all' = every solution
+let exportPick = null;    // which solution Export covers: null = the one on screen, else an index into scenario.alternatives
 let saveHintPending = false; // set by the first successful Solve; the "save my month" hint shows until dismissed
 let compareOpen = true;
 // "Revise this plan" (v1.10.0): wide screens only. Inputs on the left, results on the right, each scrolling on
 // its own. Not persisted: a reload always opens the one-column page.
 let reviseMode = false;
+let autoSplitDone = false;       // the first good Solve on a wide screen opens the side-by-side view once
+const WIDE_PX = 1100;           // same breakpoint as the CSS that shows Revise this plan
 let staleSnap = null;       // the scenario as last solved, shown greyed on the right once an input is edited
 let autoResolve = false;    // re-solve ~0.7 s after each edit (a per-viewer preference, see AUTO_KEY)
 let autoTimer = null;
@@ -99,7 +101,7 @@ function announceResults() {
     const h = document.createElement('h2');
     h.textContent = 'Your results are here';
     const x = document.createElement('button');
-    x.type = 'button'; x.className = 'btn-ghost'; x.textContent = '×'; x.title = 'Close';
+    x.type = 'button'; x.className = 'btn-ghost'; x.textContent = '×'; x.title = 'Closes this message and scrolls you down to the schedule. Nothing on your schedule changes.';
     x.addEventListener('click', () => dlg.close());
     header.append(h, x);
     const body = document.createElement('div');
@@ -113,9 +115,11 @@ function announceResults() {
     label.className = 'dialog-note';
     const cb = document.createElement('input');
     cb.type = 'checkbox'; cb.id = 'results-note-off';
+    cb.title = 'Tick this to stop the “Your results are here” message from appearing after each Solve; the page will just scroll to the results. The choice is saved on this computer only, in this browser.';
     label.append(cb, document.createTextNode(' Don’t show this again'));
     const ok = document.createElement('button');
     ok.type = 'button'; ok.className = 'btn-primary dialog-link'; ok.textContent = 'Show me the results';
+    ok.title = 'Closes this message and scrolls you down to the schedule. If “Don’t show this again” is ticked, this message will not appear after future Solves.';
     ok.addEventListener('click', () => dlg.close());
     body.append(p, tip, label, ok);
     dlg.append(header, body);
@@ -142,7 +146,7 @@ function openQuickHowTo() {
     const h = document.createElement('h2');
     h.textContent = 'Quick how-to';
     const x = document.createElement('button');
-    x.type = 'button'; x.className = 'btn-ghost'; x.textContent = '×'; x.title = 'Close';
+    x.type = 'button'; x.className = 'btn-ghost'; x.textContent = '×'; x.title = 'Closes the quick how-to without changing anything. You can reopen it any time from the Quick How-to button at the top.';
     x.addEventListener('click', () => dlg.close());
     header.append(h, x);
     const body = document.createElement('div');
@@ -164,6 +168,7 @@ function openQuickHowTo() {
     note.textContent = 'Need more? Open the Comprehensive Guide in the header any time.';
     const ok = document.createElement('button');
     ok.type = 'button'; ok.className = 'btn-primary dialog-link'; ok.textContent = 'Got it';
+    ok.title = 'Closes the quick how-to. You can reopen it any time from the Quick How-to button at the top; nothing you entered is affected.';
     ok.addEventListener('click', () => dlg.close());
     body.append(p, steps, note, ok);
     dlg.append(header, body);
@@ -172,6 +177,9 @@ function openQuickHowTo() {
   }
   if (!dlg.open && typeof dlg.showModal === 'function') dlg.showModal();
 }
+
+const COLLAPSE_TIP_CLOSE = 'Hides the body of this section so the rest of the page is easier to see; only its heading stays. Nothing you entered is lost or changed. The choice is remembered on this computer. Click Expand to bring it back.';
+const COLLAPSE_TIP_OPEN = 'Shows this section again. Everything in it is exactly as you left it. The choice is remembered on this computer.';
 
 // Top-right minimize button on a panel; the panel keeps its heading and hides the rest.
 function addCollapse(panel) {
@@ -182,7 +190,7 @@ function addCollapse(panel) {
   btn.type = 'button';
   btn.className = 'btn-ghost collapse-btn';
   btn.textContent = isCollapsed ? 'Expand' : 'Collapse';
-  btn.title = isCollapsed ? 'Show this section' : 'Minimize this section';
+  btn.title = isCollapsed ? COLLAPSE_TIP_OPEN : COLLAPSE_TIP_CLOSE;
   btn.setAttribute('aria-expanded', String(!isCollapsed));
   btn.addEventListener('click', () => {
     if (collapsed.has(id)) collapsed.delete(id); else collapsed.add(id);
@@ -190,7 +198,7 @@ function addCollapse(panel) {
     const now = collapsed.has(id);
     panel.classList.toggle('collapsed', now);
     btn.textContent = now ? 'Expand' : 'Collapse';
-    btn.title = now ? 'Show this section' : 'Minimize this section';
+    btn.title = now ? COLLAPSE_TIP_OPEN : COLLAPSE_TIP_CLOSE;
     btn.setAttribute('aria-expanded', String(!now));
   });
   panel.prepend(btn);
@@ -265,7 +273,7 @@ function ensureGuideDialog() {
   closeBtn.type = 'button';
   closeBtn.className = 'btn-ghost';
   closeBtn.textContent = '×';
-  closeBtn.title = 'Close';
+  closeBtn.title = 'Closes the user guide and returns you to the scheduler. Your schedule is not affected.';
   closeBtn.addEventListener('click', () => dialogEl.close());
   header.appendChild(closeBtn);
   dialogEl.appendChild(header);
@@ -297,7 +305,7 @@ function topBar() {
   chip.id = 'version-chip';
   const buildDate = String(typeof __BUILD_VERSION__ !== 'undefined' ? __BUILD_VERSION__ : '').split(' ')[1];
   chip.textContent = `v${appVersion()} · What’s new`;
-  chip.title = `Version ${appVersion()}${buildDate ? ` (built ${buildDate})` : ''} — see what’s new.`;
+  chip.title = `You are running version ${appVersion()}${buildDate ? ` (built ${buildDate})` : ''}. Click to see what changed in each version, newest first. It is read-only and does not change your schedule.`;
   chip.addEventListener('click', openWhatsNew);
   left.appendChild(chip);
   bar.appendChild(left);
@@ -308,14 +316,14 @@ function topBar() {
   guideBtn.type = 'button';
   guideBtn.className = 'btn-secondary';
   guideBtn.textContent = 'Comprehensive Guide';
-  guideBtn.title = 'Open the full user guide.';
+  guideBtn.title = 'Opens the full user guide in a window on top of this page. It explains how to set up a month, what each option does and how to read the schedule. Close it with the × in its corner; your schedule is not affected.';
   guideBtn.addEventListener('click', () => { if (!dialogEl.open) dialogEl.showModal(); });
   const howtoBtn = document.createElement('button');
   howtoBtn.id = 'howto-button';
   howtoBtn.type = 'button';
   howtoBtn.className = 'btn-secondary';
   howtoBtn.textContent = 'Quick How-to';
-  howtoBtn.title = 'A six-step overview of how to use this page.';
+  howtoBtn.title = 'Opens a short six-step guide to setting up a month and pressing Solve. It is read-only and does not change anything you have entered. Use the Comprehensive Guide for the full detail.';
   howtoBtn.addEventListener('click', openQuickHowTo);
   right.append(howtoBtn, guideBtn);
 
@@ -324,7 +332,7 @@ function topBar() {
   critBtn.type = 'button';
   critBtn.className = 'btn-secondary';
   critBtn.textContent = 'How it solves';
-  critBtn.title = 'The rules and priorities the solver uses, in short.';
+  critBtn.title = 'Opens a plain-language list of the rules the scheduler always follows and the preferences it works toward, in priority order. Read-only: nothing on your schedule changes.';
   critBtn.addEventListener('click', openCriteria);
   right.appendChild(critBtn);
 
@@ -333,7 +341,7 @@ function topBar() {
   acgmeBtn.type = 'button';
   acgmeBtn.className = 'btn-secondary';
   acgmeBtn.textContent = ACGME.title;
-  acgmeBtn.title = 'ACGME work-hour rules, with links to the exact page of each.';
+  acgmeBtn.title = 'Opens the ACGME duty-hour rules, with a link to the exact page of each rule in the official document. It also explains which of them the scheduler checks. Read-only: nothing on your schedule changes.';
   acgmeBtn.addEventListener('click', openAcgme);
   right.appendChild(acgmeBtn);
 
@@ -342,7 +350,7 @@ function topBar() {
   dlBtn.type = 'button';
   dlBtn.className = 'btn-secondary';
   dlBtn.textContent = 'Download';
-  dlBtn.title = 'Get the latest version to run offline';
+  dlBtn.title = 'Opens the download options for the scheduler so you can run it offline on your own computer. Nothing is uploaded, and your current schedule is not changed.';
   dlBtn.addEventListener('click', openDownload);
   right.appendChild(dlBtn);
 
@@ -352,7 +360,7 @@ function topBar() {
   reportBtn.id = 'report-button';
   reportBtn.type = 'button';
   reportBtn.className = 'btn-report';
-  reportBtn.title = 'Tell us what went wrong — we receive your schedule so we can see exactly what you see.';
+  reportBtn.title = 'Opens a short form to tell the developer about a problem. Your current month (roster, pins and solutions) is attached by default so they can see exactly what you see; you can untick that in the form. Nothing is sent until you press Send.';
   // narrow screens hide the second line visually; the accessible name keeps it
   reportBtn.setAttribute('aria-label', 'Report a problem — sends us your schedule');
   const main = document.createElement('span');
@@ -382,7 +390,7 @@ function onboardingHint() {
   btn.className = 'btn-primary';
   btn.id = 'load-example-button';
   btn.textContent = 'Load the example month (Medicine F · Feb 2026)';
-  btn.title = 'Load a filled-in example scenario (Medicine F, February 2026) to see the app in action.';
+  btn.title = 'Fills the app with a sample month (Medicine F, February 2026) so you can see how it works. This replaces the setup on the page and clears any schedule. It is meant for a first look; use Clear scenario to start your own month afterwards.';
   btn.addEventListener('click', () => onChange(parseScenario(feb)));
   box.appendChild(btn);
   return box;
@@ -499,8 +507,8 @@ function reviseBar() {
     bar.className = 'revise-bar';
     const btn = document.createElement('button');
     btn.type = 'button'; btn.id = 'revise-button'; btn.className = 'btn-primary revise-btn';
-    btn.textContent = 'Revise this plan';
-    btn.title = 'Put your inputs on the left and this schedule on the right, so you can edit and re-solve side by side';
+    btn.textContent = autoSplitDone ? 'Return to two-column view' : 'Revise this plan';
+    btn.title = 'Splits the screen into two columns: your inputs on the left and this schedule on the right, each scrolling on its own, so you can change something and re-solve side by side. Your schedule and inputs are unchanged by switching views. Needs a wide screen to be useful. Use Return to single-column view to go back.';
     btn.addEventListener('click', () => setRevise(true));
     bar.appendChild(btn);
     return bar;
@@ -509,13 +517,14 @@ function reviseBar() {
   bar.className = 'revise-bar';
   const done = document.createElement('button');
   done.type = 'button'; done.id = 'revise-done'; done.className = 'btn-ghost';
-  done.textContent = 'Done';
-  done.title = 'Back to the one-column page';
+  done.textContent = 'Return to single-column view';
+  done.title = 'Goes back to the single-column page: inputs first, with the schedule below. Your inputs are kept. Gotcha: if you changed something and have not pressed Solve, the greyed old schedule is dropped and the results stay empty until you Solve again.';
   done.addEventListener('click', () => setRevise(false));
   const label = document.createElement('label');
   label.className = 'switch';
-  label.title = 'Off: the old schedule stays greyed until you press Solve. On: it re-solves a moment after each edit.';
+  label.title = 'When on, the schedule rebuilds by itself about a second after each change you make. When off, the old schedule stays greyed out until you press Solve. Automatic solving replaces the schedule each time, so turn it off if you are making several edits. This setting is remembered on this computer only.';
   const box = document.createElement('input');
+  box.title = label.title;
   box.type = 'checkbox'; box.id = 'auto-resolve'; box.setAttribute('role', 'switch');
   box.checked = autoResolve;
   box.addEventListener('change', () => {
@@ -542,6 +551,7 @@ function staleBanner() {
   if (!solving) {
     const s = document.createElement('button');
     s.type = 'button'; s.className = 'btn-primary'; s.textContent = 'Solve';
+    s.title = 'Rebuilds the schedule with your latest changes. The greyed old schedule is replaced when the new ones are ready.';
     s.addEventListener('click', runSolve);
     b.appendChild(s);
   }
@@ -641,9 +651,9 @@ function exportMenu() {
   toggle.setAttribute('aria-controls', 'export-menu');
   toggle.setAttribute('aria-expanded', String(exportMenuOpen));
   toggle.disabled = !hasSchedule;
-  toggle.title = hasSchedule ? 'Calendars, spreadsheet, Google Sheets, print.' : 'Solve first';
+  toggle.title = hasSchedule ? 'Opens the menu for getting the schedule out of the app: personal calendar files, a spreadsheet, Google Sheets, or print. Nothing downloads until you pick an item in the menu. Click again, press Escape or click elsewhere to close it.' : 'Disabled until there is a schedule. Press Solve first (and fix any errors), then the export options become available.';
   // a disabled button shows no tooltip in some browsers — the wrapper carries it too
-  wrap.title = hasSchedule ? '' : 'Solve first';
+  wrap.title = hasSchedule ? '' : 'Disabled until there is a schedule. Press Solve first (and fix any errors), then the export options become available.';
   toggle.addEventListener('click', () => setExportMenu(!exportMenuOpen, { focusFirst: true }));
   wrap.appendChild(toggle);
 
@@ -687,7 +697,7 @@ function clearButton() {
   btn.type = 'button';
   btn.className = 'btn-ghost btn-danger';
   btn.textContent = 'Clear scenario';
-  btn.title = 'Wipe the setup, roster, chips, pins, and solved schedule — start fresh.';
+  btn.title = 'Erases this whole month: setup, roster, clinic days, time off, pins and the solved schedule, and starts a blank one. It asks you to confirm first, but it cannot be undone afterwards unless you saved a copy with Save my month. Files you saved earlier are not touched.';
   btn.disabled = solving;
   // ponytail: native confirm() — no styled dialog until someone asks for one.
   btn.addEventListener('click', () => {
@@ -710,13 +720,14 @@ function solveButton(errors) {
   btn.type = 'button';
   btn.className = 'btn-primary';
   btn.textContent = solving ? 'Solving…' : 'Solve';
-  btn.title = 'Build the optimal schedule with the current setup.';
+  btn.title = 'Builds the schedule from your team, roster, clinic days, time off and pins. It replaces the schedule now on screen, and extra alternative solutions (Solution 2 to 5) appear as they finish. Greyed out while there are errors above that must be fixed, or while a solve is running.';
   btn.disabled = errors.length > 0 || solving;
   btn.addEventListener('click', runSolve);
   return btn;
 }
 
-const FREEZE_TIP = 'Keep every day up to this date exactly as it is; only later days can change';
+const FREEZE_TIP = 'Keeps every day up to this date exactly as it is, so the next Solve can only change the days after it. Use it to lock in the part of the month that is already done. Any edit to the setup clears this date, and it is not saved with the month.';
+const SOLVE_FIRST_TIP = 'Disabled until there is a schedule to freeze. Press Solve first; then pick the last day you want kept as it is.';
 
 function freezeControl() {
   const wrap = document.createElement('div');
@@ -731,7 +742,8 @@ function freezeControl() {
   freeze.id = 'freeze-date';
   freeze.disabled = !hasSchedule || solving;
   // a disabled input shows no tooltip in some browsers — the wrapper carries it too
-  freeze.title = wrap.title = hasSchedule ? FREEZE_TIP : 'Solve first';
+  freeze.title = wrap.title = hasSchedule ? FREEZE_TIP : SOLVE_FIRST_TIP;
+  label.title = freeze.title;
   const dates = monthDates(scenario.month);
   if (dates.length) { freeze.min = dates[0]; freeze.max = dates[dates.length - 1]; }
   freeze.value = freezeDate;
@@ -789,7 +801,13 @@ async function runSolve() {
     solving = false;
     progress = null;
     render();
-    if (resultsReady) { resultsReady = false; announceResults(); }
+    if (resultsReady) {
+      resultsReady = false;
+      // A wide screen goes straight to the side-by-side view on the FIRST good Solve (results slide right, inputs
+      // stay left). After that it is the user's choice: 'Done revising' is never undone automatically.
+      if (!autoSplitDone && !reviseMode && window.innerWidth >= WIDE_PX) { autoSplitDone = true; setRevise(true); }
+      else announceResults();
+    }
   }
 }
 
@@ -855,7 +873,7 @@ function renderResults() {
   const wrap = section('results-section');
 
   const h = document.createElement('h2');
-  h.textContent = 'Results';
+  h.innerHTML = '<span class="screen-only">Results</span><span class="print-only">Final Results</span>';
   wrap.appendChild(h);
   const help = document.createElement('p');
   help.className = 'panel-help';
@@ -913,7 +931,7 @@ function renderResults() {
     for (const el of solutionTabs()) wrap.appendChild(el);
     const cal = renderCalendar(scenario, sched);
     cal.addEventListener('click', onCalendarClick);
-    cal.title = 'Click an OFF / PAGER / ROUNDERS cell to pin an assignment and re-solve';
+    cal.title = 'Click an OFF, PAGER or ROUNDERS cell to pin a person to that day (for example off, pager or night call) and re-solve. The pin stays until you remove it, and the rest of the month stays as close to this schedule as it can. Outlined cells show what changed. Other rows do nothing when clicked.';
     // calendar.js output is frozen: scroll wrappers and change markers are added around/onto it here.
     for (const table of cal.querySelectorAll('table.week')) {
       const box = scrollBox('week-scroll');
@@ -955,10 +973,22 @@ function reportPrompt(lead, action, id, prefill) {
   btn.type = 'button';
   btn.className = 'btn-ghost';
   btn.textContent = action;
+  btn.title = 'Opens the problem form already filled in with what this page shows, so you only have to add a note. Your month goes with it unless you untick the box in the form. Nothing is sent until you press Send.';
   btn.addEventListener('click', () => openFeedback({ type: 'problem', prefill }));
   p.appendChild(btn);
   return p;
 }
+
+const COMPARE_HELP = {
+  solution: 'One row per solution. Click a row to make it the schedule on screen; the calendar, totals, issues and every export then follow it. Rows still building are greyed out.',
+  quality: 'How this solution compares with Solution 1 overall. Solution 1 is your current schedule, so it just says Current.',
+  issues: 'Number of potential issues the checker found in this solution, with the change compared with Solution 1 in brackets. Fewer is better.',
+  moves: 'How many days off were moved compared with Solution 1. A small number means a gentle change to the plan you already have.',
+  nights: 'Number of night-call shifts each person has in this solution.',
+  weekend: 'Number of Saturdays and Sundays each person has off in this solution. Free bonus days are not counted.',
+  pager: 'Number of days each person holds the pager in this solution.',
+  pmoff: 'Number of afternoons each person has free in this solution: worked the morning with nothing in the afternoon. Information only.',
+};
 
 // Compact overview of built solutions; pending rows arrive with the same progress as the tabs.
 function compareSolutions(total) {
@@ -975,6 +1005,7 @@ function compareSolutions(total) {
   });
   const summary = document.createElement('summary');
   summary.textContent = 'Compare solutions';
+  summary.title = 'Opens or closes a table comparing the solutions side by side: how different each is from Solution 1, how many issues it has, and each person\u2019s nights, weekend days off, pager days and afternoons off. Click a row to make it the schedule on screen. Whether it is open is remembered on this computer.';
   details.appendChild(summary);
   const table = document.createElement('table');
   table.className = 'compare-table';
@@ -994,7 +1025,7 @@ function compareSolutions(total) {
     values.forEach((value, i) => {
       const span = document.createElement('span');
       span.textContent = value;
-      span.title = names[i];
+      span.title = `${names[i]}: ${value}`;
       grid.appendChild(span);
     });
     return grid;
@@ -1004,8 +1035,9 @@ function compareSolutions(total) {
     th.scope = 'col';
     th.dataset.metric = metric;
     th.textContent = label;
+    th.title = COMPARE_HELP[metric];
     if (['nights', 'weekend', 'pager'].includes(metric)) {
-      th.title = `Residents in roster order: ${names.join(' · ')}`;
+      th.title = `${COMPARE_HELP[metric]} Residents in roster order: ${names.join(' \u00b7 ')}.`;
       th.appendChild(perPerson(names.map(n => n.trim().split(/\s+/)[0].slice(0, 3))));
     }
     head.appendChild(th);
@@ -1016,6 +1048,7 @@ function compareSolutions(total) {
     const schedule = alts[k];
     const row = body.insertRow();
     row.dataset.solution = k;
+    row.title = 'Click (or press Enter) to make this solution the schedule on screen. Later re-solves stay close to whichever solution is active.';
     row.tabIndex = 0;
     row.setAttribute('aria-selected', String(k === (scenario.activeSolution ?? 0)));
     const name = document.createElement('th');
@@ -1024,6 +1057,7 @@ function compareSolutions(total) {
     row.appendChild(name);
     if (!schedule) {
       row.className = 'compare-pending';
+      row.title = 'Still being built. It becomes clickable when it finishes.';
       row.setAttribute('aria-disabled', 'true');
       columns.slice(1).forEach(([metric], i) => {
         const cell = row.insertCell();
@@ -1105,6 +1139,8 @@ function solutionTabs() {
         s2.textContent = sub;
         tab.appendChild(s2);
       }
+      tab.title = !alts[k] ? 'Still being built. It becomes clickable when it finishes.'
+        : 'Shows this solution on the page. The calendar, totals, issue list and every export then follow it. Solution 1 is your current schedule; the others show different ways to schedule the same month, with the number of days off moved from Solution 1.';
       tab.disabled = !alts[k];                            // still being built
       tab.addEventListener('click', () => selectSolution(k));
       tab.addEventListener('keydown', e => onTabKey(e, k));
@@ -1182,6 +1218,7 @@ function differsBanner(banner, d) {
     det.className = 'diff-details';
     const sum = document.createElement('summary');
     sum.textContent = 'Show details';
+    sum.title = 'Lists, for each person, the exact days off that moved compared with Solution 1. Display only; nothing changes.';
     det.appendChild(sum);
     for (const p of d.people) {
       const line = document.createElement('p');
@@ -1219,6 +1256,7 @@ function changesLegend() {
   const box = document.createElement('input');
   box.type = 'checkbox';
   box.id = 'highlight-changes';
+  label.title = box.title = 'Draws an outline around the OFF, PAGER and ROUNDERS cells that differ from Solution 1, so you can see what changed. Turn it off to view the calendar without outlines. This only affects the screen, not prints or exports, and is remembered on this computer.';
   box.setAttribute('role', 'switch');
   box.checked = highlightOn();
   box.addEventListener('change', () => {
@@ -1266,13 +1304,25 @@ const ISSUE_GROUPS = [
   ['stretch', 'Long stretches without a day off', ['W_LONG_STRETCH']],
   ['duty', 'Fewer than 1 rest day in 7', ['W_DUTY_HOUR']],
   ['senior-sc', 'Senior off on a short-call day', ['W_SENIOR_OFF_SC']],
-  ['single', 'One person scheduled (you allowed it)', ['W_SINGLE_COVER']],
+  ['single', 'One person scheduled (you forced it)', ['W_SINGLE_COVER']],
   ['senior-pager', 'Senior pager days over your limit', ['W_SENIOR_PAGER_OVER']],
   ['mr', 'Morning Report coverage', ['W_MR_THIN', 'W_MR_NO_SENIOR', 'W_MR_NO_INTERN']],
   ['pager', 'Pager / didactics', ['W_ATTENDING_PAGER', 'W_DIDACTICS_MISS', 'W_DIDACTICS_PAGER',
     'W_DIDACTICS_PAGER_INTERN', 'W_DIDACTICS_NO_SENIOR_COVER', 'W_DIDACTICS_OFF', 'W_DIDACTICS_NO_DATES']],
   ['other', 'Other', null],
 ];
+const ISSUE_GROUP_HELP = {
+  violation: 'Rules the independent checker found the schedule breaks. Fix these first, so this group is always open. Opens or closes the list.',
+  'multi-off': 'Days when more than one person is off at once. The scheduler avoids this when it can, but it is a preference. Opens or closes the list.',
+  stretch: 'Residents who work a long run of days in a row without a day off. Opens or closes the list.',
+  duty: 'Residents with fewer days off than one in seven of their service days, the ACGME rest-day guideline. PTO does not count as a day off here. Opens or closes the list.',
+  'senior-sc': 'Days a senior is off on a short-call day. The scheduler avoids this unless you ticked Allow seniors off on short-call days. Opens or closes the list.',
+  single: 'Days only one person is scheduled. You asked for these with Force One Person Only. Opens or closes the list.',
+  'senior-pager': 'Seniors who hold the pager on more days than the limit you set in Setup. That limit is a soft goal. Opens or closes the list.',
+  mr: 'Morning Report days where the team is thin or has no senior or no intern present. Opens or closes the list.',
+  pager: 'Pager and didactics conflicts, such as a resident holding the pager during their didactics or missing a session, and days the attending covers the pager. Opens or closes the list.',
+  other: 'Other things the checker flagged that do not fit the groups above. Opens or closes the list.',
+};
 const MON_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const shortDate = iso => `${MON_ABBR[Number(iso.slice(5, 7)) - 1]} ${Number(iso.slice(8, 10))}`;
 
@@ -1323,6 +1373,7 @@ function groupIssues(panel, auditResult) {
     const sum = document.createElement('summary');
     sum.className = 'issue-group-title';
     sum.textContent = `${label} (${members.length})`;
+    sum.title = ISSUE_GROUP_HELP[key] ?? 'Opens or closes this group of issues found in the schedule.';
     det.appendChild(sum);
     const ul = document.createElement('ul');
     for (const li of members) ul.appendChild(li);   // moved, not rebuilt: the attending buttons keep their handlers
@@ -1342,7 +1393,7 @@ function resultsEmptyState() {
   btn.type = 'button';
   btn.className = 'btn-ghost';
   btn.textContent = 'Open the Guide';
-  btn.title = 'Open the full user guide.';
+  btn.title = 'Opens the full user guide, which explains how to set up a month and how to read the schedule. Nothing on the page changes.';
   btn.addEventListener('click', () => { if (!dialogEl.open) dialogEl.showModal(); });
   box.appendChild(btn);
   return box;
@@ -1391,12 +1442,14 @@ function openPinPopover(rect, date, row) {
   title.textContent = `Pin — ${date}`;
   pop.appendChild(title);
 
-  const personSel = mkSelect(people.map(n => [n, n]));
+  const personSel = mkSelect(people.map(n => [n, n]),
+    'The resident this pin applies to. Only people on service that day are listed, and the one currently in the clicked cell is pre-selected.');
   const dflt = defaultPerson(date, row);
   if (dflt) personSel.value = dflt;
   pop.appendChild(personSel);
 
-  const typeSel = mkSelect(PIN_TYPES);
+  const typeSel = mkSelect(PIN_TYPES,
+    'What the pin forces: off (a whole day off that counts toward their quota), must work, pager, day call, night call, or a half day off in the morning or afternoon (a free perk that does not count toward the quota). Pins stay until you remove them. A pin that conflicts with another rule shows as an error.');
   typeSel.value = row === 'PAGER' ? 'pager' : row === 'ROUNDERS' ? 'nightCall' : 'offCounted';
   pop.appendChild(typeSel);
 
@@ -1404,13 +1457,16 @@ function openPinPopover(rect, date, row) {
     addPin(personSel.value, date, typeSel.value);
     closePopover();
     runSolve();
-  }, 'btn-primary'));
+  }, 'btn-primary',
+    'Pins this person to the chosen option on this day, then rebuilds the schedule. The rest of the month stays as close to the current schedule as it can, and the pin stays until you remove it. The alternative solutions are rebuilt too.'));
   pop.appendChild(mkButton('Remove pins here', () => {
     removePins(personSel.value, date);
     closePopover();
     runSolve();
-  }, 'btn-secondary'));
-  pop.appendChild(mkButton('Cancel', closePopover, 'btn-ghost'));
+  }, 'btn-secondary',
+    'Removes every pin for this person on this day, whatever type it is, and rebuilds the schedule. It does not ask first, so check the day before you press it.'));
+  pop.appendChild(mkButton('Cancel', closePopover, 'btn-ghost',
+    'Closes this box without changing any pins or re-solving.'));
 
   document.body.appendChild(pop);
   popoverEl = pop;
@@ -1423,8 +1479,9 @@ function closePopover() {
   if (popoverEl) { popoverEl.remove(); popoverEl = null; }
 }
 
-function mkSelect(opts) {
+function mkSelect(opts, title = '') {
   const sel = document.createElement('select');
+  if (title) sel.title = title;
   for (const [v, l] of opts) {
     const o = document.createElement('option');
     o.value = v;
@@ -1434,8 +1491,9 @@ function mkSelect(opts) {
   return sel;
 }
 
-function mkButton(text, onClick, cls = 'btn-secondary') {
+function mkButton(text, onClick, cls = 'btn-secondary', title = '') {
   const b = document.createElement('button');
+  if (title) b.title = title;
   b.type = 'button';
   b.className = cls;
   b.textContent = text;
@@ -1486,7 +1544,7 @@ function ioButtons() {
   saveBtn.type = 'button';
   saveBtn.className = 'btn-secondary';
   saveBtn.textContent = 'Save my month (.json)';
-  saveBtn.title = 'Download this month as a file — your setup, pins and every solution. Reopen it anytime or send it to a co-chief.';
+  saveBtn.title = 'Downloads this month to a file on your computer (team-month.json) with your setup, roster, pins and schedules, so you can reopen it later or send it to a co-chief. If there are errors or a broken rule, only the setup is saved, not the schedule. Nothing on screen changes.';
   saveBtn.disabled = solving;            // mid-build the file would hold only some of the solutions
   saveBtn.addEventListener('click', saveMonth);
   wrap.appendChild(saveBtn);
@@ -1519,7 +1577,7 @@ function ioButtons() {
   openBtn.type = 'button';
   openBtn.className = 'btn-secondary';
   openBtn.textContent = 'Open a saved month…';
-  openBtn.title = 'Open a month you (or a co-chief) saved earlier.';
+  openBtn.title = 'Opens a month file you saved earlier and replaces the month on screen with it, without asking first. Save the current month first if you want to keep it. Solutions saved inside the file come back too. A file that cannot be read shows an error and changes nothing.';
   openBtn.addEventListener('click', () => loadInput.click());
   wrap.append(openBtn, loadInput);
 
@@ -1546,10 +1604,11 @@ function saveHint() {
   box.appendChild(p);
   const save = mkButton('Save my month', saveMonth, 'btn-primary');
   save.id = 'save-hint-button';
+  save.title = 'Downloads this month to a file so you can reopen it later or send it to a co-chief. This reminder goes away after you save.';
   save.disabled = solving;               // same lock as the action bar's Save
   box.appendChild(save);
   const x = mkButton('Dismiss', dismissSaveHint, 'btn-ghost');
-  x.title = 'Don’t show this again.';
+  x.title = 'Hides this save reminder for good on this computer. You can still save any time with Save my month in the bottom bar.';
   box.appendChild(x);
   return box;
 }
@@ -1566,7 +1625,7 @@ function openAppDialog(id, title, fill) {
     const h = document.createElement('h2');
     header.appendChild(h);
     header.appendChild(mkButton('×', () => dlg.close(), 'btn-ghost'));
-    header.lastChild.title = 'Close';
+    header.lastChild.title = 'Closes this box. Nothing is downloaded or changed.';
     const body = document.createElement('div');
     body.className = 'app-dialog-body';
     dlg.append(header, body);
@@ -1598,8 +1657,10 @@ function openSheetsGuide(download) {
       document.getElementById('sheets-dialog')?.close();
     }, 'btn-primary');
     go.classList.add('dialog-link');
+    go.title = 'Downloads the spreadsheet to your Downloads folder and opens a new blank Google Sheet in a new tab. Then use File, Open, Upload in Sheets to bring the file in. Your browser may block the new tab, so allow pop-ups if nothing opens.';
     const cancel = mkButton('Cancel', () => document.getElementById('sheets-dialog')?.close(), 'btn-ghost');
     cancel.classList.add('dialog-link');
+    cancel.title = 'Closes this box without downloading anything or opening Google Sheets.';
     body.append(lead, steps, go, cancel);
   });
 }
@@ -1626,6 +1687,7 @@ function openDownload() {
     const main = linkButton(`${RELEASES}/latest/download/med-scheduler.html`,
       'Download the app (one HTML file)', 'btn-primary');
     main.id = 'download-app-link';
+    main.title = 'Downloads the newest version of the scheduler as a single HTML file. Open it by double-clicking, and it works offline. Your current schedule is not changed.';
     body.appendChild(main);
     const note = document.createElement('p');
     note.className = 'dialog-note';
@@ -1635,6 +1697,7 @@ function openDownload() {
     const kit = linkButton(`${RELEASES}/latest/download/Medicine-Scheduler.zip`,
       'Starter kit (.zip): app + guide + example months', 'btn-secondary');
     kit.id = 'download-kit-link';
+    kit.title = 'Downloads a ZIP containing the app, the guide and example months, for a first look or a fresh start on another computer. Your current schedule is not changed.';
     body.appendChild(kit);
 
     const all = document.createElement('a');
@@ -1643,6 +1706,7 @@ function openDownload() {
     all.rel = 'noopener';
     all.className = 'dialog-small-link';
     all.textContent = 'All versions on GitHub';
+    all.title = 'Opens a GitHub page that lists every released version of the scheduler, in a new tab. Nothing is downloaded.';
     body.appendChild(all);
   });
 }
@@ -1678,7 +1742,7 @@ function openAcgme() {
       a.rel = 'noopener';
       a.className = 'cite-link';
       a.textContent = `\u2197 ${r.ref}`;
-      a.title = `Open ACGME requirement ${r.ref} (PDF page ${r.page})`;
+      a.title = `Opens the official ACGME document at the page for requirement ${r.ref} (PDF page ${r.page}), in a new tab, so you can read the rule in its original wording.`;
       h.appendChild(a);
       body.appendChild(h);
       const p = document.createElement('p');
@@ -1697,6 +1761,7 @@ function openAcgme() {
       a.rel = 'noopener';
       a.className = 'dialog-small-link';
       a.textContent = `\u2197 ${src.label}`;
+      a.title = 'Opens the full official ACGME document in a new tab so you can read the requirements in their original wording.';
       body.appendChild(a);
     }
   });
@@ -1725,39 +1790,41 @@ function openWhatsNew() {
 function exportButtons() {
   const wrap = document.createElement('div');
   wrap.className = 'export-buttons';
-  const schedule = scenario.lastSolution;
   const alts = scenario.alternatives ?? [];
+  const onScreen = scenario.activeSolution ?? 0;
+  if (alts.length < 2 || exportPick == null || !alts[exportPick]) exportPick = null;
+  // ONE solution at a time: the picked one, or the one on screen by default.
+  const pickedIdx = () => (exportPick ?? onScreen);
+  const pickedSchedule = () => (alts.length > 1 ? alts[pickedIdx()] : scenario.lastSolution);
+  const schedule = scenario.lastSolution;
   const allowed = !!exportableSchedule();
   const blockedTip = validate(scenario).length || (schedule && !allowed) ? FIX_EXPORT_TIP : null;
-  if (alts.length < 2) exportScope = 'one';
-  const allScope = () => exportScope === 'all' && alts.length > 1;
-  const canExport = () => !solving && !!exportableSchedule()
-    && (!allScope() || alts.every(sch => exportableSchedule(sch)));
-  const allEntries = () => alts.map((sch, k) => ({
-    schedule: sch, auditResult: audit(scenario, sch), headerLines: k === 0 ? [] : differsLines(k),
-  }));
+  const canExport = () => !solving && !!exportableSchedule(pickedSchedule());
   const xlsx = () => {
     if (!canExport()) return;
-    return allScope() ? downloadAllXlsx(scenario, allEntries())
-      : downloadXlsx(scenario, schedule, audit(scenario, schedule));
+    const sch = pickedSchedule();
+    return downloadXlsx(scenario, sch, audit(scenario, sch));
   };
 
   if (alts.length > 1) {
-    const scopeSelect = mkSelect([['one', 'This solution'], ['all', 'All solutions']]);
+    const scopeSelect = mkSelect(alts.map((_, k) =>
+      [String(k), k === onScreen ? `Solution ${k + 1} (the one on screen)` : `Solution ${k + 1}`]));
     scopeSelect.id = 'export-scope';
-    scopeSelect.title = 'Export only the solution on screen, or every solution at once.';
-    scopeSelect.value = exportScope;
+    scopeSelect.title = 'Chooses which ONE solution the spreadsheet and the calendar files are made from. It starts on the solution you are looking at; pick another number to export that one instead. You export one solution at a time, so the file always matches the solution you named. It downloads nothing by itself. Print always prints the solution on screen.';
+    scopeSelect.value = String(pickedIdx());
     scopeSelect.disabled = !allowed || solving;
-    scopeSelect.addEventListener('change', () => { exportScope = scopeSelect.value; });
+    scopeSelect.addEventListener('change', () => {
+      exportPick = Number(scopeSelect.value) === onScreen ? null : Number(scopeSelect.value);
+    });
     wrap.appendChild(menuField('Which solution', scopeSelect));
   }
 
   const calendarSelect = document.createElement('select');
   calendarSelect.id = 'calendar-export-person';
-  calendarSelect.title = 'Choose one resident calendar or download every resident as a ZIP.';
+  calendarSelect.title = 'Picks whose calendar file (.ics) the Download calendar button makes. Choose one resident for a single .ics file, or leave it on Everyone for a ZIP holding one .ics file per person. These are calendar files to import into Outlook, Google Calendar or Apple Calendar; they are not the Excel spreadsheet. It downloads nothing by itself.';
   const all = document.createElement('option');
   all.value = '';
-  all.textContent = 'All residents (.zip)';
+  all.textContent = 'Everyone (ZIP of .ics files)';
   calendarSelect.appendChild(all);
   for (const resident of scenario.residents) {
     const option = document.createElement('option');
@@ -1766,15 +1833,19 @@ function exportButtons() {
     calendarSelect.appendChild(option);
   }
   calendarSelect.disabled = !allowed || solving;
-  wrap.appendChild(menuField('Whose calendar', calendarSelect));
+  wrap.appendChild(menuField('Whose calendar (.ics file)', calendarSelect));
+  const calNote = document.createElement('p');
+  calNote.className = 'export-note';
+  calNote.textContent = 'Makes .ics calendar files to import into Outlook, Google Calendar or Apple Calendar. This is not the spreadsheet.';
+  wrap.appendChild(calNote);
 
   const calendarBtn = document.createElement('button');
   calendarBtn.id = 'calendar-export-button';
   calendarBtn.type = 'button';
   calendarBtn.className = 'btn-secondary';
-  calendarBtn.textContent = 'Download calendar';
-  calendarBtn.title = blockedTip ?? 'Download one personal .ics calendar, or a ZIP containing one per resident.';
-  calendarBtn.disabled = !allowed || solving;   // 'All solutions' mid-build = a partial set
+  calendarBtn.textContent = 'Download calendar (.ics)';
+  calendarBtn.title = blockedTip ?? 'Downloads .ics calendar files for the solution named above, to import into Outlook, Google Calendar or Apple Calendar on a phone or computer. One resident gives one .ics file; Everyone gives a ZIP with one .ics file per person. This is not the Excel spreadsheet. Nothing on the schedule changes.';
+  calendarBtn.disabled = !allowed || solving;
   calendarBtn.addEventListener('click', async () => {
     if (!canExport()) return;
     calendarBtn.disabled = true;
@@ -1782,12 +1853,11 @@ function exportButtons() {
     const original = calendarBtn.textContent;
     calendarBtn.textContent = 'Preparing…';
     try {
-      if (allScope())
-        await downloadAllSolutionsCalendarsZip(scenario, alts, calendarSelect.value || null);
-      else if (calendarSelect.value)
-        downloadResidentCalendar(scenario, schedule, calendarSelect.value);
+      const sch = pickedSchedule();
+      if (calendarSelect.value)
+        downloadResidentCalendar(scenario, sch, calendarSelect.value);
       else
-        await downloadCalendarsZip(scenario, schedule);
+        await downloadCalendarsZip(scenario, sch);
     } finally {
       calendarBtn.textContent = original;
       calendarBtn.disabled = !canExport();
@@ -1801,18 +1871,22 @@ function exportButtons() {
   xlsxBtn.id = 'xlsx-export-button';
   xlsxBtn.type = 'button';
   xlsxBtn.className = 'btn-secondary';
-  xlsxBtn.textContent = 'Export spreadsheet';
-  xlsxBtn.title = blockedTip ?? 'Download a formatted .xlsx for Excel or Google Sheets.';
+  xlsxBtn.textContent = 'Export Excel spreadsheet (.xlsx)';
+  xlsxBtn.title = blockedTip ?? 'Downloads the solution named above as an Excel spreadsheet (.xlsx): the calendar, each person’s totals and the checks. Keep it as your reference through the month, or send it to the chief for approval. It opens in Excel or Google Sheets. Nothing on the schedule changes.';
   xlsxBtn.disabled = !allowed || solving;
   xlsxBtn.addEventListener('click', xlsx);
   wrap.appendChild(xlsxBtn);
+  const xNote = document.createElement('p');
+  xNote.className = 'export-note';
+  xNote.textContent = 'An Excel file to work from through the month, or to send to the chief for approval. Print makes a PDF instead.';
+  wrap.appendChild(xNote);
 
   const sheetsBtn = document.createElement('button');
   sheetsBtn.id = 'google-sheets-button';
   sheetsBtn.type = 'button';
   sheetsBtn.className = 'btn-secondary';
   sheetsBtn.textContent = 'Download & open Google Sheets';
-  sheetsBtn.title = blockedTip ?? 'Downloads the formatted workbook and opens a new Google Sheet. In Sheets, use File → Import → Upload.';
+  sheetsBtn.title = blockedTip ?? 'Opens a short two-step guide first. Then it downloads the spreadsheet and opens a blank Google Sheet, where you upload the file. Nothing downloads until you confirm in the next box.';
   sheetsBtn.disabled = !allowed || solving;
   sheetsBtn.addEventListener('click', () => {
     if (!canExport()) return;
@@ -1825,8 +1899,8 @@ function exportButtons() {
   printBtn.id = 'print-button';
   printBtn.type = 'button';
   printBtn.className = 'btn-secondary';
-  printBtn.textContent = 'Print';
-  printBtn.title = blockedTip ?? 'Print the calendar + totals of the solution on screen (browser → PDF).';
+  printBtn.textContent = 'Print / Save as PDF';
+  printBtn.title = blockedTip ?? 'Opens your browser’s print window with the calendar and totals of the solution on screen (not the one picked above). Choose Save as PDF there to make a PDF. Nothing on the schedule changes.';
   printBtn.disabled = !allowed || solving;
   printBtn.addEventListener('click', () => {
     if (solving || !exportableSchedule()) return;

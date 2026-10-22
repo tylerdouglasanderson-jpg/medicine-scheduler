@@ -142,9 +142,15 @@ button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focu
 .carry-in { margin-top: 0.85rem; padding-top: 0.85rem; border-top: 1px dashed var(--border); width: 100%; }
 .team-select { min-width: 4.75rem; }
 .prefs {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 1.25rem;
+  display: flex; flex-direction: column; gap: 0.6rem;
   margin-top: 0.85rem; padding-top: 0.75rem; border-top: 1px dashed var(--border);
 }
+label.pref { display: flex; align-items: flex-start; gap: 0.6rem; cursor: pointer; max-width: 60ch; }
+label.pref > input[type="checkbox"] { margin: 0.15rem 0 0; width: 1rem; height: 1rem; flex: none; cursor: pointer; }
+label.pref > select { flex: none; min-width: 6rem; }
+.pref-text { display: flex; flex-direction: column; gap: 0.1rem; }
+.pref-name { font-size: var(--fs-body); color: var(--ink); line-height: 1.3; }
+.pref-hint { font-size: var(--fs-small); color: var(--muted); line-height: 1.35; }
 .prefs-heading {
   flex-basis: 100%; margin: 0; font-size: var(--fs-micro); font-weight: 600; color: var(--muted);
   text-transform: uppercase; letter-spacing: 0.04em;
@@ -707,13 +713,32 @@ label.switch input[type="checkbox"]:checked::before { transform: translateX(0.8r
 }
 
 /* ---- print (calendar + totals only) ---- */
+.print-only { display: none; }
 @media print {
+  @page { size: landscape; margin: 0.4in; }
   .app-bar, .action-bar, .onboarding-hint, .storage-notice, .save-hint, .report-prompt,
-  #setup-section, #roster-section, #chips-section, #errors-panel,
-  .compare-solutions, .solution-tabs, .solution-reason, .diff-legend, .diff-details, .export-menu { display: none; }
+  #setup-section, #roster-section, #chips-section, #errors-panel, .collapse-btn, .revise-bar,
+  .compare-solutions, .solution-tabs, .solution-reason, .solution-header, .diff-legend, .diff-details,
+  .export-menu, .warnings-panel, #results-section > .panel-help { display: none !important; }
+  .screen-only { display: none; }
+  .print-only { display: inline; }
+  body, body.revise-on { overflow: visible; height: auto; }
+  .main, .main.revise { display: block !important; height: auto !important; overflow: visible; max-width: none; width: 100%; }
+  .pane { overflow: visible; height: auto; }
+  .panel { border: 0; box-shadow: none; padding: 0; margin: 0; }
+  .calendar { border: 0; padding: 0; }
   .calendar td.cell-changed { outline: none; }
   .calendar td.cell-changed::after { display: none; }
-  .totals-scroll, .week-scroll { overflow: visible; }
-  .calendar table.week { min-width: 0; }
-  .calendar table.week { page-break-inside: avoid; }
+  .totals-scroll, .week-scroll { overflow: visible; max-width: 100%; }
+  /* Two weeks to a page; everything fits the page width (no sideways scrolling, nothing runs off the edge). */
+  .calendar table.week { min-width: 0; width: 100%; table-layout: fixed; page-break-inside: avoid; break-inside: avoid; margin-bottom: 0.6rem; }
+  .calendar .weeks > table.week:nth-of-type(2n) { break-after: page; page-break-after: always; }
+  .calendar .weeks > table.week:last-of-type { break-after: auto; page-break-after: auto; }
+  .calendar table.week th, .calendar table.week td { font-size: 0.68rem; padding: 0.15rem 0.25rem; overflow-wrap: anywhere; }
+  .calendar td.type-mr .mr-tag { white-space: normal; font-size: 0.55rem; }
+  .legend { margin: 0.4rem 0; font-size: 0.7rem; break-inside: avoid; }
+  .totals-scroll { margin: 0.4rem 0 0; break-inside: avoid; }
+  .totals-table { width: 100%; table-layout: auto; font-size: 0.66rem; }
+  .totals-table th, .totals-table td { padding: 0.15rem 0.25rem; white-space: normal; overflow-wrap: anywhere; }
 }
+.export-note { margin: 0; font-size: var(--fs-micro); color: var(--ink-2); line-height: 1.35; }

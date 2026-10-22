@@ -128,9 +128,9 @@ describe('multi-solution UI (jsdom)', () => {
     saveScenario(solved);
     mountApp();
     const scope = document.querySelector('#export-scope');
-    expect([...scope.options].map(o => o.textContent)).toEqual(['This solution', 'All solutions']);
-    expect(document.querySelector('#calendar-export-button').textContent).toBe('Download calendar');
-    expect(document.querySelector('#xlsx-export-button').textContent).toBe('Export spreadsheet');
+    expect([...scope.options].map(o => o.textContent)).toEqual(['Solution 1', 'Solution 2 (the one on screen)', ...[...scope.options].slice(2).map(o => o.textContent)]);
+    expect(document.querySelector('#calendar-export-button').textContent).toBe('Download calendar (.ics)');
+    expect(document.querySelector('#xlsx-export-button').textContent).toBe('Export Excel spreadsheet (.xlsx)');
 
     localStorage.clear();
     saveScenario({ ...solved, alternatives: [], activeSolution: 0 });
@@ -341,10 +341,10 @@ describe('all-solutions exports', () => {
     const folders = [...new Set(files.map(f => f.split('/')[0]))].sort();
     expect(folders).toEqual(Array.from({ length: n }, (_, k) => `Solution ${k + 1}`).sort());
     expect(files.length).toBe(n * solved.residents.length);
-    expect(await zip.file('Solution 1/Senior1-2026-02.ics').async('string')).toContain('BEGIN:VCALENDAR');
+    expect(await zip.file('Solution 1/Whitfield-2026-02.ics').async('string')).toContain('BEGIN:VCALENDAR');
 
     const one = await JSZip.loadAsync(await buildAllSolutionsCalendarsZip(solved, solved.alternatives,
-      { person: 'Senior1', now: new Date(2026, 0, 1) }));
+      { person: 'Whitfield', now: new Date(2026, 0, 1) }));
     expect(Object.keys(one.files).filter(f => !one.files[f].dir).length).toBe(n);
   });
 });

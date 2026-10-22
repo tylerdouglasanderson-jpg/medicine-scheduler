@@ -46,25 +46,25 @@ function ensureDialog() {
           <h2 id="feedback-title">Report a problem or idea</h2>
           <p class="feedback-subtitle" id="feedback-subtitle">We'll see exactly what you see.</p>
         </div>
-        <button type="button" class="btn-ghost" data-close title="Close" aria-label="Close">×</button>
+        <button type="button" class="btn-ghost" data-close title="Closes this box without sending anything. Whatever you typed is discarded, and the form starts empty next time you open it." aria-label="Close">×</button>
       </div>
       <form novalidate>
         <fieldset class="feedback-type segmented">
           <legend class="visually-hidden">What are you sending?</legend>
-          <input type="radio" name="fb-type" id="fb-type-problem" value="problem" checked>
-          <label for="fb-type-problem">Problem</label>
-          <input type="radio" name="fb-type" id="fb-type-idea" value="idea">
-          <label for="fb-type-idea">Idea</label>
+          <input type="radio" name="fb-type" id="fb-type-problem" value="problem" checked title="Choose this when something is broken, wrong or not working as you expected, such as a bad schedule or an error message.">
+          <label for="fb-type-problem" title="Choose this when something is broken, wrong or not working as you expected, such as a bad schedule or an error message.">Problem</label>
+          <input type="radio" name="fb-type" id="fb-type-idea" value="idea" title="Choose this for a suggestion or a feature you would like. Nothing is wrong; you are just telling the developer what would help.">
+          <label for="fb-type-idea" title="Choose this for a suggestion or a feature you would like. Nothing is wrong; you are just telling the developer what would help.">Idea</label>
         </fieldset>
         <label class="feedback-field">Your name (optional)
-          <input type="text" data-name maxlength="80" autocomplete="name">
+          <input type="text" data-name maxlength="80" autocomplete="name" title="Optional. Your name, so the reply can be addressed to you. Up to 80 characters. Leave it blank to send anonymously.">
         </label>
         <label class="feedback-field">What happened, or your idea
-          <textarea data-message maxlength="4000" required
+          <textarea data-message maxlength="4000" required title="Describe what you saw, what you expected, and what you did just before. Required, up to 4,000 characters. Send does nothing until this has text."
             placeholder="Describe the problem or share your idea…"></textarea>
         </label>
         <label class="check feedback-attach">
-          <input type="checkbox" data-attach checked>
+          <input type="checkbox" data-attach checked title="Sends your whole month (roster, pins and saved solutions) with your message so the problem can be reproduced exactly. Untick to send only your message. A month that is too large is sent without the schedule.">
           <span>Attach my schedule (recommended)</span>
         </label>
         <p class="field-hint">This is the only thing the app sends anywhere — what you type here, the app
@@ -73,8 +73,8 @@ function ensureDialog() {
           <label>Leave this empty<input type="text" data-hp tabindex="-1" autocomplete="off"></label>
         </div>
         <div class="feedback-actions">
-          <button type="submit" class="btn-primary" data-send>Send</button>
-          <button type="button" class="btn-ghost" data-close>Cancel</button>
+          <button type="submit" class="btn-primary" data-send title="Sends your message to the developer, with your schedule if the box above is ticked. It stays here with an error if the message is empty or sending fails, and closes itself a moment after a successful send.">Send</button>
+          <button type="button" class="btn-ghost" data-close title="Closes this box without sending anything. Whatever you typed is discarded.">Cancel</button>
         </div>
         <p class="feedback-status" role="status" data-status></p>
       </form>

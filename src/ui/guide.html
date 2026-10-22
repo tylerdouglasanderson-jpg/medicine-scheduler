@@ -450,12 +450,13 @@
               <td>The number of counted days off for a resident on service the <em>full</em> month.
                 The app pro-rates this for each resident by their actual service days (rounded half
                 up), so a half-month seat gets half. Typical value: 4 — so 4 in a full month, 2 on a
-                two-week window. This is a <strong>hard line</strong>: the solver gives everyone
+                two-week window. Normally leave it at 4. This is a <strong>hard line</strong>: the solver gives everyone
                 their full number or reports the month as infeasible. It will never quietly hand
-                someone a day less.</td>
+                someone a day less. The preference <strong>Allow more than the quota of days off</strong>
+                (below) turns it into a minimum.</td>
             </tr>
             <tr>
-              <td><strong>Attempt golden weekend</strong></td>
+              <td><strong>Try for a golden weekend</strong></td>
               <td>A soft goal: give each resident a full Saturday+Sunday off together when the
                 schedule can afford it. Never overrides a hard rule.</td>
             </tr>
@@ -468,9 +469,16 @@
                 is never protected either way.</td>
             </tr>
             <tr>
-              <td><strong>Have a senior present on the 1st</strong></td>
+              <td><strong>Keep a senior present on the 1st</strong></td>
               <td>On by default: a soft goal that keeps seniors from being off on the first day of the
                 month, when the team changes over. Untick it to let a senior's day off fall there.</td>
+            </tr>
+            <tr>
+              <td><strong>Allow more than the quota of days off</strong></td>
+              <td><strong>Not advised.</strong> Off by default. Lets the solver give someone more whole
+                days off than the quota, but only as a last resort when the month cannot be staffed any
+                other way (each extra day carries a penalty). It exists for over-scheduled months. For
+                extra time off, add bonus days afterwards instead.</td>
             </tr>
             <tr>
               <td><strong>Limit senior pager days to</strong></td>
@@ -479,11 +487,13 @@
                 can, and Potential Issues lists who is over. Leave it on "No limit" to turn it off.</td>
             </tr>
             <tr>
-              <td><strong>Carry-in</strong></td>
-              <td>Appears only when the anchor is post-call. Records who was <strong>night</strong>,
-                <strong>day-call intern</strong>, and <strong>day-call senior</strong> on the last
-                call day of the <em>previous</em> month, so this month's cycle continues correctly
-                from where the last one left off.</td>
+              <td><strong>Carry-in night person / day-call intern / day-call senior</strong></td>
+              <td>Appear only when the anchor is post-call, and all three are required before you can
+                Solve. They record who took night call, day call (intern) and day call (senior) on the
+                last call day of the <em>previous</em> month, so this month's cycle continues from where
+                the last one left off. (The scheduler does not currently use the day-call senior when
+                building day&nbsp;1; it is saved with the month.) The <strong>Preferences</strong> group
+                sits below them.</td>
             </tr>
           </tbody>
         </table>
@@ -497,8 +507,8 @@
           <thead><tr><th>Column</th><th>What it is &amp; why it matters</th></tr></thead>
           <tbody>
             <tr>
-              <td><strong>Name</strong></td>
-              <td>The resident's identifier on the grid.</td>
+              <td><strong>Last name</strong></td>
+              <td>The resident's last name, used as their identifier on the grid.</td>
             </tr>
             <tr>
               <td><strong>Role</strong></td>
@@ -517,14 +527,14 @@
                 off quota.</td>
             </tr>
             <tr>
-              <td><strong>Didactics: day / half / hard</strong></td>
+              <td><strong>Didactics day / Half / Hard</strong></td>
               <td>The weekly teaching half-day. It's filled in automatically from
                 <strong>Role</strong> and <strong>Kind</strong> — seniors and Psych interns
                 <strong>Tue PM</strong>, Family interns <strong>Thu PM</strong> — and you can change the day, half, or protection for any
                 resident. <strong>Transitional</strong> interns get <strong>Wednesday PM</strong> selected and greyed out:
                 theirs is every other Wednesday and the starting week changes monthly, so a pop-up asks you to click just the
                 Wednesdays that have it, using the <strong>Didactics (PM)</strong> mode on their calendar. Those dates count
-                exactly like weekly didactics. Marking it <strong>hard</strong> makes it protected: the solver only puts
+                exactly like weekly didactics. <strong>Hard</strong> is ticked automatically for interns (seniors start soft). Marking it <strong>hard</strong> makes it protected: the solver only puts
                 them on the pager over hard didactics when there is truly no other option, and it
                 raises a warning when it does.
                 <br><br>Teaching time is protected for <strong>everyone</strong>, interns first. The
@@ -538,7 +548,7 @@
           </tbody>
         </table>
       </div>
-      <p><strong>Add resident</strong> and <strong>Remove</strong> do what they say.</p>
+      <p><strong>Add resident</strong> creates an intern of kind Other with no didactics; fill in the name, dates and didactics. <strong>Remove</strong> deletes the row.</p>
       <h3>Split seat</h3>
       <p>
         The mid-month handoff helper. Use it when one service line needs to be covered by two
@@ -553,14 +563,14 @@
       <h2><span class="num-badge">5</span>Commitments · PTO · Pins</h2>
       <p>
         This panel is a chip editor: choose a <strong>mode</strong>, then click days directly on
-        a resident's month strip to toggle that mark on or off. Click a chip's <strong>×</strong>
-        to remove it.
+        a resident's month strip to toggle that mark on or off. Click the same day again to
+        remove its mark.
       </p>
       <h3>Commitments</h3>
       <p>
-        <strong>Commitment (AM)</strong> and <strong>Commitment (PM)</strong> mark a recurring
+        <strong>Commitment AM</strong> and <strong>Commitment PM</strong> mark a
         half-day obligation — clinic, a procedure block, admin time. You'll be prompted for a
-        label. The solver keeps the resident working around it, but a commitment that lands on a
+        label; it remembers the last one you typed and starts at "clinic". The solver keeps the resident working around it, but a commitment that lands on a
         call or post-call day is a <strong>hard error</strong> — fix it with your program admin,
         since call and post-call can't be split around an outside obligation.
       </p>
@@ -571,17 +581,24 @@
         sessions count like any didactics (protected from days off and the pager, balanced across the team, shown as
         attended out of picked). If none are picked you get a warning, which you can ignore if they have none this month.
       </p>
-      <h3>1 person OK &mdash; days one person is enough</h3>
+      <h3>Force One Person Only / Force Two People Only</h3>
       <p>
-        Normally the solver needs at least two people working each day. If a particular day can truly run with one,
-        pick <strong>1 person OK</strong> and click that date on any resident's strip. It is a day-level mark, so a chip
-        appears for every resident, and the date is listed under <em>Days where one person is enough</em>, where you can
-        name who works alone or leave <em>Solver chooses</em> (it prefers a senior). It is only permission: the solver
-        still staffs two or more whenever it can. When it does leave one person, the results show
-        <em>Only X is scheduled on D, as you allowed</em>. Days that already drop to one person on their own (Med C,
-        two-person teams, or heavy PTO) need no marking. Morning Report days keep their thin-staffing warning.
+        Normally at least two people work every day. To make a day run with <strong>exactly one</strong> person, or
+        <strong>exactly two</strong>, pick <strong>Force One Person Only</strong> or <strong>Force Two People
+        Only</strong> and click that date on any resident's strip. You can keep clicking dates; there is no dialog. The
+        date is listed under <em>Forced Staffing Days</em>. For one person you can name who works alone or leave
+        <em>Solver chooses</em> (it prefers a senior). Everyone else who is free that day gets a
+        <strong>bonus day off</strong> that does not count against the quota. Click the same mode on a date again to
+        remove it; the other mode switches the count.
       </p>
-      <h3>PTO</h3>
+      <p>
+        A call day cannot be forced (everyone works call), and the day must have room: if more people than the count
+        have a clinic or a Must Work / Pager pin that day, you get an error. On a forced-one day the results show
+        <em>Only X is scheduled on D, as you asked</em>. Older files that used "1 person OK" load as Force One Person
+        Only. Days that already drop to one person on their own (Med C, two-person teams, or heavy PTO) need no
+        marking. Morning Report days keep their thin-staffing warning.
+      </p>
+      <h3>PTO Day</h3>
       <p>
         Marks a vacation or leave day. Like commitments, <strong>PTO on a call or post-call day
         is a hard error</strong> — move the PTO to a day that isn't call-adjacent.
@@ -592,12 +609,12 @@
         <table>
           <thead><tr><th>Pin</th><th>Forces</th></tr></thead>
           <tbody>
-            <tr><td class="pin-name">Off (counted)</td><td>A day off that counts toward the resident's quota.</td></tr>
-            <tr><td class="pin-name">Must work</td><td>The resident is working that day.</td></tr>
-            <tr><td class="pin-name">Pager</td><td>The resident holds the pager that day.</td></tr>
-            <tr><td class="pin-name">Day call</td><td>The resident works the call day as day-call, not night.</td></tr>
-            <tr><td class="pin-name">Night call</td><td>The resident is the night-call person that day.</td></tr>
-            <tr><td class="pin-name">Half off (AM) / Half off (PM)</td><td>A half day off — an extra freebie: it never counts toward anyone's days off, however many they get (two halves are not a day off). Shown as "½ off" on rounders and counted under Perks.</td></tr>
+            <tr><td class="pin-name">PIN:OFF DAY</td><td>A day off that counts toward the resident's quota.</td></tr>
+            <tr><td class="pin-name">PIN:Must Work</td><td>The resident is working that day.</td></tr>
+            <tr><td class="pin-name">PIN:Pager</td><td>The resident holds the pager that day.</td></tr>
+            <tr><td class="pin-name">PIN:Day</td><td>The resident works the call day as day-call, not night.</td></tr>
+            <tr><td class="pin-name">PIN:Night</td><td>The resident is the night-call person that day.</td></tr>
+            <tr><td class="pin-name">PIN:Half Off AM / PIN:Half Off PM</td><td>A half day off — an extra freebie: it never counts toward anyone's days off, however many they get (two halves are not a day off). Shown as "X - 1/2 off" on rounders and counted under Perks.</td></tr>
           </tbody>
         </table>
       </div>
@@ -638,11 +655,11 @@
       <ul>
         <li>Exactly one night person per call day; they sleep the next day (no pager, not counted on the team).</li>
         <li>Everyone on service works the call day. No days off on call or post-call days.</li>
-        <li>Each resident gets exactly their quota of whole days off (pro-rated for part-month seats). Half days and PTO never count toward it.</li>
+        <li>Each resident gets at least their quota of whole days off (pro-rated for part-month seats), and exactly the quota unless Allow more than the quota of days off is ticked and the month needs it. Half days, PTO and the bonus days on forced-staffing days never count toward it.</li>
         <li>No day off on a day with clinic or another commitment.</li>
         <li>Exactly one pager holder every non-call day: never someone who is off, on PTO, asleep, or in a PM commitment.</li>
         <li>Post-call pager goes to the previous day-call intern; a senior only if no intern can.</li>
-        <li>Staffing floor: at least 2 working each day (1 for a Med C or 2-person team).</li>
+        <li>Staffing floor: at least 2 working each day (1 for a Med C or 2-person team), unless you force a day to exactly 1 or exactly 2.</li>
         <li>2 seniors + 1 intern for the whole month: the intern takes exactly every other call night.</li>
         <li>Your pins, PTO, service windows and chosen attending-pager days are always honoured.</li>
       </ul>
@@ -662,11 +679,11 @@
       </ul>
       <h3>Where days off land (preferences)</h3>
       <ul>
-        <li>Keep seniors present on weekday short-call days (SC1 / SC2) and on day 1 of the month. A senior off then is penalised, not forbidden. The "Seniors may be off on short call" option lifts the short-call preference; weekend short call is not protected.</li>
+        <li>Keep seniors present on weekday short-call days (SC1 / SC2) and on day 1 of the month. A senior off then is penalised, not forbidden. The "Allow seniors off on short-call days" option lifts the short-call preference; weekend short call is not protected.</li>
         <li>Offs are pushed toward the lightest days: pre-call first, then SC2 (for seniors, weekday SC1/SC2 are the last choice; see above). Call and post-call days can never be offs.</li>
         <li>Avoid offs on Morning Report days (Tue/Thu pre-call); keep at least 2 people present, a senior and an intern if possible.</li>
         <li>Avoid two people off the same day.</li>
-        <li>Optional: reward Sat + Sun both off ("Golden weekend").</li>
+        <li>Optional: reward Sat + Sun both off ("Try for a golden weekend").</li>
         <li>Re-solving changes as little as possible of the schedule you already have.</li>
       </ul>
     </section>
@@ -717,6 +734,19 @@
         tabs around that choice. Changing the setup, roster, commitments or PTO clears the tabs
         (they would no longer be valid).
       </p>
+      <p>
+        Under the tabs, <strong>Compare solutions</strong> opens a table of every solution (quality against Solution 1,
+        Potential Issues, days off moved, nights, weekend days off, pager and afternoons off per person); click a row to
+        select it. <strong>Highlight changes</strong> outlines the cells that differ from Solution 1.
+      </p>
+      <h3>Wide screens: two-column view</h3>
+      <p>
+        On a screen at least 1100 pixels wide, the first successful Solve opens a side-by-side view with your inputs on
+        the left and the results on the right, each scrolling on its own. Press <strong>Return to single-column
+        view</strong> for the normal page, and <strong>Return to two-column view</strong> to come back (on a narrow
+        screen the button reads <strong>Revise this plan</strong>). While editing, the old schedule stays greyed until
+        you press Solve, or switch on <strong>Re-solve automatically</strong>.
+      </p>
       <h3>Keep them, reopen them, share them</h3>
       <p>
         <strong>Save my month (.json)</strong> keeps every solution, and which tab you were on, in
@@ -731,7 +761,7 @@
         The calendar lays out in Sun–Sat week blocks. Each day has rows for
         <strong>DATE</strong>/<strong>TYPE</strong> (the cycle phase — CALL is highlighted),
         <strong>ROUNDERS</strong> (the day team — call days show "Day - X" / "Night - Y", post-call
-        days are tagged "(postcall)", half-off shows "X - ½ off"), <strong>PAGER</strong>,
+        days are tagged "(postcall)", half-off shows "X - 1/2 off"), <strong>PAGER</strong>,
         <strong>CLINIC</strong>, <strong>DIDACTICS</strong>, <strong>PTO</strong>, and <strong>OFF</strong>.
       </p>
       <h3>Morning Report days</h3>
@@ -793,7 +823,7 @@
             <tr><td><strong class="num">Didactics</strong></td><td>Sessions attended, over the sessions this month could offer them — e.g. <strong>3 / 4</strong>. The denominator drops call days and PTO, which nothing can fix. Holding the pager still counts as attended (they go and step out if needed); hover the cell to see how many were like that.</td></tr>
             <tr><td><strong class="num">Off</strong></td><td>Counted whole days off — this is what meets the quota. Half days never count here.</td></tr>
             <tr><td><strong class="num">PTO</strong></td><td>Leave days.</td></tr>
-            <tr><td><strong class="num">Days</strong></td><td>Free/bonus whole days off (the Bonus days) that don't count against quota.</td></tr>
+            <tr><td><strong class="num">Days</strong></td><td>Free whole days off that do not count against quota: bonus days you pinned off, plus the surplus people sent home on a Force One / Two day.</td></tr>
             <tr><td><strong class="num">Perks (half days)</strong></td><td>Half days off — extra freebies on top of the quota.</td></tr>
             <tr><td><strong class="num">Off + Bonus</strong></td><td>Total rest days off.</td></tr>
             <tr><td><strong class="num">PM off</strong></td><td>Afternoons off: days they rounded in the morning with nothing in the afternoon — no pager, clinic, didactics or other PM block (e.g. an ITE). Weekends count; call and post-call days never do. A PM half day off counts. For information only — the scheduler does not solve for it. Also shown per person in the solution comparison.</td></tr>
@@ -805,20 +835,31 @@
 
     <section id="export">
       <h2><span class="num-badge">10</span>Exporting &amp; sharing</h2>
+      <h3>The Export menu: what each button makes</h3>
+      <p>
+        The <strong>Export</strong> menu always exports <strong>one solution at a time</strong>. By default that is the
+        solution on screen. If there is more than one, <strong>Which solution</strong> lets you pick Solution 1 to 5
+        (the one on screen is marked), and the buttons use that pick. There is no export-all.
+      </p>
+      <ul>
+        <li><strong>Download calendar (.ics)</strong> makes calendar files to import into Outlook, Google Calendar or
+          Apple Calendar. It is not the spreadsheet. <strong>Whose calendar (.ics file)</strong> picks one resident or
+          <strong>Everyone (ZIP of .ics files)</strong>, which is one .ics per person in a ZIP.</li>
+        <li><strong>Export Excel spreadsheet (.xlsx)</strong> makes the Excel file to work from through the month, or to
+          send to the chief for approval.</li>
+        <li><strong>Print / Save as PDF</strong> makes a PDF of the solution on screen (see Print below).</li>
+      </ul>
       <h3>Personal calendars</h3>
       <p>
-        Choose a resident and click <strong>Download calendar</strong> for a personal
-        <code>.ics</code> file, or choose <strong>All residents (.zip)</strong> for one calendar per
-        person in a single ZIP. Import the files into Google Calendar, Apple Calendar, or Outlook.
         Each calendar includes rounding/call, pager duty, clinic and other obligations, didactics,
         Morning Report, post-call, OFF, and PTO in Central Time.
       </p>
       <h3>Spreadsheet</h3>
       <p>
-        <strong>Export spreadsheet</strong> downloads a formatted <code>.xlsx</code> whose colors
-        match this grid, with readable widths, wrapped rows, and frozen headers for Excel or Google
-        Sheets. <strong>Download &amp; open Google Sheets</strong> first explains the steps, then downloads the same
+        The <code>.xlsx</code> has colors that match this grid, readable widths, wrapped rows, and frozen headers for
+        Excel or Google Sheets. <strong>Download &amp; open Google Sheets</strong> first explains the steps, then downloads the same
         workbook and opens a blank Sheet; in Sheets, use <strong>File → Open → Upload</strong> and pick the file from your Downloads folder.
+        Every day off on a Forced Staffing Day is written as "(bonus)".
       </p>
       <h3>Bonus days given</h3>
       <p>
@@ -843,24 +884,11 @@
         <li>The boxes start empty. Type an <code>x</code> (any entry, or a ticked checkbox, counts) where a day or
           half day was given; delete it to undo.</li>
       </ul>
-      <h3>One solution or all of them</h3>
-      <p>
-        When there is more than one solution, a selector next to the export buttons lets you choose
-        <strong>This solution</strong> (the tab on screen — exactly the exports described above) or
-        <strong>All solutions</strong>:
-      </p>
-      <ul>
-        <li><strong>Spreadsheet</strong> — one workbook with a sheet per solution
-          ("Solution 1", "Solution 2", …). Sheets 2 and up start with the short note on how
-          they differ from Solution 1. <strong>Download &amp; open Google Sheets</strong> uses the
-          same workbook.</li>
-        <li><strong>Calendars</strong> — one ZIP with a folder per solution ("Solution 1/",
-          "Solution 2/", …). If you picked a single resident, each folder holds just their file.</li>
-      </ul>
       <h3>Print</h3>
       <p>
-        Browser print (→ Save as PDF) of the solution on screen: its calendar, totals and its
-        "how it differs" note. The setup controls and the tabs are hidden automatically.
+        <strong>Print / Save as PDF</strong> prints the solution on screen, titled <em>Final Results</em>: the calendar
+        (two weeks per landscape page), the legend and the totals table. The setup controls, tabs, collapse buttons and
+        Potential Issues are left out, and everything fits the page width.
       </p>
       <h3>Save / Open a saved month</h3>
       <p>
@@ -913,9 +941,49 @@
             <tr>
               <td class="code-cell">CONTRADICTORY_PINS</td>
               <td>Two pins conflict — e.g. off + must-work the same day, two people both pinned
-                night or pager the same day, an off pin on a call/post-call day, or a day/night
-                pin on a non-call day.</td>
+                night or pager the same day, an off pin on a call/post-call day, a pager pin on a call
+                day, a PM half-off pin plus a pager pin, or a day/night pin on a non-call day.</td>
               <td>Remove one of the conflicting pins.</td>
+            </tr>
+            <tr>
+              <td class="code-cell">SINGLE_DAY_PERSON_UNAVAILABLE</td>
+              <td>The person named to work alone on a Force One Person Only day is on PTO or off service that day.</td>
+              <td>Choose Solver chooses, or someone else.</td>
+            </tr>
+            <tr>
+              <td class="code-cell">FORCED_DAY_ON_CALL</td>
+              <td>A Forced Staffing Day lands on a call day. Everyone works call, so it cannot be forced.</td>
+              <td>Remove it from Forced Staffing Days.</td>
+            </tr>
+            <tr>
+              <td class="code-cell">FORCED_DAY_TOO_MANY_STUCK</td>
+              <td>More people than the forced count have a clinic or a Must Work / Pager pin that day.</td>
+              <td>Remove a pin or clinic, force two instead of one, or remove the forced day.</td>
+            </tr>
+            <tr>
+              <td class="code-cell">OFF_ON_COMMITMENT</td>
+              <td>An off pin lands on a day that person has a commitment.</td>
+              <td>Remove the pin or the commitment.</td>
+            </tr>
+            <tr>
+              <td class="code-cell">HALFOFF_ON_COMMITMENT</td>
+              <td>A half-day off pin overlaps a commitment in the same half.</td>
+              <td>Remove one of them.</td>
+            </tr>
+            <tr>
+              <td class="code-cell">ATTENDING_DAY_OUTSIDE_MONTH</td>
+              <td>The attending is set to cover the pager on a date outside the month.</td>
+              <td>Take that day back from the attending.</td>
+            </tr>
+            <tr>
+              <td class="code-cell">ATTENDING_DAY_INVALID</td>
+              <td>The attending is set to cover the pager on a call or post-call day.</td>
+              <td>Take that day back from the attending.</td>
+            </tr>
+            <tr>
+              <td class="code-cell">NIGHT_ALTERNATION_IMPOSSIBLE</td>
+              <td>With two seniors and one intern, the intern must take every other call night, and your pins make that impossible.</td>
+              <td>Change the night or day-call pins.</td>
             </tr>
             <tr>
               <td class="code-cell">CARRYIN_REQUIRED</td>
@@ -924,7 +992,7 @@
             </tr>
             <tr>
               <td class="code-cell">DEGENERATE_COMPOSITION</td>
-              <td>A call day's on-service roster can't staff call — e.g. no senior on that day, or fewer than two people.</td>
+              <td>A call day's on-service roster can't staff call — e.g. no senior on that day, or fewer than two people on service. (A Medicine C team of two or more seniors is allowed without an intern.)</td>
               <td>Adjust service windows or the roster.</td>
             </tr>
             <tr>
@@ -952,7 +1020,7 @@
             <tr><td class="code-cell">W_DIDACTICS_PAGER</td><td>A senior makes didactics but carries the pager through it — the normal, acceptable case. When nobody else is free either, the row offers <strong>Attending covers the pager</strong>.</td></tr>
             <tr><td class="code-cell">W_DIDACTICS_PAGER_INTERN</td><td>An <em>intern</em> carries the pager through their own didactics, which is close to not attending at all. The row names the senior who was free that afternoon (pin the pager to them and re-solve), or offers <strong>Attending covers the pager</strong> when no senior was.</td></tr>
             <tr><td class="code-cell">W_SENIOR_PAGER_OVER</td><td>A senior holds the pager on more days than the Limit senior pager days setting. It is a soft goal, so this is informational: the month could not stay under the limit.</td></tr>
-            <tr><td class="code-cell">W_SINGLE_COVER</td><td>Only one person is scheduled on a day you marked 1 person OK. Informational: you allowed it.</td></tr>
+            <tr><td class="code-cell">W_SINGLE_COVER</td><td>Only one person is scheduled on a day you set to Force One Person Only. Informational: you asked for it.</td></tr>
             <tr><td class="code-cell">W_DIDACTICS_NO_DATES</td><td>A Transitional intern has no didactics Wednesdays picked this month. Pick them with the Didactics (PM) mode in their calendar, or ignore this if they have none this month.</td></tr>
             <tr><td class="code-cell">W_DIDACTICS_NO_SENIOR_COVER</td><td>A senior has a PM commitment on <em>every one</em> of an intern's didactics afternoons this month, so no schedule can ever put a senior on that pager. Moving one of those clinics is the real fix.</td></tr>
             <tr><td class="code-cell">W_DIDACTICS_MISS</td><td>Pager duty makes someone miss hard didactics.</td></tr>
@@ -986,7 +1054,7 @@
         <p>
           The app also folds any independent-audit hard-rule violation into this same panel. If
           you ever see a code starting with <code>A_</code> here, the solver and the auditor
-          disagree with each other — treat it as a bug and report it.
+          disagree with each other — treat it as a bug and report it. (<code>A_FORCED_STAFFING</code> means a Forced Staffing Day does not have exactly the forced number working. <code>A_CONSECUTIVE_NIGHTS</code> can appear when no other arrangement exists and does not block export.)
         </p>
       </div>
     </section>
@@ -1034,6 +1102,18 @@
     <section id="whatsnew">
       <h2><span class="num-badge">15</span>What's new</h2>
       <p>Newest first. The same list opens when you click the version number at the top of the app.</p>
+      <h3>1.12.0 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">&middot; 2026-10-22</span></h3>
+      <ul>
+        <li>New Force One Person Only and Force Two People Only buttons make a day run with exactly one or exactly two people. Everyone else who is free that day gets a bonus day off that does not count against the quota. Click dates one after another with no dialog; click the same mode again to remove a date. Old 1 person OK days load as Force One Person Only</li>
+        <li>Commitment buttons remember the last label you typed (starting at clinic). Pin and mode buttons are renamed in Title Case: PTO Day, PIN:OFF DAY, PIN:Must Work, PIN:Pager, PIN:Day, PIN:Night, PIN:Half Off AM and PIN:Half Off PM</li>
+        <li>Setup has a tidier Preferences group. The off quota hint says it is per month and pro-rated (normally leave it at 4), and a new, not advised preference Allow more than the quota of days off lets the solver exceed it only when a month cannot be staffed otherwise</li>
+        <li>The roster name column is now Last name, the example month uses sample last names, and interns get Hard didactics ticked automatically</li>
+        <li>On a wide screen the first Solve now puts your inputs on the left and the results on the right automatically. The buttons read Return to single-column view and Return to two-column view</li>
+        <li>Every control now has a longer, fuller tooltip that was checked against what the code does</li>
+        <li>Print / Save as PDF is cleaner: the title reads Final Results, there is no collapse button, byline or Potential Issues, two weeks fit on each landscape page, and tables stay inside the page width</li>
+        <li>The Export menu exports one solution at a time, the one on screen by default, and says which. Calendar (.ics) files are for Outlook, Google or Apple Calendar; the Excel spreadsheet is for working through the month or sending to the chief; Print makes a PDF</li>
+        <li>Fixed the solver ignoring its preference for a senior when only one person works, and a crash when opening the side-by-side view on a wide screen</li>
+      </ul>
       <h3>1.11.0 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">&middot; 2026-10-21</span></h3>
       <ul>
         <li>Each day box in the Commitments / PTO / Pins calendars now shows the team’s call-cycle day in the top-right corner (SC1, SC2, PRE-C, CALL, PC for post-call, PPC), so you can see what the team is doing while you edit one person</li>

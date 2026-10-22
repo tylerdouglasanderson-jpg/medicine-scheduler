@@ -45,7 +45,8 @@ function halfOffTag(scenario, person, date) {
   return halves.size === 0 ? '' : ` - 1/2 off${halves.size > 1 ? BOTH_HALVES : ''}`;
 }
 function isBonusOff(scenario, person, date) {
-  return (scenario.pins ?? []).some(p => p.type === 'offFree' && p.person === person && p.date === date);
+  return (scenario.pins ?? []).some(p => p.type === 'offFree' && p.person === person && p.date === date)
+    || (scenario.singleDays ?? []).some(x => x.date === date);
 }
 function rounderLines(date, type, dd, scenario) {
   const lines = [];

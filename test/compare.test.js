@@ -94,15 +94,15 @@ describe('describeDifference on a real month', () => {
     const s = parseScenario(structuredClone(feb));
     const base = await solve(s);
     const alt = structuredClone(base);
-    // Move one of Intern2's days off by hand onto a call day: the auditor will object.
-    const from = Object.keys(alt.schedule.days).find(d => alt.schedule.days[d].off.includes('Intern2'));
+    // Move one of Reyes's days off by hand onto a call day: the auditor will object.
+    const from = Object.keys(alt.schedule.days).find(d => alt.schedule.days[d].off.includes('Reyes'));
     const to = Object.keys(alt.schedule.days).find(d => alt.schedule.days[d].type === 'call');
-    alt.schedule.days[from].off = alt.schedule.days[from].off.filter(n => n !== 'Intern2');
-    alt.schedule.days[to].off.push('Intern2');
+    alt.schedule.days[from].off = alt.schedule.days[from].off.filter(n => n !== 'Reyes');
+    alt.schedule.days[to].off.push('Reyes');
     const count = sch => { const a = audit(s, sch); return a.violations.length + a.warnings.length; };
     const r = describeDifference(s, base, alt);
     expect(r.stats.issuesDelta).toBe(count(alt.schedule) - count(base.schedule));
     expect(r.stats.issuesDelta).toBeGreaterThan(0);
-    expect(r.lines[0]).toMatch(/^Intern2: off Feb \d+→Feb \d+$/);
+    expect(r.lines[0]).toMatch(/^Reyes: off Feb \d+→Feb \d+$/);
   }, 60000);
 });

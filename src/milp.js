@@ -34,7 +34,8 @@ export const WEIGHTS = {
   offPrecall: 6,           // S12 reward per off on a non-Morning-Report pre-call day (lightest day)
   offSc2: 3,               // S12 reward per off on a short-call-2 day (next lightest)
   seniorPagerOver: 150,    // S15 per pager day above options.seniorPagerLimit, per senior (soft; still minimizes past the cap)
-  singleSenior: 40,        // S14 a chief-allowed one-person day with the person left open: prefer a senior working it
+  extraOff: 300,           // S16 each whole day off ABOVE the quota (only with options.allowExtraOffs): a last resort
+  singleSenior: 40,       // S14 a chief-allowed one-person day with the person left open: prefer a senior working it
   mrThin: 60,              // S13 fewer than 2 people present on a Morning-Report day
   mrNoSenior: 30,          // S13 no senior present on a Morning-Report day
   mrNoIntern: 20,          // S13 no intern present on a Morning-Report day
@@ -90,10 +91,12 @@ export function buildModel(scenario, freezeDate = null,
   { elasticQuota = false, stability = true, distinctFrom = [], minOffsMoved = 0, objCap = null,
     categoryCaps = null } = {}) {
   // A one-person day with a NAMED person is that person's implicit "must work" pin.
-  const namedSingles = (scenario.singleDays ?? []).filter(x => x.person);
+  const namedSingles = (scenario.singleDays ?? []).filter(x => x.person && (x.count ?? 1) === 1);
   if (namedSingles.length) scenario = { ...scenario, pins: [...scenario.pins,
     ...namedSingles.map(x => ({ person: x.person, date: x.date, type: 'work', half: null, note: '' }))] };
-  const singleSet = new Set((scenario.singleDays ?? []).map(x => x.date));
+  const singleSet = new Set((scenario.singleDays ?? []).filter(x => (x.count ?? 1) === 1).map(x => x.date));
+  // Forced-staffing dates: the people sent home to hit the exact count take FREE offs (outside the quota).
+  const forcedDates = new Set((scenario.singleDays ?? []).map(x => x.date));
   const { types, callDays, morningReportDays } = deriveCycle(scenario.anchorType, scenario.month);
   const dates = monthDates(scenario.month);
   const di = new Map(dates.map((d, i) => [d, i]));
@@ -235,9 +238,15 @@ export function buildModel(scenario, freezeDate = null,
     const terms = [];
     dates.forEach(d => {
       const v = offName.get(p.name + '|' + d);
-      if (v && !hasPin(p, d, 'offFree')) terms.push(T(1, v));
+      if (v && !hasPin(p, d, 'offFree') && !forcedDates.has(d)) terms.push(T(1, v));
     });
     const slack = elasticQuota ? [T(1, `short_${pi}`)] : [];
+    // options.allowExtraOffs (v1.5.0): the quota becomes a minimum; each day above it is priced so it is a last resort.
+    if (scenario.options?.allowExtraOffs && terms.length) {
+      cont(`xoff_${pi}`, { kind: 'xoff', person: p.name });
+      addObj(WEIGHTS.extraOff, `xoff_${pi}`);
+      slack.push(T(-1, `xoff_${pi}`));
+    }
     cons.push(`q_${pi}: ` + lin([...terms, ...slack]) + ' = ' + quotaFor(p, scenario));
   });
 
@@ -333,6 +342,9 @@ export function buildModel(scenario, freezeDate = null,
     let constant = 0; const terms = [];
     people.forEach(p => { const w = wTerm(p, d); constant += w.constant; terms.push(...w.terms); });
     if (terms.length) cons.push(`stf_${di.get(d)}: ` + lin(terms) + ' >= ' + (rhs - constant));
+    // Forced day: no MORE than N work either (the surplus are off, free of quota). Not on call days.
+    const forced = (scenario.singleDays ?? []).find(x => x.date === d);
+    if (forced && terms.length) cons.push(`fcap_${di.get(d)}: ` + lin(terms) + ' <= ' + ((forced.count ?? 1) - constant));
   });
 
   // S14 one-person days the chief allowed, person left open: when only one works, prefer a senior.
@@ -342,7 +354,7 @@ export function buildModel(scenario, freezeDate = null,
     if (x.person || types.get(d) === 'call') return;
     let constant = 0; const terms = [];
     people.filter(p => p.role === 'senior').forEach(p => { const w = wTerm(p, d); constant += w.constant; terms.push(...w.terms); });
-    if (constant >= 1 || (!terms.length && constant === 0)) return;   // a senior always works, or none can
+    if (!terms.length) return;   // a senior always works (constant >= 1), or none can (constant 0)
     const u = cont(`sone_${di.get(d)}`, { kind: 'sone', date: d }, 0, 1);
     cons.push(`sone_${di.get(d)}_r: ` + lin([...terms, T(1, u)]) + ' >= ' + (1 - constant));
     addObj(WEIGHTS.singleSenior, u);

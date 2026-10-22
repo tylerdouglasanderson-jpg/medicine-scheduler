@@ -323,6 +323,7 @@ function extract(scenario, vars, cols) {
     const svc = dates.filter(d => onService(p, d));
     const pins = scenario.pins.filter(x => x.person === name);
     const freeDates = new Set(pins.filter(x => x.type === 'offFree').map(x => x.date));
+    for (const x of scenario.singleDays ?? []) if (days[x.date]?.off.includes(name)) freeDates.add(x.date);   // forced-day offs are free
     const halfPins = pins.filter(x => x.type === 'halfOff');
     const halfDates = new Set(halfPins.map(x => x.date));
 

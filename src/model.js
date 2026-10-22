@@ -51,8 +51,8 @@ export function defaultDidactics(role, kind) {
   if (role === 'senior') dow = TUE;
   else if (kind === 'psych') dow = TUE;
   else if (kind === 'categorical') dow = THU;
-  else if (kind === 'TY' && role !== 'senior') return { dow: 3, half: 'PM', hard: false, alt: true, dates: [] };
-  return dow === null ? null : { dow, half: 'PM', hard: false };
+  else if (kind === 'TY' && role !== 'senior') return { dow: 3, half: 'PM', hard: true, alt: true, dates: [] };
+  return dow === null ? null : { dow, half: 'PM', hard: role !== 'senior' };   // interns default to Hard: try to give them the day off; seniors soft
 }
 
 // Does this resident have a didactics session on `date` (YYYY-MM-DD)? Weekly rule: that weekday. Every-other
@@ -91,7 +91,7 @@ export function afternoonsOffDates(scenario, schedule, name) {
 // solve() stamps every schedule it produces with this. A saved solution carrying a different stamp
 // is not used to anchor re-solve stability, so a scenario file built under older rules re-solves to
 // the NEW optimum without being cleared and re-typed first.
-export const RULES_VERSION = '1.4.0';   // v1.4.0: soft options.seniorPagerLimit; v1.3.0: per-date one-person-is-enough staffing exception (singleDays); v1.2.0: Transitional didactics dates
+export const RULES_VERSION = '1.5.0';   // v1.5.0: singleDays now FORCES exactly 1 or 2 working (surplus offs are free); v1.4.0: soft options.seniorPagerLimit; v1.3.0: per-date one-person-is-enough staffing exception (singleDays); v1.2.0: Transitional didactics dates
 
 export function parseScenario(json) {
   for (const k of ['team', 'month', 'anchorType', 'residents'])
@@ -101,7 +101,7 @@ export function parseScenario(json) {
     alternatives: [], activeSolution: 0, alternativesReason: null,
     ...json,
     options: {
-      offQuota: 4, goldenWeekend: false, seniorsOffShortCall: false, seniorFirstDay: true, seniorPagerLimit: null,
+      offQuota: 4, goldenWeekend: false, seniorsOffShortCall: false, seniorFirstDay: true, seniorPagerLimit: null, allowExtraOffs: false,
       ...(json.options ?? {}),
     },
     residents: json.residents.map(r => ({ didactics: null, commitments: [], pto: [], ...r })),
@@ -122,11 +122,13 @@ function normalize(s) {
   const rawSpl = s.options.seniorPagerLimit;
   const spl = rawSpl === null || rawSpl === undefined || rawSpl === '' ? NaN : Number(rawSpl);
   s.options = { ...s.options, seniorPagerLimit: Number.isInteger(spl) && spl >= 0 && spl <= 4 ? spl : null };
-  // Days the chief says one person is enough: { date, person } - person '' lets the solver choose who.
+  // Days the chief FORCES to exactly N people working (v1.5.0; before it, 1 was only allowed, never forced):
+  // { date, count: 1|2, person } - person '' lets the solver choose who works alone (count 1 only).
   const seenSingle = new Set();
   s.singleDays = (s.singleDays ?? [])
     .filter(x => x && inMonth(x.date) && !seenSingle.has(x.date) && seenSingle.add(x.date))
-    .map(x => ({ date: x.date, person: names.has(x.person) ? x.person : '' }))
+    .map(x => { const count = Number(x.count) === 2 ? 2 : 1;
+      return { date: x.date, count, person: count === 1 && names.has(x.person) ? x.person : '' }; })
     .sort((a, b) => a.date.localeCompare(b.date));
   for (const r of s.residents) {
     r.commitments = (r.commitments ?? []).filter(c => c && inMonth(c.date));

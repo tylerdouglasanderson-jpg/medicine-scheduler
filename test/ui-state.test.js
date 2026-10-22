@@ -13,8 +13,8 @@ describe('state round-trip', () => {
   });
   it('scenario JSON export/import round-trips exactly', () => {
     const s = importScenarioJSON(exportScenarioJSON(feb));
-    expect(s.residents.map(r => r.name)).toEqual(['Intern1', 'Intern2', 'Senior1', 'Senior2']);
-    expect(s.options).toEqual({ offQuota: 4, goldenWeekend: false, seniorsOffShortCall: false, seniorFirstDay: true, seniorPagerLimit: null });
+    expect(s.residents.map(r => r.name)).toEqual(['Okafor', 'Reyes', 'Whitfield', 'Nakamura']);
+    expect(s.options).toEqual({ offQuota: 4, goldenWeekend: false, seniorsOffShortCall: false, seniorFirstDay: true, seniorPagerLimit: null, allowExtraOffs: false });
   });
   it('importScenarioJSON throws a readable error on garbage', () =>
     expect(() => importScenarioJSON('{nope')).toThrow());
@@ -71,10 +71,10 @@ describe('app smoke (jsdom)', () => {
 
     const calendarSelect = document.querySelector('#calendar-export-person');
     expect([...calendarSelect.options].map(o => o.textContent)).toEqual([
-      'All residents (.zip)', 'Intern1', 'Intern2', 'Senior1', 'Senior2',
+      'Everyone (ZIP of .ics files)', 'Okafor', 'Reyes', 'Whitfield', 'Nakamura',
     ]);
-    expect(document.querySelector('#calendar-export-button').textContent).toBe('Download calendar');
-    expect(document.querySelector('#xlsx-export-button').textContent).toBe('Export spreadsheet');
+    expect(document.querySelector('#calendar-export-button').textContent).toBe('Download calendar (.ics)');
+    expect(document.querySelector('#xlsx-export-button').textContent).toBe('Export Excel spreadsheet (.xlsx)');
     expect(document.querySelector('#google-sheets-button').textContent).toBe('Download & open Google Sheets');
   });
 

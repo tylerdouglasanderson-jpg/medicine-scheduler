@@ -16,21 +16,21 @@ describe('buildModel(feb-2026) structure', () => {
     expect(kindsFor(vars, 'off')
       .filter(([, m]) => ['call', 'postcall'].includes(types.get(m.date)))).toEqual([]));
 
-  it('no pager vars on call days; none for Intern2 on his PM clinic dates', () => {
+  it('no pager vars on call days; none for Reyes on his PM clinic dates', () => {
     const pagers = kindsFor(vars, 'pager');
     expect(pagers.filter(([, m]) => types.get(m.date) === 'call')).toEqual([]);
     expect(pagers.filter(([, m]) =>
-      m.person === 'Intern2' && ['2026-02-03', '2026-02-10'].includes(m.date))).toEqual([]);
+      m.person === 'Reyes' && ['2026-02-03', '2026-02-10'].includes(m.date))).toEqual([]);
   });
 
   it('nights Feb 5/11 intern-only; Feb 17/23 fairness-decided (all 3 remaining people)', () => {
     const nights = kindsFor(vars, 'night');
     expect(new Set(nights.filter(([, m]) => m.date === '2026-02-05').map(([, m]) => m.person)))
-      .toEqual(new Set(['Intern1', 'Intern2']));
+      .toEqual(new Set(['Okafor', 'Reyes']));
     expect(nights.filter(([, m]) => m.date === '2026-02-17').length).toBe(3);
   });
 
-  it('Intern1 quota row = 2 (half window) and is a hard equality — no slack var at all', () => {
+  it('Okafor quota row = 2 (half window) and is a hard equality — no slack var at all', () => {
     expect(lp).toMatch(/q_0:.* = 2/);
     expect(lp).not.toMatch(/short_/);
   });
@@ -131,8 +131,8 @@ describe('senior short-call + first-day options', () => {
   const scDates = [...types].filter(([, t]) => ['sc1', 'sc2'].includes(t)).map(([d]) => d);
   const base = solveWith({}), lifted = solveWith({ seniorsOffShortCall: true });
   const delta = d => {
-    const v = offVar(base.vars, 'Senior1', d);
-    return v ? objCoef(base.lp, v) - objCoef(lifted.lp, offVar(lifted.vars, 'Senior1', d)) : null;
+    const v = offVar(base.vars, 'Whitfield', d);
+    return v ? objCoef(base.lp, v) - objCoef(lifted.lp, offVar(lifted.vars, 'Whitfield', d)) : null;
   };
 
   it('a weekday short-call off costs a senior seniorOffSC, and the option lifts it', () => {
@@ -150,9 +150,9 @@ describe('senior short-call + first-day options', () => {
   it('seniorFirstDay (default on) charges a senior off on day 1; turning it off removes it', () => {
     const d1 = '2026-02-01';
     const on = solveWith({}), off = solveWith({ seniorFirstDay: false });
-    const v = offVar(on.vars, 'Senior1', d1);
+    const v = offVar(on.vars, 'Whitfield', d1);
     expect(v).toBeTruthy();
-    expect(objCoef(on.lp, v) - objCoef(off.lp, offVar(off.vars, 'Senior1', d1))).toBe(WEIGHTS.seniorOffFirstDay);
+    expect(objCoef(on.lp, v) - objCoef(off.lp, offVar(off.vars, 'Whitfield', d1))).toBe(WEIGHTS.seniorOffFirstDay);
   });
 });
 

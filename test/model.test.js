@@ -42,9 +42,9 @@ describe('defaultDidactics — type-based defaults (Tue=2, Wed=3, Thu=4; PM)', (
     expect(defaultDidactics('senior', 'other')).toEqual({ dow: 2, half: 'PM', hard: false });
   });
   it('interns default by kind: psych Tue, categorical Thu; TY Wed PM every-other (dates picked by hand)', () => {
-    expect(defaultDidactics('intern', 'psych')).toEqual({ dow: 2, half: 'PM', hard: false });
-    expect(defaultDidactics('intern', 'TY')).toEqual({ dow: 3, half: 'PM', hard: false, alt: true, dates: [] });
-    expect(defaultDidactics('intern', 'categorical')).toEqual({ dow: 4, half: 'PM', hard: false });
+    expect(defaultDidactics('intern', 'psych')).toEqual({ dow: 2, half: 'PM', hard: true });
+    expect(defaultDidactics('intern', 'TY')).toEqual({ dow: 3, half: 'PM', hard: true, alt: true, dates: [] });
+    expect(defaultDidactics('intern', 'categorical')).toEqual({ dow: 4, half: 'PM', hard: true });
   });
   it('OB/GYN & other interns have no fixed default', () => {
     expect(defaultDidactics('intern', 'OBGYN')).toBeNull();
@@ -55,8 +55,8 @@ describe('defaultDidactics — type-based defaults (Tue=2, Wed=3, Thu=4; PM)', (
 describe('quotas — proportional round-half-up', () => {
   const s = parseScenario(fixture);
   const q = Object.fromEntries(s.residents.map(r => [r.name, quotaFor(r, s)]));
-  it('Intern1 2 (15/28), others 4', () =>
-    expect(q).toEqual({ Intern1: 2, Intern2: 4, Senior1: 4, Senior2: 4 }));
+  it('Okafor 2 (15/28), others 4', () =>
+    expect(q).toEqual({ Okafor: 2, Reyes: 4, Whitfield: 4, Nakamura: 4 }));
   it('half-month rounds half up: 4 * 14/28 = 2', () =>
     expect(quotaFor({ serviceStart: '2026-02-01', serviceEnd: '2026-02-14' }, s)).toBe(2));
 });

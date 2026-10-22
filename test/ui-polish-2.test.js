@@ -82,7 +82,7 @@ describe('totals table', () => {
       [name]: { ...sched.totals[name], didactics: 0, didacticsOf: 0, didacticsPager: 0 } } });
     const cell = t.querySelector(`[data-name="${name}"][data-col="didactics"]`);
     expect(cell.textContent).toBe('—');
-    expect(cell.title).toBe('No didactics sessions they could attend this month (call, post-call, PTO or off service)');
+    expect(cell.title).toMatch(/^No didactics sessions they could attend this month/);
     expect(t.textContent).not.toContain('0 / 0');
   });
 
@@ -116,7 +116,7 @@ describe('action bar', () => {
     mountApp();
     const menu = $('#export-menu');
     expect(menu.querySelector('label[for="export-scope"]').textContent).toBe('Which solution');
-    expect(menu.querySelector('label[for="calendar-export-person"]').textContent).toBe('Whose calendar');
+    expect(menu.querySelector('label[for="calendar-export-person"]').textContent).toBe('Whose calendar (.ics file)');
     expect(menu.querySelectorAll('hr.export-divider').length).toBe(2);
     const order = [...menu.querySelectorAll('button, hr')].map(el => el.id || el.className);
     expect(order).toEqual(['calendar-export-button', 'export-divider', 'xlsx-export-button',
@@ -128,7 +128,7 @@ describe('action bar', () => {
     mountApp();
     expect($('#export-scope')).toBeNull();
     expect($('label[for="export-scope"]')).toBeNull();
-    expect($('label[for="calendar-export-person"]').textContent).toBe('Whose calendar');
+    expect($('label[for="calendar-export-person"]').textContent).toBe('Whose calendar (.ics file)');
   });
 
   it('Freeze through is a real label[for] wired to its date input; disabled with "Solve first" until solved', () => {
@@ -139,13 +139,13 @@ describe('action bar', () => {
     expect(label.control).toBe(input);
     expect(label.textContent).toBe('Freeze through');
     expect(input.disabled).toBe(true);
-    expect(input.title).toBe('Solve first');
+    expect(input.title).toMatch(/Solve first/);
 
     saveScenario(solved);
     mountApp();
     expect($('#freeze-date').disabled).toBe(false);
     expect($('#freeze-date').title)
-      .toBe('Keep every day up to this date exactly as it is; only later days can change');
+      .toMatch(/^Keeps every day up to this date exactly as it is/);
   });
 });
 

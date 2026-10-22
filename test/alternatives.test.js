@@ -89,8 +89,8 @@ describe('freeze, pins and attending days hold in EVERY solution', () => {
   beforeAll(async () => {
     base = (await solve(parseScenario(structuredClone(feb)))).schedule;
     const after = Object.keys(base.days).filter(d => d > FREEZE);
-    // Pin Intern2 to WORK on a day he had off, so the pin has to move something.
-    pin = { person: 'Intern2', date: after.find(d => base.days[d].off.includes('Intern2')), type: 'work' };
+    // Pin Reyes to WORK on a day he had off, so the pin has to move something.
+    pin = { person: 'Reyes', date: after.find(d => base.days[d].off.includes('Reyes')), type: 'work' };
     attDay = after.find(d => ['ppc', 'sc1', 'sc2', 'precall'].includes(base.days[d].type) && d !== pin.date);
     s = parseScenario({ ...structuredClone(feb), lastSolution: base, pins: [pin], attendingPagerDays: [attDay] });
     out = await solveAlternatives(s, { freezeDate: FREEZE });
@@ -108,7 +108,7 @@ describe('freeze, pins and attending days hold in EVERY solution', () => {
         expect(schedule.days[d].night).toBe(base.days[d].night);
         expect(schedule.days[d].pager).toBe(base.days[d].pager);
       }
-      expect(schedule.days[pin.date].working).toContain('Intern2');
+      expect(schedule.days[pin.date].working).toContain('Reyes');
       expect(schedule.days[attDay].pager).toBe('ATTENDING');
     }
   });
@@ -183,8 +183,8 @@ describe('stopping short', () => {
 
   it('an infeasible month comes back exactly as solve() reports it', async () => {
     const s = parseScenario({ ...structuredClone(feb), pins: [   // the contradictory pins from solve.test.js
-      { person: 'Intern2', date: '2026-02-05', type: 'nightCall' },
-      { person: 'Intern2', date: '2026-02-06', type: 'pager' }] });
+      { person: 'Reyes', date: '2026-02-05', type: 'nightCall' },
+      { person: 'Reyes', date: '2026-02-06', type: 'pager' }] });
     const r = await solveAlternatives(s);
     expect(r.infeasible).toBeTruthy();
     expect(r).toEqual(await solve(s));
@@ -218,15 +218,15 @@ describe('buildModel alternative options', () => {
 
   it('pinned and frozen off cells are not movable', async () => {
     const all = buildModel(s).movableOffs.map(([, m]) => m);
-    const target = all.find(m => m.person === 'Intern2' && m.date > '2026-02-10');   // a real off var
+    const target = all.find(m => m.person === 'Reyes' && m.date > '2026-02-10');   // a real off var
     const { schedule } = await solve(s);
     const pinned = parseScenario({ ...structuredClone(feb), lastSolution: schedule,
-      pins: [{ person: 'Intern2', date: target.date, type: 'work' }] });
+      pins: [{ person: 'Reyes', date: target.date, type: 'work' }] });
     const mv = buildModel(pinned, '2026-02-10').movableOffs.map(([, m]) => m);
     expect(all.some(m => m.date <= '2026-02-10')).toBe(true);
     expect(mv.length).toBeGreaterThan(0);
     expect(mv.some(m => m.date <= '2026-02-10')).toBe(false);
-    expect(mv.some(m => m.person === 'Intern2' && m.date === target.date)).toBe(false);
+    expect(mv.some(m => m.person === 'Reyes' && m.date === target.date)).toBe(false);
   });
 });
 
