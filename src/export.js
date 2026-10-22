@@ -212,7 +212,7 @@ function residentFormulas(cal, geo, row, k, { hasDidactics, didacticsOf = null }
   const ticks = j => {
     const L = colLetter(tickCol(k, j));
     const rg = `${L}$${geo.first}:${L}$${geo.last}`;
-    return `(COUNTIF(${rg},TRUE)+COUNTIF(${rg},"x"))`;
+    return `(COUNTIF(${rg},"?*")+COUNTIF(${rg},TRUE))`;   // any text, or a ticked checkbox
   };
   const dayIs = (lo, hi) => `COLUMN(${rng(lo, hi)})-1`;
   const dayIdx = `MATCH(${day},${DAY_LIST},0)`;
@@ -287,8 +287,8 @@ function writeTotals(ws, scenario, schedule, dates, top, cal, geo) {
   });
 }
 
-// Bonus grid: one row per date, AM / PM / Day tick boxes per resident, under the totals. Ticks are booleans
-// (Google Sheets: select them, Insert > Checkbox); "x" also counts so Excel users can type it. A Day tick adds
+// Bonus grid: one row per date, AM / PM / Day tick boxes per resident, under the totals. Boxes start empty;
+// any entry (an "x", or a checkbox ticked TRUE) counts. A Day tick adds
 // a Days (bonus day off) and takes a Shift; an AM/PM tick adds a Perk (half day) and takes half a Shift. The
 // grid starts empty: days already given are in the calendar as "(bonus)" / "1/2 off" and counted from there.
 function writeBonusGrid(ws, scenario, schedule, dates, geo) {
@@ -298,15 +298,14 @@ function writeBonusGrid(ws, scenario, schedule, dates, geo) {
   const dateCol = TOTALS_START_COL;
   const helperCol = dateCol + 1 + 3 * names.length;
   const keyCol = Math.max(helperCol, DAY_HELPER_COL) + 1;   // hidden "|A|B|" list the conflict rule searches
-  const tick = ref => `OR(${ref}=TRUE,${ref}="x")`;
+  const tick = ref => `AND(${ref}<>"",${ref}<>FALSE)`;
 
   ws.mergeCells(titleRow, dateCol, titleRow, helperCol);
   const title = ws.getCell(titleRow, dateCol);
-  title.value = 'Bonus days given: tick Day = bonus day off (Days), AM / PM = half day (Perks). '
-    + 'Totals above update. Google Sheets does not import checkboxes from Excel files: drag-select the FALSE grid, '
-    + 'then Insert > Checkbox (one click, all of them turn into real boxes).';
+  title.value = 'Bonus days: put an X in each box where a day or half day was given. Totals update.';
   title.font = { bold: true };
-  title.alignment = { vertical: 'middle', wrapText: true };
+  title.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+  ws.getRow(titleRow).height = 22;
 
   ws.mergeCells(head1, dateCol, head2, dateCol);
   ws.getCell(head1, dateCol).value = 'Date';
@@ -344,7 +343,6 @@ function writeBonusGrid(ws, scenario, schedule, dates, geo) {
       for (let j = 0; j < 3; j++) {
         const cell = ws.getCell(row, c0 + j);
         styleBox(cell, { argb: on ? band : FILLS.BLANK });
-        if (on) cell.value = false;
       }
     });
 

@@ -792,14 +792,14 @@
       <p>
         <strong>Export spreadsheet</strong> downloads a formatted <code>.xlsx</code> whose colors
         match this grid, with readable widths, wrapped rows, and frozen headers for Excel or Google
-        Sheets. <strong>Download &amp; open Google Sheets</strong> downloads the same workbook and opens
-        a new Sheet; in Sheets, use <strong>File → Import → Upload</strong> to select the download.
+        Sheets. <strong>Download &amp; open Google Sheets</strong> first explains the steps, then downloads the same
+        workbook and opens a blank Sheet; in Sheets, use <strong>File → Open → Upload</strong> and pick the file from your Downloads folder.
       </p>
       <h3>Bonus days given</h3>
       <p>
         Under the totals is a grid with one row per day and three boxes per resident:
         <strong>AM</strong> and <strong>PM</strong> (a half day off) and <strong>Day</strong> (a whole
-        bonus day off). Tick a box and that resident's totals update on their own: a Day adds 1 to
+        bonus day off). Put an X in a box and that resident's totals update on their own: a Day adds 1 to
         <strong>Days</strong> and to <strong>Off + Bonus</strong> and takes 1 off <strong>Shifts</strong>;
         an AM or PM adds 1 to <strong>Perks (half days)</strong> and takes ½ off <strong>Shifts</strong>.
         <strong>Days</strong> and <strong>Perks (half days)</strong> sit under one <strong>Bonus/Off</strong>
@@ -815,9 +815,8 @@
         <li>The <strong>Already off / PTO</strong> column lists who is off that day. A box turns
           <strong>red</strong> if you tick someone who is already off, or tick both a half and the whole day.</li>
         <li>Grey boxes are days that resident isn't on the team.</li>
-        <li><strong>Google Sheets:</strong> the boxes arrive as TRUE / FALSE. Select the grid, then
-          <strong>Insert → Checkbox</strong> once. To clear a tick, click the box — don't press Delete,
-          which removes the checkbox itself. In Excel, type <code>x</code> (or TRUE) to tick.</li>
+        <li>The boxes start empty. Type an <code>x</code> (any entry, or a ticked checkbox, counts) where a day or
+          half day was given; delete it to undo.</li>
       </ul>
       <h3>One solution or all of them</h3>
       <p>
@@ -1007,6 +1006,10 @@
     <section id="whatsnew">
       <h2><span class="num-badge">15</span>What's new</h2>
       <p>Newest first. The same list opens when you click the version number at the top of the app.</p>
+      <h3>1.4.3 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">· 2026-10-21</span></h3>
+      <ul>
+        <li>Export to Google Sheets: “Download &amp; open Google Sheets” now first explains the steps (file lands in Downloads, then File, Open, Upload). The bonus grid starts empty: put an X in a box to give a day or half day. Shorter grid title that no longer overflows</li>
+      </ul>
       <h3>1.4.2 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">· 2026-10-21</span></h3>
       <ul>
         <li>Google Sheets export: row heights now fit their text instead of stretched fixed heights, and the bonus tick grid says plainly how to turn it into checkboxes (Sheets cannot import them from Excel files: select the grid, choose Insert, then Checkbox)</li>

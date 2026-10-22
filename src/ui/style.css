@@ -429,6 +429,9 @@ dialog.app-dialog::backdrop { background: oklch(0.2 0.02 255 / 0.5); }
 .app-dialog-body .cite-link { display: inline-block; margin-left: 0.4rem; padding: 0 0.4rem; border: 1px solid var(--accent); border-radius: 4px; font-size: var(--fs-small); font-weight: 500; color: var(--accent); text-decoration: none; vertical-align: middle; }
 .app-dialog-body .cite-link:hover { text-decoration: underline; }
 
+.app-dialog-body .dialog-steps { margin: 0 0 1rem; padding-left: 1.3rem; color: var(--ink-2); }
+.app-dialog-body .dialog-steps li { margin-bottom: 0.4rem; }
+
 /* ---- feedback dialog: report a problem or idea ---- */
 dialog#feedback-dialog {
   border: none; border-radius: 12px; padding: 0; width: min(30rem, 92vw);

@@ -1303,6 +1303,30 @@ function openAppDialog(id, title, fill) {
   if (!dlg.open) dlg.showModal();
 }
 
+// Explain the two-step Google Sheets hand-off before anything downloads or opens.
+function openSheetsGuide() {
+  openAppDialog('sheets-dialog', 'Open in Google Sheets', body => {
+    const lead = document.createElement('p');
+    lead.textContent = 'The file downloads into your Downloads folder and a blank Google Sheets page opens. Then:';
+    const steps = document.createElement('ol');
+    steps.className = 'dialog-steps';
+    for (const text of [
+      'In Google Sheets, click File, then Open.',
+      'Choose the Upload tab and pick the file from your Downloads folder (or drag it in).',
+      'Open it. On the right, put an X in the AM / PM / Day boxes for bonus days given.',
+    ]) { const li = document.createElement('li'); li.textContent = text; steps.appendChild(li); }
+    const go = mkButton('Download and open Google Sheets', () => {
+      window.open('https://sheets.new', '_blank', 'noopener');
+      xlsx();
+      document.getElementById('sheets-dialog')?.close();
+    }, 'btn-primary');
+    go.classList.add('dialog-link');
+    const cancel = mkButton('Cancel', () => document.getElementById('sheets-dialog')?.close(), 'btn-ghost');
+    cancel.classList.add('dialog-link');
+    body.append(lead, steps, go, cancel);
+  });
+}
+
 const linkButton = (href, text, cls) => {
   const a = document.createElement('a');
   a.href = href;
@@ -1515,8 +1539,7 @@ function exportButtons() {
   sheetsBtn.disabled = !allowed || solving;
   sheetsBtn.addEventListener('click', () => {
     if (!canExport()) return;
-    window.open('https://sheets.new', '_blank', 'noopener');
-    xlsx();
+    openSheetsGuide();
   });
   wrap.appendChild(sheetsBtn);
   wrap.appendChild(menuDivider());

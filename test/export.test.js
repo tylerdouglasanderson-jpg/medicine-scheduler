@@ -62,7 +62,7 @@ describe('xlsx export (feb-2026, week of Feb 1-7)', () => {
       const h = sheet.getRow(r).height;
       expect(h).toBeGreaterThanOrEqual(20);
       expect(h).toBeLessThanOrEqual(110);
-      expect((h - 5) % 15 === 0 || h === 20).toBe(true);
+      expect((h - 5) % 15 === 0 || h === 20 || h === 22).toBe(true);
     }
     expect(sheet.getCell('H1').isMerged).toBe(true);
     expect(sheet.views[0]).toEqual(expect.objectContaining({

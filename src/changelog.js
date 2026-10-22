@@ -4,6 +4,12 @@
 // The first entry's version must equal package.json's version.
 export const CHANGELOG = [
   {
+    version: '1.4.3', date: '2026-10-21',
+    items: [
+      'Export to Google Sheets: “Download & open Google Sheets” now first explains the steps (file lands in Downloads, then File, Open, Upload). The bonus grid starts empty: put an X in a box to give a day or half day. Shorter grid title that no longer overflows',
+    ],
+  },
+  {
     version: '1.4.2', date: '2026-10-21',
     items: [
       'Google Sheets export: row heights now fit their text instead of stretched fixed heights, and the bonus tick grid says plainly how to turn it into checkboxes (Sheets cannot import them from Excel files: select the grid, choose Insert, then Checkbox)',

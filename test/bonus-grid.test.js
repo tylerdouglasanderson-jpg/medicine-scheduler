@@ -169,7 +169,7 @@ describe('xlsx totals box', () => {
       const r = s.residents.find(x => x.name === name);
       dates.forEach((d, i) => [0, 1, 2].forEach(j => {
         const v = ws.getCell(first + i, 11 + 3 * k + j).value;
-        if (onService(r, d)) expect(v).toBe(false); else expect(v).toBeNull();
+        expect(v).toBeNull();   // boxes start empty; an X (or a ticked box) is the tick
       }));
     });
     const keyCol = Math.max(11 + 3 * names.length, 21) + 1;
