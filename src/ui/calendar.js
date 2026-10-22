@@ -1,6 +1,6 @@
 // Calendar render: week blocks (Sun-Sat), totals table, warnings panel.
 // Rendering spec ground truth: fixtures/aug-2025-sheet-week.md (format only).
-import { deriveCycle, monthDates, onService } from '../model.js';
+import { deriveCycle, didacticsOn, monthDates, onService } from '../model.js';
 
 const ROWS = ['DATE', 'TYPE', 'ROUNDERS', 'PAGER', 'CLINIC', 'DIDACTICS', 'PTO', 'OFF'];
 const ROW_CLASS = {
@@ -50,9 +50,8 @@ function offNames(scenario, dd, date) {
 function didacticsNames(scenario, schedule, date, type) {
   if (type === 'call' || type === 'postcall') return [];   // nobody attends on those days
   const dd = schedule.days[date];
-  const dow = dowOf(date);
   return scenario.residents
-    .filter(r => r.didactics && r.didactics.dow === dow && onService(r, date))
+    .filter(r => didacticsOn(r, date) && onService(r, date))
     .filter(r => !(dd.off.includes(r.name) || (r.pto ?? []).includes(date)))
     .filter(r => !(scenario.pins ?? []).some(p => p.type === 'halfOff' && p.person === r.name
       && p.date === date && p.half === (r.didactics.half ?? 'PM')))

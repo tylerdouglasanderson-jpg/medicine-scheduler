@@ -4,6 +4,12 @@
 // The first entry's version must equal package.json's version.
 export const CHANGELOG = [
   {
+    version: '1.6.0', date: '2026-10-21',
+    items: [
+      'Transitional interns now get Wednesday PM didactics selected automatically (greyed out, since it is every other week). A new Didactics (PM) mode in the calendar lets you click just the Wednesdays that have it. They count like any didactics: protected from days off and the pager, balanced across the team, and shown in the totals, the export and the calendar invite. A warning appears if none are picked',
+    ],
+  },
+  {
     version: '1.5.0', date: '2026-10-21',
     items: [
       'Transitional interns: nothing is assumed for their every-other-Wednesday didactics any more. Choosing Transitional pops up instructions to enter those Wednesdays as PM commitments on their calendar',

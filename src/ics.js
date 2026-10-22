@@ -188,7 +188,7 @@ function obligationEvents(scenario, schedule, resident, date, now, startIndex, h
   }
 
   const attendsDidactics = resident.didactics
-    && resident.didactics.dow === dow(date)
+    && (resident.didactics.alt ? (resident.didactics.dates ?? []).includes(date) : resident.didactics.dow === dow(date))
     && onService(resident, date)
     && !['call', 'postcall'].includes(dd?.type)
     && !(resident.pto ?? []).includes(date)

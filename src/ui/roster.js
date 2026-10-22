@@ -19,17 +19,19 @@ function patchResident(scenario, i, patch) {
   return { ...scenario, residents };
 }
 
-// Changing Role or Kind re-fills that type's default didactics day (keeping any `hard` flag).
+// Changing Role or Kind re-fills that type's default didactics day (keeping any `hard` flag, and a Transitional
+// intern's picked dates).
 // The day/half stay editable per resident afterward.
 function patchType(scenario, i, patch) {
   const r = scenario.residents[i];
   const def = defaultDidactics(patch.role ?? r.role, patch.kind ?? r.kind);
   const didactics = def ? { ...def, hard: r.didactics?.hard ?? false } : null;
+  if (didactics?.alt && r.didactics?.alt) didactics.dates = r.didactics.dates ?? [];
   return patchResident(scenario, i, { ...patch, didactics });
 }
 
 // Transitional interns teach every OTHER Wednesday PM, and which Wednesdays differs each month, so nothing is
-// filled in for them: this pop-up tells the chief to enter those Wednesdays as PM commitments.
+// filled in (locked) but the dates are not: this pop-up tells the chief to click them in the Didactics mode.
 function showTransitionalNotice() {
   let dlg = document.getElementById('transitional-dialog');
   if (!dlg) {
@@ -48,14 +50,14 @@ function showTransitionalNotice() {
     body.className = 'app-dialog-body';
     const p = document.createElement('p');
     p.textContent = 'Transitional interns have didactics every Wednesday afternoon, or every other Wednesday afternoon. '
-      + 'This software is not sure which Wednesdays, so nothing is filled in for them. Please confirm which Wednesdays '
-      + 'your transitional intern has didactics and enter them in their calendar:';
+      + 'This software is not sure which Wednesdays, so none are filled in. Wednesday PM is selected for them. Please '
+      + 'confirm which Wednesdays your transitional intern has didactics and click them in their calendar:';
     const steps = document.createElement('ol');
     steps.className = 'dialog-steps';
     for (const text of [
-      'Scroll to Commitments / PTO / Pins and pick the mode “Commitment (PM)”.',
+      'Scroll to Commitments / PTO / Pins and pick the mode “Didactics (PM)”.',
       'In that intern’s calendar, click each Wednesday that has didactics.',
-      'Type a label such as “didactics” when asked. They are then kept off the pager that afternoon.',
+      'They count like any didactics: kept off the pager and days off when possible, and listed in the totals.',
       'Remove one by clicking its × chip.',
     ]) { const li = document.createElement('li'); li.textContent = text; steps.appendChild(li); }
     const ok = document.createElement('button');
@@ -135,7 +137,7 @@ export function render(container, scenario, onChange) {
         false, 'Intern vs senior — drives call composition. Seniors default to Tue PM didactics.'));
       tr.appendChild(selectCell(KINDS, r.kind, k => KIND_LABELS[k] ?? k,
         v => { onChange(patchType(scenario, i, { kind: v })); if (v === 'TY') showTransitionalNotice(); },
-        false, 'Training background. Sets the default didactics day: Psych → Tue PM, Family → Thu PM. Transitional has none: add their every-other-Wednesday PM commitments by hand.'));
+        false, 'Training background. Sets the default didactics day: Psych → Tue PM, Family → Thu PM. Transitional is Wednesday PM every other week: pick the dates in their calendar with the Didactics (PM) mode.'));
 
       const start = document.createElement('input');
       start.type = 'date';
@@ -152,16 +154,18 @@ export function render(container, scenario, onChange) {
       tr.appendChild(td(end));
 
       const dowOptions = ['none', ...DOW_LABELS.map((_, dow) => String(dow))];
+      const alt = !!r.didactics?.alt;   // Transitional: Wed PM is fixed, the dates are picked in the calendar
       const dowValue = r.didactics ? String(r.didactics.dow) : 'none';
       tr.appendChild(selectCell(dowOptions, dowValue, o => (o === 'none' ? 'None' : DOW_LABELS[Number(o)]), v => {
         const didactics = v === 'none' ? null : { dow: Number(v), half: r.didactics?.half ?? 'PM', hard: r.didactics?.hard ?? false };
         onChange(patchResident(scenario, i, { didactics }));
-      }, false, 'Weekly didactics day — defaulted from role/kind; override here per resident.'));
+      }, alt, alt ? 'Every other Wednesday — pick the dates in this intern’s calendar (Didactics (PM) mode).'
+        : 'Weekly didactics day — defaulted from role/kind; override here per resident.'));
 
       tr.appendChild(selectCell(['AM', 'PM'], r.didactics?.half ?? 'PM', null, v => {
         if (!r.didactics) return;
         onChange(patchResident(scenario, i, { didactics: { ...r.didactics, half: v } }));
-      }, !r.didactics, 'AM or PM half for didactics.'));
+      }, !r.didactics || alt, 'AM or PM half for didactics.'));
 
       const hard = document.createElement('input');
       hard.type = 'checkbox';

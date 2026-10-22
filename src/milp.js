@@ -1,7 +1,7 @@
 // MILP formulation — emits a CPLEX-LP string for HiGHS plus a var-extraction map.
 // Encodings follow docs/superpowers/plans/2026-07-16-med-scheduler.md Task 5;
 // rule authority is docs/plan-v2.md. audit.js must NEVER import from here (CLAUDE.md).
-import { deriveCycle, monthDates, onService, serviceDaysIn, quotaFor, solutionIsCurrent } from './model.js';
+import { deriveCycle, didacticsOn, monthDates, onService, serviceDaysIn, quotaFor, solutionIsCurrent } from './model.js';
 
 // Nobody attends didactics on these days (program rule, 2026-08): a call day is in-house start to
 // finish, and a post-call day is spent sleeping or handing over. They are excluded from the model,
@@ -175,7 +175,7 @@ export function buildModel(scenario, freezeDate = null,
       if (!onService(p, d) || isPto(p, d)) return;
       if (!hasPin(p, d, 'pager')) { // ponytail: explicit pager pin overrides static pruning; pin row enforces it
         if (p.commitments.some(x => x.date === d && x.half === 'PM')) return;
-        if (p.didactics?.hard && p.didactics.dow === dow(d) && t !== 'postcall') return;
+        if (p.didactics?.hard && didacticsOn(p, d) && t !== 'postcall') return;
         if (pinsOf(p, d).some(x => x.type === 'halfOff' && x.half === 'PM')) return;
       }
       if (carry && d === dates[0]) { // day-1 post-call from carryIn
@@ -439,7 +439,7 @@ export function buildModel(scenario, freezeDate = null,
     const svc = dates.filter(d => onService(p, d) && !isPto(p, d));
     const clinicPM = svc.filter(d => p.commitments.some(c => c.date === d && c.half === 'PM')).length;
     const didacticsDays = p.didactics
-      ? svc.filter(d => dow(d) === p.didactics.dow && !NO_DIDACTICS.has(types.get(d))).length : 0;
+      ? svc.filter(d => didacticsOn(p, d) && !NO_DIDACTICS.has(types.get(d))).length : 0;
     const pvs = dates.map(d => pagerName.get(p.name + '|' + d)).filter(Boolean);
     const denom = serviceDaysIn(p, scenario.month);
     if (denom) afternoons.push({ pi, denom, terms: pvs.map(v => T(1, v)), constant: clinicPM + didacticsDays });
@@ -461,7 +461,7 @@ export function buildModel(scenario, freezeDate = null,
     const terms = [];
     let constant = 0;
     dates.forEach(d => {
-      if (dow(d) !== p.didactics.dow || !onService(p, d) || isPto(p, d)) return;
+      if (!didacticsOn(p, d) || !onService(p, d) || isPto(p, d)) return;
       if (NO_DIDACTICS.has(types.get(d))) return;               // nobody attends on call / post-call
       // A half day off pinned over the didactics half is a fixed miss (Astra review 2026-10-06): the
       // chief chose it, so nothing to price — but it still counts toward the miss spread.
@@ -517,7 +517,7 @@ export function buildModel(scenario, freezeDate = null,
       : t === 'sc2' ? WEIGHTS.offSc2 : 0;
     if (!reward) return;
     people.forEach(p => {
-      if (p.didactics && dow(d) === p.didactics.dow && !NO_DIDACTICS.has(t)) return;  // never bribe an off onto teaching time
+      if (didacticsOn(p, d) && !NO_DIDACTICS.has(t)) return;  // never bribe an off onto teaching time
       const v = offName.get(p.name + '|' + d);
       if (v) addObj(-reward, v);
     });

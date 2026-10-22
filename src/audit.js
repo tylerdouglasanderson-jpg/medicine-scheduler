@@ -25,6 +25,10 @@ export function audit(scenario, schedule) {
   const onSvc = (r, d) => d >= r.serviceStart && d <= r.serviceEnd;   // ISO strings compare lexically
   const isPto = (r, d) => (r.pto ?? []).includes(d);
   const day = d => schedule.days[d];
+  // Re-stated, not imported from model.js (the auditor stays independent): weekly rule = that weekday,
+  // `alt` (Transitional every-other-Wednesday) = only the dates the chief picked.
+  const didOn = (r, d) => !r.didactics ? false
+    : r.didactics.alt ? (r.didactics.dates ?? []).includes(d) : dow(d) === r.didactics.dow;
   const dow = d => { const [y, m, dd] = d.split('-').map(Number); return new Date(y, m - 1, dd).getDay(); };
 
   // ---------- per-day checks ----------
@@ -117,7 +121,7 @@ export function audit(scenario, schedule) {
             V('A_PAGER_CONFLICT', `Pager holder ${dd.pager} has a PM commitment on ${d}`, dd.pager, d);
           if ((scenario.pins ?? []).some(x => x.person === dd.pager && x.date === d && x.type === 'halfOff' && x.half === 'PM'))
             V('A_PAGER_CONFLICT', `Pager holder ${dd.pager} has the afternoon off on ${d}`, dd.pager, d);
-          if (pr.didactics?.hard && pr.didactics.dow === dow(d) && !NO_DIDACTICS.includes(t))
+          if (pr.didactics?.hard && didOn(pr, d) && !NO_DIDACTICS.includes(t))
             W('W_DIDACTICS_MISS', `${dd.pager} holds the pager on ${d} and will miss didactics`, dd.pager, d);
         }
       }
@@ -266,10 +270,18 @@ export function audit(scenario, schedule) {
   // sleep are misses; the pager still lets them go but tethered, and when nobody else on the team
   // was eligible that afternoon the only remedy is handing the pager to the attending — flagged so
   // the chief can do exactly that and re-solve.
+  // Transitional every-other-Wednesday didactics: the software cannot know the dates, so an empty list is
+  // surfaced rather than silently treated as "no didactics" (v1.6.0).
+  for (const r of scenario.residents) {
+    if (r.didactics?.alt && !dates.some(d => (r.didactics.dates ?? []).includes(d) && onSvc(r, d)))
+      W('W_DIDACTICS_NO_DATES',
+        `${r.name} has no didactics Wednesdays picked this month. Pick them with the Didactics (PM) mode in their calendar, or ignore this if they have none this month.`,
+        r.name);
+  }
   for (const r of scenario.residents) {
     if (!r.didactics) continue;
     for (const d of dates) {
-      if (dow(d) !== r.didactics.dow || !onSvc(r, d) || isPto(r, d)) continue;
+      if (!didOn(r, d) || !onSvc(r, d) || isPto(r, d)) continue;
       if (NO_DIDACTICS.includes(types.get(d))) continue;   // no session to make on a call/post-call day
       const dd = day(d);
       const halfOffHere = (scenario.pins ?? []).some(x => x.person === r.name && x.date === d
@@ -315,7 +327,7 @@ export function audit(scenario, schedule) {
   // has to move a clinic or hand those afternoons to the attending, so say it once, plainly.
   for (const r of scenario.residents) {
     if (r.role !== 'intern' || !r.didactics) continue;
-    const sessions = dates.filter(d => dow(d) === r.didactics.dow && onSvc(r, d) && !isPto(r, d)
+    const sessions = dates.filter(d => didOn(r, d) && onSvc(r, d) && !isPto(r, d)
       && !NO_DIDACTICS.includes(types.get(d)));
     if (sessions.length < 2) continue;
     const coverable = sessions.filter(d => scenario.residents.some(o => o.role === 'senior'
@@ -323,7 +335,7 @@ export function audit(scenario, schedule) {
       && !(o.commitments ?? []).some(c => c.date === d && c.half === 'PM')));
     if (coverable.length === 0)
       W('W_DIDACTICS_NO_SENIOR_COVER',
-        `No senior can cover ${r.name}'s ${DOW_NAMES[r.didactics.dow]} didactics on any of the ${sessions.length} afternoons this month — a senior has a PM commitment every one of those days. They can only fall to another intern or the attending. Moving one of those clinics is the real fix.`,
+        `No senior can cover ${r.name}'s ${r.didactics.alt ? 'chosen' : DOW_NAMES[r.didactics.dow]} didactics on any of the ${sessions.length} afternoons this month — a senior has a PM commitment every one of those days. They can only fall to another intern or the attending. Moving one of those clinics is the real fix.`,
         r.name);
   }
 

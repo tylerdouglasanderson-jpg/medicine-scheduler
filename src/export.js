@@ -3,7 +3,7 @@
 // this module targets an ExcelJS workbook, not the DOM, and Task 9's scope is export.js only).
 /* global __BUILD_VERSION__ */
 import ExcelJS from 'exceljs';
-import { deriveCycle, monthDates, onService } from './model.js';
+import { deriveCycle, didacticsOn, monthDates, onService } from './model.js';
 
 const ROWS = ['DATE', 'TYPE', 'ROUNDERS', 'PAGER', 'CLINIC', 'DIDACTICS', 'PTO', 'OFF'];
 const TYPE_LABEL = { precall: 'PRECALL', call: 'CALL', postcall: 'PC', ppc: 'PPC', sc1: 'SC1', sc2: 'SC2' };
@@ -85,9 +85,8 @@ function offNames(scenario, dd, date) {
 function didacticsNames(scenario, schedule, date, type) {
   if (type === 'call' || type === 'postcall') return [];   // nobody attends on those days
   const dd = schedule.days[date];
-  const dow = dowOf(date);
   return scenario.residents
-    .filter(r => r.didactics && r.didactics.dow === dow && onService(r, date))
+    .filter(r => didacticsOn(r, date) && onService(r, date))
     .filter(r => !(dd.off.includes(r.name) || (r.pto ?? []).includes(date)))
     .filter(r => !(scenario.pins ?? []).some(p => p.type === 'halfOff' && p.person === r.name
       && p.date === date && p.half === (r.didactics.half ?? 'PM')))
@@ -282,7 +281,7 @@ function writeTotals(ws, scenario, schedule, dates, top, cal, geo) {
       styleBox(cell);
     }
     const day = ws.getCell(row, DAY_HELPER_COL);
-    day.value = r?.didactics ? DOW3[r.didactics.dow] : '';
+    day.value = r?.didactics ? DOW3[r.didactics.dow] + (r.didactics.alt ? ' (alt)' : '') : '';
     styleBox(day, { argb: INPUT_FILL });
   });
 }
@@ -383,7 +382,7 @@ function writeNotes(ws, scenario, auditResult, startRow, overlaps = []) {
   for (const r of scenario.residents) {
     if (!r.didactics) continue;
     const stop = r.didactics.hard ? 'hard stop' : 'soft stop';
-    line(`${r.name}: ${DOW_NAMES[r.didactics.dow]} didactics (${stop})`);
+    line(r.didactics.alt ? `${r.name}: Wednesday didactics, every other week (${(r.didactics.dates ?? []).length} picked, ${stop})` : `${r.name}: ${DOW_NAMES[r.didactics.dow]} didactics (${stop})`);
   }
   if (overlaps.length) line(`Name overlap (the live totals match names as text and will double count): ${overlaps.join('; ')}`);
   // Potential Issues stay on the solution page only (program rule, 2026-10); the spreadsheet carries no flags.

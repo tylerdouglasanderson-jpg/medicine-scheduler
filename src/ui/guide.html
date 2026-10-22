@@ -515,9 +515,10 @@
               <td>The weekly teaching half-day. It's filled in automatically from
                 <strong>Role</strong> and <strong>Kind</strong> — seniors and Psych interns
                 <strong>Tue PM</strong>, Family interns <strong>Thu PM</strong> — and you can change the day, half, or protection for any
-                resident. <strong>Transitional</strong> interns get no default: theirs is every other Wednesday
-                afternoon and the starting week changes monthly, so a pop-up asks you to add those Wednesdays
-                yourself as <strong>Commitment (PM)</strong> days on their calendar. Marking it <strong>hard</strong> makes it protected: the solver only puts
+                resident. <strong>Transitional</strong> interns get <strong>Wednesday PM</strong> selected and greyed out:
+                theirs is every other Wednesday and the starting week changes monthly, so a pop-up asks you to click just the
+                Wednesdays that have it, using the <strong>Didactics (PM)</strong> mode on their calendar. Those dates count
+                exactly like weekly didactics. Marking it <strong>hard</strong> makes it protected: the solver only puts
                 them on the pager over hard didactics when there is truly no other option, and it
                 raises a warning when it does.
                 <br><br>Teaching time is protected for <strong>everyone</strong>, interns first. The
@@ -556,6 +557,13 @@
         label. The solver keeps the resident working around it, but a commitment that lands on a
         call or post-call day is a <strong>hard error</strong> — fix it with your program admin,
         since call and post-call can't be split around an outside obligation.
+      </p>
+      <h3>Didactics (PM) &mdash; Transitional interns</h3>
+      <p>
+        Transitional interns have didactics every other Wednesday afternoon, and the starting week changes each month.
+        Pick <strong>Didactics (PM)</strong>, then click only the Wednesdays that have it on that intern's strip. Those
+        sessions count like any didactics (protected from days off and the pager, balanced across the team, shown as
+        attended out of picked). If none are picked you get a warning, which you can ignore if they have none this month.
       </p>
       <h3>PTO</h3>
       <p>
@@ -927,6 +935,7 @@
             <tr><td class="code-cell">W_DIDACTICS_OFF</td><td>A day off landed on that resident's own didactics day — a missed session <em>and</em> a day off spent on a half-day.</td></tr>
             <tr><td class="code-cell">W_DIDACTICS_PAGER</td><td>A senior makes didactics but carries the pager through it — the normal, acceptable case. When nobody else is free either, the row offers <strong>Attending covers the pager</strong>.</td></tr>
             <tr><td class="code-cell">W_DIDACTICS_PAGER_INTERN</td><td>An <em>intern</em> carries the pager through their own didactics, which is close to not attending at all. The row names the senior who was free that afternoon (pin the pager to them and re-solve), or offers <strong>Attending covers the pager</strong> when no senior was.</td></tr>
+            <tr><td class="code-cell">W_DIDACTICS_NO_DATES</td><td>A Transitional intern has no didactics Wednesdays picked this month. Pick them with the Didactics (PM) mode in their calendar, or ignore this if they have none this month.</td></tr>
             <tr><td class="code-cell">W_DIDACTICS_NO_SENIOR_COVER</td><td>A senior has a PM commitment on <em>every one</em> of an intern's didactics afternoons this month, so no schedule can ever put a senior on that pager. Moving one of those clinics is the real fix.</td></tr>
             <tr><td class="code-cell">W_DIDACTICS_MISS</td><td>Pager duty makes someone miss hard didactics.</td></tr>
             <tr><td class="code-cell">W_MULTI_OFF</td><td>More than one person is off the same day.</td></tr>
@@ -1007,6 +1016,10 @@
     <section id="whatsnew">
       <h2><span class="num-badge">15</span>What's new</h2>
       <p>Newest first. The same list opens when you click the version number at the top of the app.</p>
+      <h3>1.6.0 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">&middot; 2026-10-21</span></h3>
+      <ul>
+        <li>Transitional interns now get Wednesday PM didactics selected automatically (greyed out, since it is every other week). A new Didactics (PM) mode in the calendar lets you click just the Wednesdays that have it. They count like any didactics: protected from days off and the pager, balanced across the team, and shown in the totals, the export and the calendar invite. A warning appears if none are picked</li>
+      </ul>
       <h3>1.5.0 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">· 2026-10-21</span></h3>
       <ul>
         <li>Transitional interns: nothing is assumed for their every-other-Wednesday didactics any more. Choosing Transitional pops up instructions to enter those Wednesdays as PM commitments on their calendar</li>

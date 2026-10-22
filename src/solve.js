@@ -2,7 +2,7 @@
 // solve() is pure (no DOM, no storage) and does not audit — the UI composes them.
 // solveAlternatives() does audit: the independent auditor is its acceptance gate for alternatives.
 import { buildModel, NO_DIDACTICS, ALT_SLACK } from './milp.js';
-import { deriveCycle, onService, RULES_VERSION, solutionIsCurrent, afternoonsOffDates } from './model.js';
+import { deriveCycle, didacticsOn, onService, RULES_VERSION, solutionIsCurrent, afternoonsOffDates } from './model.js';
 import { validate } from './validate.js';
 import { audit } from './audit.js';
 
@@ -337,7 +337,7 @@ function extract(scenario, vars, cols) {
     const clinic = p.commitments.filter(c => days[c.date]?.working.includes(name)).length;
     if (p.didactics) {
       for (const d of svc) {
-        if (dow(d) !== p.didactics.dow) continue;
+        if (!didacticsOn(p, d)) continue;
         if (NO_DIDACTICS.has(types.get(d)) || p.pto.includes(d)) continue;   // no session to make
         didacticsOf++;                                                   // the denominator a chief can act on
         const dd = days[d];
@@ -371,7 +371,7 @@ function extract(scenario, vars, cols) {
     const holder = dd.pager;
     if (!holder || holder === 'ATTENDING') continue;
     const pr = people.find(p => p.name === holder);
-    if (pr?.didactics?.hard && pr.didactics.dow === dow(d))
+    if (pr?.didactics?.hard && didacticsOn(pr, d))
       W('W_DIDACTICS_MISS', `${holder} holds the pager on ${d} and will miss didactics`, holder, d);
   }
   for (const d of dates) {                       // seniors are only softly discouraged from weekday SC offs — surface it

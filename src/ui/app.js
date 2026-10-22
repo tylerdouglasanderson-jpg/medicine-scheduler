@@ -993,7 +993,7 @@ const ISSUE_GROUPS = [
   ['senior-sc', 'Senior off on a short-call day', ['W_SENIOR_OFF_SC']],
   ['mr', 'Morning Report coverage', ['W_MR_THIN', 'W_MR_NO_SENIOR', 'W_MR_NO_INTERN']],
   ['pager', 'Pager / didactics', ['W_ATTENDING_PAGER', 'W_DIDACTICS_MISS', 'W_DIDACTICS_PAGER',
-    'W_DIDACTICS_PAGER_INTERN', 'W_DIDACTICS_NO_SENIOR_COVER', 'W_DIDACTICS_OFF']],
+    'W_DIDACTICS_PAGER_INTERN', 'W_DIDACTICS_NO_SENIOR_COVER', 'W_DIDACTICS_OFF', 'W_DIDACTICS_NO_DATES']],
   ['other', 'Other', null],
 ];
 const MON_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

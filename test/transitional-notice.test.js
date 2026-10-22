@@ -11,7 +11,7 @@ const $ = sel => document.querySelector(sel);
 beforeEach(() => { localStorage.clear(); document.body.innerHTML = ''; });
 
 describe('Transitional intern kind', () => {
-  it('pops up instructions, and leaves didactics empty', () => {
+  it('pops up instructions, selects Wed PM locked, no dates', () => {
     HTMLDialogElement.prototype.showModal ??= function () { this.setAttribute('open', ''); };
     HTMLDialogElement.prototype.close ??= function () { this.removeAttribute('open'); };
     const s = parseScenario(feb);
@@ -26,10 +26,14 @@ describe('Transitional intern kind', () => {
     const dlg = $('#transitional-dialog');
     expect(dlg.hasAttribute('open')).toBe(true);
     expect(dlg.textContent).toContain('every other Wednesday afternoon');
-    expect(dlg.textContent).toContain('Commitment (PM)');
+    expect(dlg.textContent).toContain('Didactics (PM)');
     // re-rendered roster: the kind stuck, and no didactics day was filled in
     const row = document.querySelectorAll('select[title^="Training background"]')[i].closest('tr');
     expect(row.querySelector('select[title^="Training background"]').value).toBe('TY');
-    expect([...row.querySelectorAll('select')].map(s => s.value)).not.toContain('3');   // Wed
+    const sels = [...row.querySelectorAll('select')];
+    const day = sels.find(x => x.value === '3');
+    expect(day).toBeTruthy();                       // Wednesday auto-selected...
+    expect(day.disabled).toBe(true);                // ...and greyed out (every other week, dates picked in the calendar)
+    expect(sels.find(x => x.value === 'PM').disabled).toBe(true);
   });
 });

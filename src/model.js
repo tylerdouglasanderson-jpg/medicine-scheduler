@@ -42,8 +42,8 @@ export function quotaFor(person, scenario) {
 
 // Default didactics half-day by resident type (program rules). PM = afternoon.
 // Seniors & psych interns: Tue PM · categorical interns: Thu PM.
-// Transitional (TY) interns: NO default. Theirs is every OTHER Wednesday PM and the starting week differs each
-// month, so the chief enters those Wednesdays as PM commitments (the roster pop-up explains how).
+// Transitional (TY) interns: Wednesday PM, flagged `alt` (every OTHER Wednesday). The starting week differs each
+// month, so nothing is assumed: `dates` starts empty and the chief picks them with the calendar's Didactics (PM) mode.
 // OB/GYN & "other" interns have no fixed default — set per resident in the roster.
 export function defaultDidactics(role, kind) {
   const TUE = 2, THU = 4;   // JS getDay(): Sun=0
@@ -51,7 +51,18 @@ export function defaultDidactics(role, kind) {
   if (role === 'senior') dow = TUE;
   else if (kind === 'psych') dow = TUE;
   else if (kind === 'categorical') dow = THU;
+  else if (kind === 'TY' && role !== 'senior') return { dow: 3, half: 'PM', hard: false, alt: true, dates: [] };
   return dow === null ? null : { dow, half: 'PM', hard: false };
+}
+
+// Does this resident have a didactics session on `date` (YYYY-MM-DD)? Weekly rule: that weekday. Every-other
+// rule (`alt`, Transitional): only the dates the chief picked. Service/PTO/call status is the caller's job.
+export function didacticsOn(r, date) {
+  const dd = r?.didactics;
+  if (!dd) return false;
+  if (dd.alt) return (dd.dates ?? []).includes(date);
+  const [y, m, d] = date.split('-').map(Number);
+  return new Date(y, m - 1, d).getDay() === dd.dow;
 }
 
 // v1.1.0 — Afternoons off (program rule, 2026-10): reported, never solved for. A resident rounds in the morning and
@@ -71,8 +82,7 @@ export function afternoonsOffDates(scenario, schedule, name) {
     if (pins.some(x => x.date === d && x.half === 'AM')) return false;
     if (pins.some(x => x.date === d && x.half === 'PM')) return true;
     if (p.commitments.some(c => c.date === d && c.half === 'PM')) return false;
-    const dow = new Date(y, m - 1, Number(d.slice(8))).getDay();
-    return !(p.didactics && p.didactics.dow === dow && (p.didactics.half ?? 'PM') === 'PM');
+    return !(didacticsOn(p, d) && (p.didactics.half ?? 'PM') === 'PM');
   });
 }
 
@@ -81,7 +91,7 @@ export function afternoonsOffDates(scenario, schedule, name) {
 // solve() stamps every schedule it produces with this. A saved solution carrying a different stamp
 // is not used to anchor re-solve stability, so a scenario file built under older rules re-solves to
 // the NEW optimum without being cleared and re-typed first.
-export const RULES_VERSION = '1.1.0';   // v1.1.0: post-call pager across a handoff
+export const RULES_VERSION = '1.2.0';   // v1.2.0: Transitional every-other-Wednesday didactics dates
 
 export function parseScenario(json) {
   for (const k of ['team', 'month', 'anchorType', 'residents'])

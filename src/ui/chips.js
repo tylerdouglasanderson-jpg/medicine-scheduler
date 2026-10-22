@@ -3,6 +3,7 @@ import { monthDates } from '../model.js';
 const MODES = [
   ['commitment-AM', 'Commitment (AM)', 'A clinic/obligation that occupies this half-day (AM).'],
   ['commitment-PM', 'Commitment (PM)', 'A clinic/obligation that occupies this half-day (PM).'],
+  ['didactics', 'Didactics (PM)', 'Transitional interns only: click each Wednesday that has didactics (they have it every other week).'],
   ['pto', 'PTO', 'Vacation day — this resident is off and unavailable to schedule.'],
   ['offCounted', 'Pin: off (counted)', 'Force this assignment: an off day that counts toward their quota.'],
   ['work', 'Pin: must work', 'Force this assignment: this resident must work (not off) this day.'],
@@ -32,6 +33,14 @@ function applyMode(scenario, onChange, i, date) {
   if (currentMode === 'pto') {
     const pto = r.pto.includes(date) ? r.pto.filter(d => d !== date) : [...r.pto, date];
     onChange(patchResident(scenario, i, { pto }));
+    return;
+  }
+  if (currentMode === 'didactics') {
+    // Only a Transitional (every-other-Wednesday) intern has picked dates, and only Wednesdays can be picked.
+    if (!r.didactics?.alt || dowOf(date) !== r.didactics.dow) return;
+    const dates = r.didactics.dates ?? [];
+    const next = dates.includes(date) ? dates.filter(d => d !== date) : [...dates, date].sort();
+    onChange(patchResident(scenario, i, { didactics: { ...r.didactics, dates: next } }));
     return;
   }
   if (currentMode === 'commitment-AM' || currentMode === 'commitment-PM') {
@@ -162,7 +171,12 @@ export function render(container, scenario, onChange) {
         cell.appendChild(chip(`pin:${p.type}${p.half ? ' ' + p.half : ''}`, 'pin', () =>
           onChange({ ...scenario, pins: scenario.pins.filter(x => x !== p) })));
 
-      if (r.didactics && dowOf(date) === r.didactics.dow)
+      if (r.didactics?.alt) {
+        if ((r.didactics.dates ?? []).includes(date))
+          cell.appendChild(chip(`didactics ${r.didactics.half}`, 'chip-didactics', () =>
+            onChange(patchResident(scenario, i, { didactics: { ...r.didactics,
+              dates: r.didactics.dates.filter(d => d !== date) } }))));
+      } else if (r.didactics && dowOf(date) === r.didactics.dow)
         cell.appendChild(staticTag(`didactics ${r.didactics.half}`, 'chip-didactics',
           `Weekly didactics: ${DOW_LABELS[r.didactics.dow]} ${r.didactics.half}` +
           `${r.didactics.hard ? ' — protected (they skip pager here when free)' : ' — soft preference'}`));
