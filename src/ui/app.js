@@ -1304,7 +1304,7 @@ function openAppDialog(id, title, fill) {
 }
 
 // Explain the two-step Google Sheets hand-off before anything downloads or opens.
-function openSheetsGuide() {
+function openSheetsGuide(download) {
   openAppDialog('sheets-dialog', 'Open in Google Sheets', body => {
     const lead = document.createElement('p');
     lead.textContent = 'The file downloads into your Downloads folder and a blank Google Sheets page opens. Then:';
@@ -1317,7 +1317,7 @@ function openSheetsGuide() {
     ]) { const li = document.createElement('li'); li.textContent = text; steps.appendChild(li); }
     const go = mkButton('Download and open Google Sheets', () => {
       window.open('https://sheets.new', '_blank', 'noopener');
-      xlsx();
+      download();
       document.getElementById('sheets-dialog')?.close();
     }, 'btn-primary');
     go.classList.add('dialog-link');
@@ -1539,7 +1539,7 @@ function exportButtons() {
   sheetsBtn.disabled = !allowed || solving;
   sheetsBtn.addEventListener('click', () => {
     if (!canExport()) return;
-    openSheetsGuide();
+    openSheetsGuide(xlsx);
   });
   wrap.appendChild(sheetsBtn);
   wrap.appendChild(menuDivider());

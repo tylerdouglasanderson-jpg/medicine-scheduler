@@ -4,6 +4,12 @@
 // The first entry's version must equal package.json's version.
 export const CHANGELOG = [
   {
+    version: '1.4.4', date: '2026-10-21',
+    items: [
+      'Fixed: “Download & open Google Sheets” opened Sheets but did not download the file (1.4.3 only)',
+    ],
+  },
+  {
     version: '1.4.3', date: '2026-10-21',
     items: [
       'Export to Google Sheets: “Download & open Google Sheets” now first explains the steps (file lands in Downloads, then File, Open, Upload). The bonus grid starts empty: put an X in a box to give a day or half day. Shorter grid title that no longer overflows',

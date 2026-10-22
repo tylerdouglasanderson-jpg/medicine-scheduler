@@ -112,6 +112,20 @@ describe('loaded schedule export and save guard', () => {
     expect(importScenarioJSON(JSON.stringify(file)).lastSolution).toBeNull();
   });
 
+  it('Google Sheets button explains first, then Continue opens Sheets and downloads the workbook', () => {
+    show(structuredClone(clean));
+    HTMLDialogElement.prototype.showModal ??= function () { this.setAttribute('open', ''); };
+    HTMLDialogElement.prototype.close ??= function () { this.removeAttribute('open'); };
+    const open = vi.spyOn(window, 'open').mockImplementation(() => {});
+    $('#google-sheets-button').click();
+    expect(open).not.toHaveBeenCalled();
+    expect(downloadXlsx).not.toHaveBeenCalled();
+    expect($('#sheets-dialog').textContent).toContain('Downloads folder');
+    [...$('#sheets-dialog').querySelectorAll('button')].find(b => /Download and open/.test(b.textContent)).click();
+    expect(open).toHaveBeenCalledWith('https://sheets.new', '_blank', 'noopener');
+    expect(downloadXlsx).toHaveBeenCalledTimes(1);
+  });
+
   it('keeps clean schedules exportable and saves the chosen schedule and alternatives', async () => {
     const s = structuredClone(clean);
     s.alternatives = [s.lastSolution, structuredClone(s.lastSolution)];
