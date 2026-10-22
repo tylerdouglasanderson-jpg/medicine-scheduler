@@ -88,7 +88,7 @@ function openQuickHowTo() {
     const steps = document.createElement('ol');
     steps.className = 'dialog-steps';
     for (const text of [
-      'At the very top, pick your team, the month, and the Anchor type: the kind of day the 1st of the month falls on in the 6-day call cycle (Pre-call, Call, Post-call, Post-post-call, Short Call 1 or Short Call 2). If it is Post-call, also say who covered night call and day call at the end of last month. This is how the app lays out the rest of the month.',
+      'At the very top, pick your team, the month, and the Anchor type: the kind of day the 1st of the month falls on in the 6-day call cycle (Pre-call, Call, Post-call, Post-post-call, Short Call 1 or Short Call 2). This is how the app lays out the rest of the month.',
       'Under Roster, add the members of your team.',
       'Didactics are filled in for you when you add someone: seniors and Psych interns on Tuesday PM, Family interns on Thursday PM. Transitional interns get Wednesday PM, but it is every other week, so click their Wednesdays with the Didactics (PM) mode. OB/GYN and Other interns get none, so set their didactics day in the Roster if they have one. Check that everyone’s is right.',
       'Under Commitments / PTO / Pins, add everybody’s clinic schedule as a Commitment (PM).',
