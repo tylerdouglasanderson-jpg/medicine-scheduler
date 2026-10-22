@@ -1,4 +1,10 @@
-import { monthDates } from '../model.js';
+import { monthDates, deriveCycle } from '../model.js';
+
+// Team call-cycle shorthand shown top-right in each day box, so you can see what the team is doing that day.
+const TYPE_TAG = {
+  precall: ['PRE-C', 'Pre-call day'], call: ['CALL', 'Call day'], postcall: ['PC', 'Post-call day'],
+  ppc: ['PPC', 'Post-post-call day'], sc1: ['SC1', 'Senior clinic day 1'], sc2: ['SC2', 'Senior clinic day 2'],
+};
 
 const MODES = [
   ['commitment-AM', 'Commitment (AM)', 'A clinic/obligation that occupies this half-day (AM).'],
@@ -180,6 +186,8 @@ export function render(container, scenario, onChange) {
   container.appendChild(singleDaysList(scenario, onChange));
 
   const dates = monthDates(scenario.month);
+  let cycleTypes = null;
+  try { cycleTypes = deriveCycle(scenario.anchorType, scenario.month).types; } catch { /* no anchor yet: no tags */ }
   let firstDow = 0;
   if (dates.length) {
     const [y, m] = scenario.month.split('-').map(Number);
@@ -218,6 +226,14 @@ export function render(container, scenario, onChange) {
       dayNum.className = 'day-num';
       dayNum.textContent = date.slice(-2);
       cell.appendChild(dayNum);
+      const tag = TYPE_TAG[cycleTypes?.get(date)];
+      if (tag) {
+        const t = document.createElement('span');
+        t.className = 'day-type';
+        t.textContent = tag[0];
+        t.title = tag[1];
+        cell.appendChild(t);
+      }
 
       if ((scenario.singleDays ?? []).some(x => x.date === date))
         cell.appendChild(chip('1 person OK', 'single', () =>

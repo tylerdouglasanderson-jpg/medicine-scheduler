@@ -4,6 +4,12 @@
 // The first entry's version must equal package.json's version.
 export const CHANGELOG = [
   {
+    version: '1.11.0', date: '2026-10-21',
+    items: [
+      'Each day box in the Commitments / PTO / Pins calendars now shows the team’s call-cycle day in the top-right corner (SC1, SC2, PRE-C, CALL, PC for post-call, PPC), so you can see what the team is doing while you edit one person',
+    ],
+  },
+  {
     version: '1.10.0', date: '2026-10-21',
     items: [
       'A new Revise this plan button above the results (laptop or monitor screens) puts your inputs on the left and the schedule on the right, each scrolling on its own. Edit PTO, clinics or pins and the old schedule stays greyed until you press Solve, or turn on Re-solve automatically to update it as you go. Days that moved are outlined for a few seconds. Press Done to return to the one-column page',
