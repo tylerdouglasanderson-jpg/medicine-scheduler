@@ -789,9 +789,8 @@ let resultsReady = false;
 let twoPersonSkipKey = null;   // the two-person days the chief already dismissed the pop-up for (this session only)
 
 const TWO_PERSON_CHOICES = [
-  ['intern', 'The intern takes every night', 'The senior takes day call; the intern covers each night, back to back if needed. Fills in both calendars.'],
-  ['senior', 'The senior takes every night', 'The intern takes day call; the senior covers each night. Fills in both calendars.'],
-  ['alternate', 'Work the days together, share the nights', 'The scheduler splits the nights between them (never back to back). Nothing is pinned.'],
+  ['intern', 'The intern takes nights, the senior takes days', 'The intern covers every night (back to back if needed) and the senior takes day call. Fills in both calendars.'],
+  ['days', 'Both work every day; cross-cover has the nights', 'The senior and the intern both work all days. Nights are covered by the cross-cover person, who is not scheduled here, so those call days show no night person.'],
   ['manual', 'I’ll pin it myself', 'Nothing is filled in. Pin the nights you want on the calendar and the scheduler handles pagers and the rest.'],
 ];
 
@@ -834,10 +833,10 @@ function askTwoPerson() {
 }
 
 // Fill in (or clear) the two-person pins for `mode`. The pop-up's own earlier pins are replaced; for the two
-// "takes every night" modes the chief's other night/day-call pins on those days are replaced too.
+// intern and cross-cover modes the chief's own night/day-call pins on those days are replaced too.
 function applyTwoPerson(mode) {
   const days = new Set(twoPersonCallDays(scenario));
-  const fill = mode === 'intern' || mode === 'senior';
+  const fill = mode === 'intern' || mode === 'days';
   const pins = scenario.pins.filter(p => p.note !== TWO_PERSON_NOTE &&
     !(fill && days.has(p.date) && (p.type === 'nightCall' || p.type === 'dayCall')));
   editKeepingAnchor({ ...scenario, pins: [...pins, ...twoPersonPins(scenario, mode)],

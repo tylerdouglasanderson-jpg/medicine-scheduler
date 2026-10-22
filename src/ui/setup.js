@@ -201,8 +201,8 @@ export function render(container, scenario, onChange, onTwoPerson) {
     name.textContent = 'Two-person team';
     const note = document.createElement('span');
     note.className = 'pref-hint';
-    const labels = { intern: 'the intern takes every night', senior: 'the senior takes every night',
-      alternate: 'sharing the nights', manual: 'you pin it yourself' };
+    const labels = { intern: 'the intern takes nights, the senior takes days',
+      days: 'both work days, cross-cover has the nights', manual: 'you pin it yourself' };
     note.textContent = 'Some days have only one senior and one intern. ' +
       (labels[scenario.options.twoPersonNights] ? `Now: ${labels[scenario.options.twoPersonNights]}.` : 'Not chosen yet; Solve will ask.');
     text.append(name, note);

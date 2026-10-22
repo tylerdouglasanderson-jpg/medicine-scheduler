@@ -64,6 +64,7 @@ function renderRounders(td, date, type, dd, scenario) {
   if (type === 'call') {
     for (const n of dd.working.filter(n => n !== dd.night)) lines.push(`Day - ${n}`);
     if (dd.night) lines.push(`Night - ${dd.night}`);
+    else if (scenario.options?.twoPersonNights === 'days') lines.push('Night - cross-cover');
   } else if (type === 'postcall') {
     for (const n of dd.working) lines.push(`${n} (postcall)`);
   } else {

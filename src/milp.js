@@ -1,7 +1,7 @@
 // MILP formulation — emits a CPLEX-LP string for HiGHS plus a var-extraction map.
 // Encodings follow docs/superpowers/plans/2026-07-16-med-scheduler.md Task 5;
 // rule authority is docs/plan-v2.md. audit.js must NEVER import from here (CLAUDE.md).
-import { deriveCycle, didacticsOn, monthDates, onService, serviceDaysIn, quotaFor, solutionIsCurrent } from './model.js';
+import { deriveCycle, noNightDays, didacticsOn, monthDates, onService, serviceDaysIn, quotaFor, solutionIsCurrent } from './model.js';
 
 // Nobody attends didactics on these days (program rule, 2026-08): a call day is in-house start to
 // finish, and a post-call day is spent sleeping or handing over. They are excluded from the model,
@@ -147,6 +147,7 @@ export function buildModel(scenario, freezeDate = null,
   };
 
   // ---- derived facts ----
+  const noNight = new Set(noNightDays(scenario));
   const callInfo = callDays.map((c, ci) => {
     const on = people.filter(p => onService(p, c));
     const interns = on.filter(p => p.role === 'intern');
@@ -156,6 +157,7 @@ export function buildModel(scenario, freezeDate = null,
     else if (interns.length === 0) E = seniors;  // Med C
     else E = on;                                 // 1 intern: fairness-decided (incl. partial 2S+1I)
     E = E.filter(p => !(p.serviceEnd === c && c < lastDate)); // sleep day would fall outside window
+    if (noNight.has(c)) E = [];                  // two-person 'days' mode: external cross-cover has the night
     return { c, ci, on, interns, seniors, E };
   });
   const whole2S1I = wholeMonth2S1I(scenario);
@@ -290,6 +292,7 @@ export function buildModel(scenario, freezeDate = null,
       const I = interns[0];
       const pv = pagerName.get(I.name + '|' + next), nv = nightName.get(I.name + '|' + c);
       if (pv && nv) cons.push(`pcp_i${people.indexOf(I)}_${ci}: ` + lin([T(1, pv), T(1, nv)]) + ' = 1');
+      else if (pv && noNight.has(c)) cons.push(`pcp_i${people.indexOf(I)}_${ci}: 1 ${pv} = 1`);   // nobody sleeps: the intern pages
       seniors.forEach(s => leq1(s, 's'));
     } else {
       seniors.forEach(s => leq1(s, 's')); // Med C: coverage picks a working senior
@@ -301,7 +304,7 @@ export function buildModel(scenario, freezeDate = null,
     // cover the c-roster; this adds people whose service starts on the post-call day.
     const seniorPv = people.filter(p => p.role === 'senior')
       .map(p => pagerName.get(p.name + '|' + next)).filter(Boolean);
-    if (seniorPv.length) people.filter(p => p.role === 'intern').forEach(i => {
+    if (seniorPv.length && !noNight.has(c)) people.filter(p => p.role === 'intern').forEach(i => {
       const pv = pagerName.get(i.name + '|' + next);
       if (!pv) return;
       const nv = nightName.get(i.name + '|' + c);
@@ -334,7 +337,8 @@ export function buildModel(scenario, freezeDate = null,
     // only counts when actually on the roster that day
     let sleeperOut = 0;
     if (t === 'postcall') {
-      sleeperOut = (carry && d === dates[0])
+      if (noNight.has(prevCallOf.get(d))) sleeperOut = 0;     // cross-cover had the night: nobody sleeps
+      else sleeperOut = (carry && d === dates[0])
         ? (availPeople.some(p => p.name === carry.nightPerson) ? 1 : 0)
         : 1;
     }

@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { mount } from '../src/ui/app.js';
 import { saveScenario } from '../src/ui/state.js';
-import { parseScenario, onService, twoPersonCallDays, twoPersonPins, TWO_PERSON_NOTE } from '../src/model.js';
+import { parseScenario, onService, twoPersonCallDays, noNightDays, twoPersonPins, TWO_PERSON_NOTE } from '../src/model.js';
 import { solve } from '../src/solve.js';
 import { audit } from '../src/audit.js';
 import { validate } from '../src/validate.js';
@@ -24,7 +24,8 @@ describe('two-person helpers', () => {
     expect(days.length).toBeGreaterThan(0);
     for (const d of days) expect(s.residents.filter(r => onService(r, d)).length).toBe(2);
   });
-  it.each(['intern', 'senior'])('mode %s pins the night person and gives the other day call', mode => {
+  it('mode intern pins the intern to the nights and gives the senior day call', () => {
+    const mode = 'intern';
     const s = base();
     const pins = twoPersonPins(s, mode);
     const days = twoPersonCallDays(s);
@@ -35,9 +36,15 @@ describe('two-person helpers', () => {
       expect(s.residents.find(r => r.name === night.person).role).toBe(mode);
     }
   });
-  it('alternate and manual fill nothing', () => {
-    expect(twoPersonPins(base(), 'alternate')).toEqual([]);
+  it('days and manual fill no pins', () => {
+    expect(twoPersonPins(base(), 'days')).toEqual([]);
     expect(twoPersonPins(base(), 'manual')).toEqual([]);
+  });
+  it('noNightDays is the two-person days in days mode and empty otherwise', () => {
+    const s = base();
+    expect(noNightDays(s)).toEqual([]);
+    s.options.twoPersonNights = 'days';
+    expect(noNightDays(s)).toEqual(twoPersonCallDays(s));
   });
   it('an unknown twoPersonNights value is cleaned to null', () => {
     const s = parseScenario({ ...structuredClone(swap), options: { ...swap.options, twoPersonNights: 'bogus' } });
@@ -61,12 +68,38 @@ describe('back-to-back nights', () => {
     const unpinned = { ...s, pins: s.pins.filter(p => p.type !== 'nightCall') };
     expect(audit(unpinned, r.schedule).violations.some(v => v.code === 'A_CONSECUTIVE_NIGHTS')).toBe(true);
   }, 60000);
-  it('alternate mode still forbids back-to-back nights', async () => {
-    const s = base();
-    s.options.twoPersonNights = 'alternate';
+});
+
+describe('cross-cover nights (days mode)', () => {
+  const daysMode = () => { const s = base(); s.options.twoPersonNights = 'days'; return s; };
+  it('solves with no night person on the two-person days and audits clean', async () => {
+    const s = daysMode();
+    expect(validate(s)).toEqual([]);
     const r = await solve(s);
-    expect(audit(s, r.schedule).violations.filter(v => v.code === 'A_CONSECUTIVE_NIGHTS')).toEqual([]);
+    expect(audit(s, r.schedule).violations).toEqual([]);
+    for (const d of noNightDays(s)) {
+      const day = r.schedule.days[d];
+      expect(day.night).toBeNull();
+      expect(day.working.length).toBe(2);
+      const next = r.schedule.days[Object.keys(r.schedule.days)[Object.keys(r.schedule.days).indexOf(d) + 1]];
+      if (next) expect(next.sleeper).toBeNull();
+    }
   }, 60000);
+  it('the auditor flags a night person on a cross-cover day', async () => {
+    const s = daysMode();
+    const r = await solve(s);
+    const d = noNightDays(s)[0];
+    const bad = structuredClone(r.schedule);
+    bad.days[d].night = bad.days[d].working[0];
+    expect(audit(s, bad).violations.some(v => v.code === 'A_NIGHT_COUNT')).toBe(true);
+  }, 60000);
+  it('a nightCall pin on a cross-cover day is a validation error', () => {
+    const s = daysMode();
+    const d = noNightDays(s)[0];
+    const intern = s.residents.find(r => r.role === 'intern' && onService(r, d));
+    s.pins = [...s.pins, { person: intern.name, date: d, type: 'nightCall', half: null, note: '' }];
+    expect(validate(s).some(e => e.code === 'CONTRADICTORY_PINS')).toBe(true);
+  });
 });
 
 describe('two-person pop-up', () => {
@@ -105,6 +138,9 @@ describe('two-person pop-up', () => {
   it('asks on Solve and the intern choice fills the pins and records the mode', async () => {
     await open();
     expect($('#two-person-dialog')).toBeTruthy();
+    expect($('#two-person-senior')).toBeNull();
+    expect($('#two-person-alternate')).toBeNull();
+    expect($('#two-person-days')).toBeTruthy();
     $('#two-person-intern').click();
     await settle();
     await saved();

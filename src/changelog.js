@@ -4,6 +4,13 @@
 // The first entry's version must equal package.json's version.
 export const CHANGELOG = [
   {
+    version: '1.14.1', date: '2026-10-22',
+    items: [
+      'The two-person team pop-up now has exactly three choices: The intern takes nights, the senior takes days; Both work every day, cross-cover has the nights; or I’ll pin it myself. The earlier senior-takes-every-night and share-the-nights choices are gone',
+      'Choosing cross-cover nights schedules the senior and the intern on every day, shows Night - cross-cover on those call days, and leaves no post-call sleeper, because the cross-cover person who covers the night is not scheduled here',
+    ],
+  },
+  {
     version: '1.14.0', date: '2026-10-22',
     items: [
       'A new pop-up appears when you press Solve on a month with a two-person team (one senior and one intern on service). It asks how to run those days: The intern takes every night, The senior takes every night, Work the days together, share the nights, or I’ll pin it myself',

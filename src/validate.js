@@ -1,4 +1,4 @@
-import { deriveCycle, onService, monthDates } from './model.js';
+import { deriveCycle, onService, monthDates, noNightDays } from './model.js';
 import { wholeMonth2S1I } from './milp.js';
 
 const OFFISH = ['offCounted', 'offFree', 'halfOff'];
@@ -39,6 +39,7 @@ export function validate(scenario) {
         `${x.date} is forced to ${n} ${n === 1 ? 'person' : 'people'}, but ${stuck.map(r => r.name).join(', ')} all have a clinic or must-work pin that day`);
   }
 
+  const noNight = new Set(noNightDays(scenario));
   for (const p of scenario.pins) {
     const r = byName[p.person];
     if (!r || !dates.includes(p.date) || !onService(r, p.date)) {
@@ -65,6 +66,8 @@ export function validate(scenario) {
     }
     if (['dayCall', 'nightCall'].includes(p.type) && t !== 'call')
       err('CONTRADICTORY_PINS', p.person, p.date, `${p.type} pin on a non-call day (${p.date})`);
+    if (p.type === 'nightCall' && noNight.has(p.date))
+      err('CONTRADICTORY_PINS', p.person, p.date, `${p.person} is pinned to night call on ${p.date}, but you chose cross-cover nights for this two-person team. Remove the pin or change the choice in Preferences`);
   }
 
   // pairwise pin contradictions (same date)

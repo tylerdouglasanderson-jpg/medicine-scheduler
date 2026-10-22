@@ -71,6 +71,10 @@ export function audit(scenario, schedule) {
         V('A_OFF_ON_COMMITMENT', `${p.person} has a half day off on ${d} over their own ${p.half} commitment`, p.person, d);
     }
 
+    // two-person 'days' mode: exactly 1 senior + 1 intern on service on a call day, nights covered by external
+    // cross-cover (re-derived here, not imported)
+    const noNightDay = t === 'call' && scenario.options?.twoPersonNights === 'days' && roster.length === 2
+      && roster.some(r => r.role === 'senior') && roster.some(r => r.role === 'intern');
     if (t === 'call') {
       // A_PAGER_ON_CALL
       if (dd.pager != null)
@@ -83,7 +87,10 @@ export function audit(scenario, schedule) {
 
       // A_NIGHT_COUNT: exactly one night, eligible per composition, never also day-call
       const interns = roster.filter(r => r.role === 'intern');
-      if (!dd.night)
+      if (noNightDay) {
+        if (dd.night)
+          V('A_NIGHT_COUNT', `${dd.night} has the night on ${d}, but the chief chose cross-cover nights for this team`, dd.night, d);
+      } else if (!dd.night)
         V('A_NIGHT_COUNT', `Call day ${d} has no night person`, null, d);
       else {
         const nr = byName[dd.night];
@@ -129,7 +136,7 @@ export function audit(scenario, schedule) {
 
     // A_STAFFING — mirrors milp floor: min(2 — or 1 for Med C / a two-person team —, on-service non-PTO minus night (call) / sleeper (post-call))
     const sleeperOut = dd.sleeper && avail.some(r => r.name === dd.sleeper) ? 1 : 0;
-    const effAvail = avail.length - (t === 'call' ? 1 : sleeperOut);
+    const effAvail = avail.length - (t === 'call' ? (noNightDay ? 0 : 1) : sleeperOut);
     const dayTeam = t === 'call' ? dd.working.filter(n => n !== dd.night) : dd.working;
     const medCstaff = scenario.team === 'C' && roster.every(r => r.role === 'senior');
     const twoPersonTeam = roster.length <= 2;   // 1 intern + 1 senior: one resident runs it alone

@@ -122,7 +122,7 @@ function dutyEvent(person, date, dd, now, index, halfOff = []) {
         now, index);
     }
     return timedEvent(person, date, 'day-call', 'Day Call', isWeekend(date) ? '0600' : '0700',
-      date, '1730', null, now, index);
+      date, '1730', dd.night ? null : 'Cross-cover has the night.', now, index);
   }
 
   if (dd.type === 'postcall') {

@@ -26,10 +26,11 @@ export function deriveCycle(anchorType, month) {
   return { types, callDays, postCallDays, morningReportDays, daysInMonth: dates.length };
 }
 
-// ---- two-person teams (v1.14.0) ----
-// 'intern' / 'senior': that person takes every night on a two-person call day and the other takes day call (pins
-// are filled in); 'alternate': the scheduler shares the nights; 'manual': the chief pins it, nothing is filled in.
-export const TWO_PERSON_MODES = ['intern', 'senior', 'alternate', 'manual'];
+// ---- two-person teams (v1.14.1) ----
+// 'intern': the intern takes every night on a two-person call day and the senior takes days (pins are filled in);
+// 'days': both work every day and an external cross-cover person covers the nights, so those call days have NO night
+// person in the app (derived at solve time, no pins); 'manual': the chief pins it, nothing is filled in.
+export const TWO_PERSON_MODES = ['intern', 'days', 'manual'];
 export const TWO_PERSON_NOTE = 'two-person';   // marks the pins the pop-up filled in, so a new choice can replace them
 
 // Call days on which exactly one senior and one intern are on service.
@@ -41,14 +42,19 @@ export function twoPersonCallDays(scenario) {
   });
 }
 
-// The night / day-call pins for mode 'intern' or 'senior'. A day whose night person has a PM commitment is left to
-// the solver (a night pin there is a validation error).
+// Call days with no night person (cross-cover has the nights): the two-person days when the mode is 'days'.
+export function noNightDays(scenario) {
+  return scenario.options?.twoPersonNights === 'days' ? twoPersonCallDays(scenario) : [];
+}
+
+// The night / day-call pins for mode 'intern'. A day whose intern has a PM commitment is left to the solver (a night
+// pin there is a validation error).
 export function twoPersonPins(scenario, mode) {
-  if (mode !== 'intern' && mode !== 'senior') return [];
+  if (mode !== 'intern') return [];
   const pins = [];
   for (const d of twoPersonCallDays(scenario)) {
     const on = scenario.residents.filter(r => onService(r, d));
-    const night = on.find(r => r.role === mode), day = on.find(r => r.role !== mode);
+    const night = on.find(r => r.role === 'intern'), day = on.find(r => r.role !== 'intern');
     if (night.commitments.some(x => x.date === d && x.half === 'PM')) continue;
     pins.push({ person: night.name, date: d, type: 'nightCall', half: null, note: TWO_PERSON_NOTE });
     pins.push({ person: day.name, date: d, type: 'dayCall', half: null, note: TWO_PERSON_NOTE });
@@ -121,7 +127,7 @@ export function afternoonsOffDates(scenario, schedule, name) {
 // solve() stamps every schedule it produces with this. A saved solution carrying a different stamp
 // is not used to anchor re-solve stability, so a scenario file built under older rules re-solves to
 // the NEW optimum without being cleared and re-typed first.
-export const RULES_VERSION = '1.6.0';   // v1.6.0: a person the chief pinned (nightCall) on two consecutive call days is exempt from the no-back-to-back-nights rule; v1.5.0: singleDays now FORCES exactly 1 or 2 working (surplus offs are free); v1.4.0: soft options.seniorPagerLimit; v1.3.0: per-date one-person-is-enough staffing exception (singleDays); v1.2.0: Transitional didactics dates
+export const RULES_VERSION = '1.7.0';   // v1.6.0: a person the chief pinned (nightCall) on two consecutive call days is exempt from the no-back-to-back-nights rule; v1.5.0: singleDays now FORCES exactly 1 or 2 working (surplus offs are free); v1.4.0: soft options.seniorPagerLimit; v1.3.0: per-date one-person-is-enough staffing exception (singleDays); v1.2.0: Transitional didactics dates
 
 export function parseScenario(json) {
   for (const k of ['team', 'month', 'anchorType', 'residents'])
