@@ -41,14 +41,15 @@ export function quotaFor(person, scenario) {
 }
 
 // Default didactics half-day by resident type (program rules). PM = afternoon.
-// Seniors & psych interns: Tue PM · TY interns: Wed PM · categorical interns: Thu PM.
+// Seniors & psych interns: Tue PM · categorical interns: Thu PM.
+// Transitional (TY) interns: NO default. Theirs is every OTHER Wednesday PM and the starting week differs each
+// month, so the chief enters those Wednesdays as PM commitments (the roster pop-up explains how).
 // OB/GYN & "other" interns have no fixed default — set per resident in the roster.
 export function defaultDidactics(role, kind) {
-  const TUE = 2, WED = 3, THU = 4;   // JS getDay(): Sun=0
+  const TUE = 2, THU = 4;   // JS getDay(): Sun=0
   let dow = null;
   if (role === 'senior') dow = TUE;
   else if (kind === 'psych') dow = TUE;
-  else if (kind === 'TY') dow = WED;
   else if (kind === 'categorical') dow = THU;
   return dow === null ? null : { dow, half: 'PM', hard: false };
 }

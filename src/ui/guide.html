@@ -514,9 +514,10 @@
               <td><strong>Didactics: day / half / hard</strong></td>
               <td>The weekly teaching half-day. It's filled in automatically from
                 <strong>Role</strong> and <strong>Kind</strong> — seniors and Psych interns
-                <strong>Tue PM</strong>, Transitional interns <strong>Wed PM</strong>, Family interns
-                <strong>Thu PM</strong> — and you can change the day, half, or protection for any
-                resident. Marking it <strong>hard</strong> makes it protected: the solver only puts
+                <strong>Tue PM</strong>, Family interns <strong>Thu PM</strong> — and you can change the day, half, or protection for any
+                resident. <strong>Transitional</strong> interns get no default: theirs is every other Wednesday
+                afternoon and the starting week changes monthly, so a pop-up asks you to add those Wednesdays
+                yourself as <strong>Commitment (PM)</strong> days on their calendar. Marking it <strong>hard</strong> makes it protected: the solver only puts
                 them on the pager over hard didactics when there is truly no other option, and it
                 raises a warning when it does.
                 <br><br>Teaching time is protected for <strong>everyone</strong>, interns first. The
@@ -1006,6 +1007,10 @@
     <section id="whatsnew">
       <h2><span class="num-badge">15</span>What's new</h2>
       <p>Newest first. The same list opens when you click the version number at the top of the app.</p>
+      <h3>1.5.0 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">· 2026-10-21</span></h3>
+      <ul>
+        <li>Transitional interns: nothing is assumed for their every-other-Wednesday didactics any more. Choosing Transitional pops up instructions to enter those Wednesdays as PM commitments on their calendar</li>
+      </ul>
       <h3>1.4.4 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">· 2026-10-21</span></h3>
       <ul>
         <li>Fixed: “Download &amp; open Google Sheets” opened Sheets but did not download the file (1.4.3 only)</li>

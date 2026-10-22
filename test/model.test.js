@@ -41,9 +41,9 @@ describe('defaultDidactics — type-based defaults (Tue=2, Wed=3, Thu=4; PM)', (
     expect(defaultDidactics('senior', 'categorical')).toEqual({ dow: 2, half: 'PM', hard: false });
     expect(defaultDidactics('senior', 'other')).toEqual({ dow: 2, half: 'PM', hard: false });
   });
-  it('interns default by kind: psych Tue, TY Wed, categorical Thu', () => {
+  it('interns default by kind: psych Tue, categorical Thu; TY none (every other Wed, entered by hand)', () => {
     expect(defaultDidactics('intern', 'psych')).toEqual({ dow: 2, half: 'PM', hard: false });
-    expect(defaultDidactics('intern', 'TY')).toEqual({ dow: 3, half: 'PM', hard: false });
+    expect(defaultDidactics('intern', 'TY')).toBeNull();
     expect(defaultDidactics('intern', 'categorical')).toEqual({ dow: 4, half: 'PM', hard: false });
   });
   it('OB/GYN & other interns have no fixed default', () => {

@@ -4,6 +4,12 @@
 // The first entry's version must equal package.json's version.
 export const CHANGELOG = [
   {
+    version: '1.5.0', date: '2026-10-21',
+    items: [
+      'Transitional interns: nothing is assumed for their every-other-Wednesday didactics any more. Choosing Transitional pops up instructions to enter those Wednesdays as PM commitments on their calendar',
+    ],
+  },
+  {
     version: '1.4.4', date: '2026-10-21',
     items: [
       'Fixed: “Download & open Google Sheets” opened Sheets but did not download the file (1.4.3 only)',

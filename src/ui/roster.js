@@ -28,6 +28,47 @@ function patchType(scenario, i, patch) {
   return patchResident(scenario, i, { ...patch, didactics });
 }
 
+// Transitional interns teach every OTHER Wednesday PM, and which Wednesdays differs each month, so nothing is
+// filled in for them: this pop-up tells the chief to enter those Wednesdays as PM commitments.
+function showTransitionalNotice() {
+  let dlg = document.getElementById('transitional-dialog');
+  if (!dlg) {
+    dlg = document.createElement('dialog');
+    dlg.id = 'transitional-dialog';
+    dlg.className = 'app-dialog';
+    const header = document.createElement('div');
+    header.className = 'guide-dialog-header';
+    const h = document.createElement('h2');
+    h.textContent = 'Transitional intern didactics';
+    const x = document.createElement('button');
+    x.type = 'button'; x.className = 'btn-ghost'; x.textContent = '×'; x.title = 'Close';
+    x.addEventListener('click', () => dlg.close());
+    header.append(h, x);
+    const body = document.createElement('div');
+    body.className = 'app-dialog-body';
+    const p = document.createElement('p');
+    p.textContent = 'Transitional interns have didactics every Wednesday afternoon, or every other Wednesday afternoon. '
+      + 'This software is not sure which Wednesdays, so nothing is filled in for them. Please confirm which Wednesdays '
+      + 'your transitional intern has didactics and enter them in their calendar:';
+    const steps = document.createElement('ol');
+    steps.className = 'dialog-steps';
+    for (const text of [
+      'Scroll to Commitments / PTO / Pins and pick the mode “Commitment (PM)”.',
+      'In that intern’s calendar, click each Wednesday that has didactics.',
+      'Type a label such as “didactics” when asked. They are then kept off the pager that afternoon.',
+      'Remove one by clicking its × chip.',
+    ]) { const li = document.createElement('li'); li.textContent = text; steps.appendChild(li); }
+    const ok = document.createElement('button');
+    ok.type = 'button'; ok.className = 'btn-primary dialog-link'; ok.textContent = 'Got it';
+    ok.addEventListener('click', () => dlg.close());
+    body.append(p, steps, ok);
+    dlg.append(header, body);
+    dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });   // backdrop click
+    document.body.appendChild(dlg);
+  }
+  if (!dlg.open) dlg.showModal();
+}
+
 function td(el) {
   const cell = document.createElement('td');
   cell.appendChild(el);
@@ -93,8 +134,8 @@ export function render(container, scenario, onChange) {
       tr.appendChild(selectCell(ROLES, r.role, null, v => onChange(patchType(scenario, i, { role: v })),
         false, 'Intern vs senior — drives call composition. Seniors default to Tue PM didactics.'));
       tr.appendChild(selectCell(KINDS, r.kind, k => KIND_LABELS[k] ?? k,
-        v => onChange(patchType(scenario, i, { kind: v })),
-        false, 'Training background. Sets the default didactics day: Psych → Tue PM, Transitional → Wed PM, Family → Thu PM. Override the day per resident if needed.'));
+        v => { onChange(patchType(scenario, i, { kind: v })); if (v === 'TY') showTransitionalNotice(); },
+        false, 'Training background. Sets the default didactics day: Psych → Tue PM, Family → Thu PM. Transitional has none: add their every-other-Wednesday PM commitments by hand.'));
 
       const start = document.createElement('input');
       start.type = 'date';
