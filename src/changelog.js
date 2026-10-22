@@ -4,6 +4,12 @@
 // The first entry's version must equal package.json's version.
 export const CHANGELOG = [
   {
+    version: '1.4.2', date: '2026-10-21',
+    items: [
+      'Google Sheets export: row heights now fit their text instead of stretched fixed heights, and the bonus tick grid says plainly how to turn it into checkboxes (Sheets cannot import them from Excel files: select the grid, choose Insert, then Checkbox)',
+    ],
+  },
+  {
     version: '1.4.1', date: '2026-10-21',
     items: [
       'The “Fewer than 1 rest day in 7” warning now needs only floor(service days ÷ 7) days off (4 for a full month, 2 for a two-week seat) and counts actual days off only, not PTO',

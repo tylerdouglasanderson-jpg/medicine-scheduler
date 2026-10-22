@@ -57,8 +57,13 @@ describe('xlsx export (feb-2026, week of Feb 1-7)', () => {
     expect(sheet.getColumn(10).width).toBe(20);
     expect(sheet.getColumn(14).width).toBe(14);
     expect(sheet.getRow(3).height).toBe(20);
-    expect(sheet.getRow(4).height).toBe(36);
-    expect(sheet.getRow(5).height).toBe(72);
+    // heights follow the text (the bonus grid shares these rows): 20 for one line, +15 per extra wrapped line
+    for (let r = 3; r <= 12; r++) {
+      const h = sheet.getRow(r).height;
+      expect(h).toBeGreaterThanOrEqual(20);
+      expect(h).toBeLessThanOrEqual(110);
+      expect((h - 5) % 15 === 0 || h === 20).toBe(true);
+    }
     expect(sheet.getCell('H1').isMerged).toBe(true);
     expect(sheet.views[0]).toEqual(expect.objectContaining({
       state: 'frozen', xSplit: 1, ySplit: 1, topLeftCell: 'B2',

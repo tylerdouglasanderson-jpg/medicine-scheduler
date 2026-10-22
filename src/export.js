@@ -21,7 +21,12 @@ const TOTALS_COLS = [
 ];
 const TOTALS_START_COL = 10; // column J
 const MR_FONT = 'FF7030A0';  // Morning-Report label — matches the app's --cal-mr
-const ROW_HEIGHTS = { DATE: 20, TYPE: 36, ROUNDERS: 72, PAGER: 34, CLINIC: 42, DIDACTICS: 42, PTO: 42, OFF: 42 };
+// Row height follows the text: the bonus-tick grid shares these rows, so fixed tall heights made the grid (and
+// Google Sheets, which keeps them verbatim) look stretched. One line = 20, each extra wrapped line adds 15.
+const ROW_MIN = 20, LINE_H = 15, CHARS_PER_LINE = 22;
+const textLines = text => String(text ?? '').split('\n')
+  .reduce((n, part) => n + Math.max(1, Math.ceil(part.length / CHARS_PER_LINE)), 0);
+const heightFor = lines => Math.max(ROW_MIN, lines * LINE_H + 5);
 
 const dowOf = date => { const [y, m, d] = date.split('-').map(Number); return new Date(y, m - 1, d).getDay(); };
 
@@ -126,7 +131,7 @@ function writeCalendar(ws, scenario, schedule, types, dates, firstDow, mrDays, t
   for (const week of buildWeeks(dates, firstDow)) {
     for (const label of ROWS) {
       const rowIdx = row++;
-      ws.getRow(rowIdx).height = ROW_HEIGHTS[label];
+      let lines = 1;
       ws.getCell(rowIdx, 1).value = label;
       week.forEach((date, ci) => {
         const cell = ws.getCell(rowIdx, ci + 2);
@@ -134,14 +139,17 @@ function writeCalendar(ws, scenario, schedule, types, dates, firstDow, mrDays, t
         const type = types.get(date);
         const dd = schedule.days[date];
         cell.value = cellText(label, date, type, dd, scenario, schedule);
+        lines = Math.max(lines, textLines(cell.value));
         const fillKey = label === 'TYPE' && type === 'call' ? 'CALL' : label;
         if (FILLS[fillKey]) fill(cell, FILLS[fillKey]);
         // Morning Report: this team presents (pre-call team on Tue/Thu).
         if (label === 'TYPE' && mrDays.has(date)) {
           cell.value = `${cell.value}\nMORNING REPORT`;
+          lines = Math.max(lines, textLines(cell.value));
           cell.font = { bold: true, color: { argb: MR_FONT } };
         }
       });
+      ws.getRow(rowIdx).height = heightFor(lines);
     }
   }
   return row; // first row after the calendar
@@ -295,7 +303,8 @@ function writeBonusGrid(ws, scenario, schedule, dates, geo) {
   ws.mergeCells(titleRow, dateCol, titleRow, helperCol);
   const title = ws.getCell(titleRow, dateCol);
   title.value = 'Bonus days given: tick Day = bonus day off (Days), AM / PM = half day (Perks). '
-    + 'Totals above update. Google Sheets: select the boxes, Insert > Checkbox.';
+    + 'Totals above update. Google Sheets does not import checkboxes from Excel files: drag-select the FALSE grid, '
+    + 'then Insert > Checkbox (one click, all of them turn into real boxes).';
   title.font = { bold: true };
   title.alignment = { vertical: 'middle', wrapText: true };
 
