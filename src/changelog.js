@@ -4,6 +4,12 @@
 // The first entry's version must equal package.json's version.
 export const CHANGELOG = [
   {
+    version: '1.7.0', date: '2026-10-21',
+    items: [
+      'A Quick How-to pop-up (six short steps) now opens the first time someone visits, and from the new Quick How-to button in the header. The Guide button is now Comprehensive Guide. Each big section (Setup, Roster, Commitments, Errors, Results) has a Collapse button at its top right to minimize it while you work on the rest; your choice is remembered',
+    ],
+  },
+  {
     version: '1.6.0', date: '2026-10-21',
     items: [
       'Transitional interns now get Wednesday PM didactics selected automatically (greyed out, since it is every other week). A new Didactics (PM) mode in the calendar lets you click just the Wednesdays that have it. They count like any didactics: protected from days off and the pager, balanced across the team, and shown in the totals, the export and the calendar invite. A warning appears if none are picked',

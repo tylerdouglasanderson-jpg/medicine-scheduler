@@ -43,6 +43,10 @@ let anchor = null;
 const RELEASES = 'https://github.com/tylerdouglasanderson-jpg/medicine-scheduler/releases';
 const HINT_KEY = 'med-scheduler-save-hint-dismissed';
 const COMPARE_KEY = 'med-scheduler-compare-open';
+const HOWTO_KEY = 'med-scheduler-howto-seen';
+const COLLAPSE_KEY = 'med-scheduler-collapsed';
+// Panels the user minimized; survives re-render (which rebuilds every panel) and reloads.
+let collapsed = new Set();
 const appVersion = () => String(typeof __BUILD_VERSION__ !== 'undefined' ? __BUILD_VERSION__ : 'dev').split(' ')[0];
 
 export function mount(container) {
@@ -50,11 +54,82 @@ export function mount(container) {
   scenario = loadScenario();
   compareOpen = true;
   try { compareOpen = localStorage.getItem(COMPARE_KEY) !== 'false'; } catch { /* viewer storage may be unavailable */ }
+  try { collapsed = new Set(JSON.parse(localStorage.getItem(COLLAPSE_KEY) || '[]')); } catch { /* viewer storage may be unavailable */ }
   ensureGuideDialog();
   initFeedback({ getScenarioJSON: () => exportScenarioJSON(scenario) });
   initHighs().catch(() => {});   // warm the wasm at page load so the first Solve is fast
   if (!dismissInstalled) { installExportMenuDismiss(); dismissInstalled = true; }
   render();
+  let seen = false;
+  try { seen = localStorage.getItem(HOWTO_KEY) === '1'; } catch { /* treat as unseen */ }
+  if (!seen) openQuickHowTo();
+}
+
+// Quick How-to: shown once on a first visit, and from the header button any time.
+function openQuickHowTo() {
+  try { localStorage.setItem(HOWTO_KEY, '1'); } catch { /* viewer storage may be unavailable */ }
+  let dlg = document.getElementById('howto-dialog');
+  if (!dlg) {
+    dlg = document.createElement('dialog');
+    dlg.id = 'howto-dialog';
+    dlg.className = 'app-dialog';
+    const header = document.createElement('div');
+    header.className = 'guide-dialog-header';
+    const h = document.createElement('h2');
+    h.textContent = 'Quick how-to';
+    const x = document.createElement('button');
+    x.type = 'button'; x.className = 'btn-ghost'; x.textContent = '×'; x.title = 'Close';
+    x.addEventListener('click', () => dlg.close());
+    header.append(h, x);
+    const body = document.createElement('div');
+    body.className = 'app-dialog-body';
+    const p = document.createElement('p');
+    p.textContent = 'Hey, here’s a real quick guide:';
+    const steps = document.createElement('ol');
+    steps.className = 'dialog-steps';
+    for (const text of [
+      'At the very top, pick your team, the month, and the day of the week the month starts on (and whether that first day is a call day), so the app can lay the month out correctly.',
+      'Under Roster, add the members of your team.',
+      'Didactics are filled in for you, except for Transitional interns and other non-Family interns (like Psych). Use the Didactics (PM) mode to pick a Transitional intern’s Wednesdays, and check everyone else’s didactics.',
+      'Under Commitments / PTO / Pins, add everybody’s clinic schedule as a Commitment (PM).',
+      'Add any PTO that is already approved.',
+      'When the clinic days, PTO, and didactics are in, press Solve (bottom left), then check the results at the very bottom of the page.',
+    ]) { const li = document.createElement('li'); li.textContent = text; steps.appendChild(li); }
+    const note = document.createElement('p');
+    note.className = 'dialog-note';
+    note.textContent = 'Need more? Open the Comprehensive Guide in the header any time.';
+    const ok = document.createElement('button');
+    ok.type = 'button'; ok.className = 'btn-primary dialog-link'; ok.textContent = 'Got it';
+    ok.addEventListener('click', () => dlg.close());
+    body.append(p, steps, note, ok);
+    dlg.append(header, body);
+    dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+    document.body.appendChild(dlg);
+  }
+  if (!dlg.open && typeof dlg.showModal === 'function') dlg.showModal();
+}
+
+// Top-right minimize button on a panel; the panel keeps its heading and hides the rest.
+function addCollapse(panel) {
+  const id = panel.id;
+  const isCollapsed = collapsed.has(id);
+  panel.classList.toggle('collapsed', isCollapsed);
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'btn-ghost collapse-btn';
+  btn.textContent = isCollapsed ? 'Expand' : 'Collapse';
+  btn.title = isCollapsed ? 'Show this section' : 'Minimize this section';
+  btn.setAttribute('aria-expanded', String(!isCollapsed));
+  btn.addEventListener('click', () => {
+    if (collapsed.has(id)) collapsed.delete(id); else collapsed.add(id);
+    try { localStorage.setItem(COLLAPSE_KEY, JSON.stringify([...collapsed])); } catch { /* viewer storage may be unavailable */ }
+    const now = collapsed.has(id);
+    panel.classList.toggle('collapsed', now);
+    btn.textContent = now ? 'Expand' : 'Collapse';
+    btn.title = now ? 'Show this section' : 'Minimize this section';
+    btn.setAttribute('aria-expanded', String(!now));
+  });
+  panel.prepend(btn);
 }
 
 // Any input edit invalidates the solved schedule AND every alternative (docs/RULES.md §12).
@@ -156,10 +231,17 @@ function topBar() {
   const guideBtn = document.createElement('button');
   guideBtn.type = 'button';
   guideBtn.className = 'btn-secondary';
-  guideBtn.textContent = 'Guide';
+  guideBtn.textContent = 'Comprehensive Guide';
   guideBtn.title = 'Open the full user guide.';
   guideBtn.addEventListener('click', () => { if (!dialogEl.open) dialogEl.showModal(); });
-  right.appendChild(guideBtn);
+  const howtoBtn = document.createElement('button');
+  howtoBtn.id = 'howto-button';
+  howtoBtn.type = 'button';
+  howtoBtn.className = 'btn-secondary';
+  howtoBtn.textContent = 'Quick How-to';
+  howtoBtn.title = 'A six-step overview of how to use this page.';
+  howtoBtn.addEventListener('click', openQuickHowTo);
+  right.append(howtoBtn, guideBtn);
 
   const critBtn = document.createElement('button');
   critBtn.id = 'criteria-button';
@@ -217,7 +299,7 @@ function onboardingHint() {
   box.className = 'onboarding-hint';
   const p = document.createElement('p');
   p.textContent = 'Set up a team, month, and roster, then Solve to build the schedule. ' +
-    'Not sure where to start? Press “Load the example month” below, or open the Guide.';
+    'Not sure where to start? Press “Load the example month” below, or open the Quick How-to.';
   box.appendChild(p);
   const btn = document.createElement('button');
   btn.type = 'button';
@@ -276,7 +358,9 @@ function render() {
   }
   main.appendChild(errorsPanel);
 
-  main.appendChild(renderResults());
+  const resultsPanel = renderResults();
+  main.appendChild(resultsPanel);
+  for (const p of [setupSection, rosterSection, chipsSection, errorsPanel, resultsPanel]) addCollapse(p);
 
   root.appendChild(actionBar(errors));
   revealActiveTab();
