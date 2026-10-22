@@ -4,6 +4,13 @@
 // The first entry's version must equal package.json's version.
 export const CHANGELOG = [
   {
+    version: '1.14.0', date: '2026-10-22',
+    items: [
+      'A new pop-up appears when you press Solve on a month with a two-person team (one senior and one intern on service). It asks how to run those days: The intern takes every night, The senior takes every night, Work the days together, share the nights, or I’ll pin it myself',
+      'The two Takes every night choices fill in both calendars for you (night call for one, day call for the other) and allow that person to work back-to-back nights, which the scheduler otherwise never does. You can change any filled-in day afterward, and Setup has a Two-person team row with a Choose how… button to pick again',
+    ],
+  },
+  {
     version: '1.13.0', date: '2026-10-22',
     items: [
       'On a wide screen the page now opens in two-column view, with your inputs on the left and the results on the right. A narrow screen stays single-column. The results panel always has a button to switch: Return to single-column view, or Return to two-column view',

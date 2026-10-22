@@ -7,7 +7,8 @@ import { downloadXlsx } from '../export.js';
 import { downloadResidentCalendar, downloadCalendarsZip } from '../ics.js';
 import { solveAlternatives, initHighs } from '../solve.js';
 import { describeDifference } from '../compare.js';
-import { onService, monthDates, parseScenario, solutionIsCurrent, afternoonsOffDates } from '../model.js';
+import { onService, monthDates, parseScenario, solutionIsCurrent, afternoonsOffDates,
+  twoPersonCallDays, twoPersonPins, TWO_PERSON_NOTE } from '../model.js';
 import { renderCalendar, renderTotals, renderWarnings } from './calendar.js';
 import * as setup from './setup.js';
 import * as roster from './roster.js';
@@ -68,6 +69,7 @@ const appVersion = () => String(typeof __BUILD_VERSION__ !== 'undefined' ? __BUI
 export function mount(container) {
   root = container;
   scenario = loadScenario();
+  twoPersonSkipKey = null;
   compareOpen = true;
   try { compareOpen = localStorage.getItem(COMPARE_KEY) !== 'false'; } catch { /* viewer storage may be unavailable */ }
   try { collapsed = new Set(JSON.parse(localStorage.getItem(COLLAPSE_KEY) || '[]')); } catch { /* viewer storage may be unavailable */ }
@@ -455,7 +457,7 @@ function render() {
 
   const setupSection = section('setup-section');
   left.appendChild(setupSection);
-  setup.render(setupSection, scenario, onChange);
+  setup.render(setupSection, scenario, onChange, reopenTwoPerson);
 
   const rosterSection = section('roster-section');
   left.appendChild(rosterSection);
@@ -783,9 +785,82 @@ const stored = sol => ({ ...sol.schedule, objective: sol.objective });
 // Every Solve — button, pin re-solve, Freeze through, attending pager — rebuilds all the tabs.
 // Solution 1 is anchored on lastSolution, i.e. on whichever tab is selected right now.
 let resultsReady = false;
+// ---- two-person team pop-up (v1.14.0) ----
+let twoPersonSkipKey = null;   // the two-person days the chief already dismissed the pop-up for (this session only)
+
+const TWO_PERSON_CHOICES = [
+  ['intern', 'The intern takes every night', 'The senior takes day call; the intern covers each night, back to back if needed. Fills in both calendars.'],
+  ['senior', 'The senior takes every night', 'The intern takes day call; the senior covers each night. Fills in both calendars.'],
+  ['alternate', 'Work the days together, share the nights', 'The scheduler splits the nights between them (never back to back). Nothing is pinned.'],
+  ['manual', 'I’ll pin it myself', 'Nothing is filled in. Pin the nights you want on the calendar and the scheduler handles pagers and the rest.'],
+];
+
+// Resolves to the chosen mode, or null if the chief closed the pop-up.
+function askTwoPerson() {
+  return new Promise(resolve => {
+    if (typeof HTMLDialogElement === 'undefined') { resolve(null); return; }
+    document.getElementById('two-person-dialog')?.remove();
+    const dlg = document.createElement('dialog');
+    dlg.id = 'two-person-dialog';
+    dlg.className = 'app-dialog';
+    let choice = null;
+    const header = document.createElement('div');
+    header.className = 'guide-dialog-header';
+    const h = document.createElement('h2');
+    h.textContent = 'Looks like you have a two-person team';
+    const x = document.createElement('button');
+    x.type = 'button'; x.className = 'btn-ghost'; x.textContent = '×'; x.title = 'Close without choosing. Nothing changes.';
+    x.addEventListener('click', () => dlg.close());
+    header.append(h, x);
+    const body = document.createElement('div');
+    body.className = 'app-dialog-body';
+    const intro = document.createElement('p');
+    intro.textContent = 'There are a few ways to schedule this. Pick one and it fills in each of their calendars; you can still change any day afterward.';
+    body.appendChild(intro);
+    for (const [mode, label, hint] of TWO_PERSON_CHOICES) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.id = 'two-person-' + mode; b.className = 'btn-secondary two-person-choice';
+      const t = document.createElement('strong'); t.textContent = label;
+      const d = document.createElement('span'); d.className = 'pref-hint'; d.textContent = hint;
+      b.append(t, document.createElement('br'), d);
+      b.addEventListener('click', () => { choice = mode; dlg.close(); });
+      body.appendChild(b);
+    }
+    dlg.append(header, body);
+    dlg.addEventListener('close', () => { dlg.remove(); resolve(choice); });
+    document.body.appendChild(dlg);
+    if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
+  });
+}
+
+// Fill in (or clear) the two-person pins for `mode`. The pop-up's own earlier pins are replaced; for the two
+// "takes every night" modes the chief's other night/day-call pins on those days are replaced too.
+function applyTwoPerson(mode) {
+  const days = new Set(twoPersonCallDays(scenario));
+  const fill = mode === 'intern' || mode === 'senior';
+  const pins = scenario.pins.filter(p => p.note !== TWO_PERSON_NOTE &&
+    !(fill && days.has(p.date) && (p.type === 'nightCall' || p.type === 'dayCall')));
+  editKeepingAnchor({ ...scenario, pins: [...pins, ...twoPersonPins(scenario, mode)],
+    options: { ...scenario.options, twoPersonNights: mode } });
+  clearTimeout(autoTimer);
+}
+
+async function reopenTwoPerson() {
+  const mode = await askTwoPerson();
+  if (mode) applyTwoPerson(mode);
+}
+
 async function runSolve() {
   if (solving) return;
   if (validate(scenario).length) { render(); return; }   // Solve gate — show errors, stay unsolved
+  const twoDays = twoPersonCallDays(scenario);
+  const twoKey = twoDays.join();
+  if (twoDays.length && scenario.options.twoPersonNights == null && twoPersonSkipKey !== twoKey) {
+    const mode = await askTwoPerson();
+    if (!mode) { twoPersonSkipKey = twoKey; return; }      // closed: no solve, and don't ask again on every edit
+    applyTwoPerson(mode);
+    if (validate(scenario).length) { render(); return; }
+  }
   solving = true;
   diagnosis = null;
   solveError = null;

@@ -758,3 +758,7 @@ label.switch input[type="checkbox"]:checked::before { transform: translateX(0.8r
 .export-note { margin: 0; font-size: var(--fs-micro); color: var(--ink-2); line-height: 1.35; }
 
 .example-row { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.5rem; }
+
+/* two-person team pop-up (v1.14.0): one full-width card per choice */
+.two-person-choice { display: block; width: 100%; text-align: left; margin: 8px 0; padding: 10px 12px; }
+.two-person-choice .pref-hint { display: block; font-weight: 400; margin-top: 2px; }

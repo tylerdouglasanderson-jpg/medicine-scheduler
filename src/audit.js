@@ -178,13 +178,15 @@ export function audit(scenario, schedule) {
   });
 
   // ---------- night chain: A_CONSECUTIVE_NIGHTS + A_NIGHT_NO_SLEEP + A_POSTCALL_PAGER ----------
-  let lastNight = null;
+  let lastNight = null, lastNightDate = null;
+  const pinnedNight = (name, date) => (scenario.pins ?? []).some(x => x.person === name && x.date === date && x.type === 'nightCall');
   dates.forEach((d, i) => {
     if (types.get(d) !== 'call') return;
     const n = day(d).night;
-    if (n && n === lastNight)
+    // Back to back is allowed only where the chief pinned the same person to both nights (v1.14.0).
+    if (n && n === lastNight && !(pinnedNight(n, d) && pinnedNight(n, lastNightDate)))
       V('A_CONSECUTIVE_NIGHTS', `${n} takes night on consecutive call days ending ${d}`, n, d);
-    lastNight = n;
+    lastNight = n; lastNightDate = d;
     const next = dates[i + 1];
     if (!next) return;                                    // month-end night: carry-out, nothing to check
     const nd = day(next);

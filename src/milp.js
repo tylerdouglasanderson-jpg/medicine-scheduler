@@ -257,8 +257,11 @@ export function buildModel(scenario, freezeDate = null,
   });
 
   // (4) no consecutive nights, penalized-slack fallback
+  // Exempt: a person the chief pinned to night call on BOTH days (two-person team "takes every night", v1.14.0).
+  const nightPinned = (p, c) => scenario.pins.some(x => x.person === p.name && x.date === c && x.type === 'nightCall');
   for (let j = 0; j + 1 < callDays.length; j++) {
     people.forEach((p, pi) => {
+      if (nightPinned(p, callDays[j]) && nightPinned(p, callDays[j + 1])) return;
       const na = nightName.get(p.name + '|' + callDays[j]);
       const nb = nightName.get(p.name + '|' + callDays[j + 1]);
       if (!na || !nb) return;

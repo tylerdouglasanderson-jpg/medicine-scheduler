@@ -143,6 +143,8 @@ describe('loaded schedule export and save guard', () => {
       ({ person: 'SeniorA', date: `2026-03-${d}`, type: 'nightCall' }));
     expect(validate(s)).toEqual([]);
     s.lastSolution = (await solve(s)).schedule;
+    // v1.14.0: pinned back-to-back nights are legal; un-pin one so the chain is a real fallback again
+    s.pins = s.pins.filter(p => p.date !== '2026-03-07');
     const violations = audit(s, s.lastSolution).violations;
     expect(violations.length).toBeGreaterThan(0);
     expect(violations.every(v => v.code === 'A_CONSECUTIVE_NIGHTS')).toBe(true);

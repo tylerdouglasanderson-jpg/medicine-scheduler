@@ -26,6 +26,36 @@ export function deriveCycle(anchorType, month) {
   return { types, callDays, postCallDays, morningReportDays, daysInMonth: dates.length };
 }
 
+// ---- two-person teams (v1.14.0) ----
+// 'intern' / 'senior': that person takes every night on a two-person call day and the other takes day call (pins
+// are filled in); 'alternate': the scheduler shares the nights; 'manual': the chief pins it, nothing is filled in.
+export const TWO_PERSON_MODES = ['intern', 'senior', 'alternate', 'manual'];
+export const TWO_PERSON_NOTE = 'two-person';   // marks the pins the pop-up filled in, so a new choice can replace them
+
+// Call days on which exactly one senior and one intern are on service.
+export function twoPersonCallDays(scenario) {
+  const { callDays } = deriveCycle(scenario.anchorType, scenario.month);
+  return callDays.filter(d => {
+    const on = scenario.residents.filter(r => onService(r, d));
+    return on.length === 2 && on.some(r => r.role === 'senior') && on.some(r => r.role === 'intern');
+  });
+}
+
+// The night / day-call pins for mode 'intern' or 'senior'. A day whose night person has a PM commitment is left to
+// the solver (a night pin there is a validation error).
+export function twoPersonPins(scenario, mode) {
+  if (mode !== 'intern' && mode !== 'senior') return [];
+  const pins = [];
+  for (const d of twoPersonCallDays(scenario)) {
+    const on = scenario.residents.filter(r => onService(r, d));
+    const night = on.find(r => r.role === mode), day = on.find(r => r.role !== mode);
+    if (night.commitments.some(x => x.date === d && x.half === 'PM')) continue;
+    pins.push({ person: night.name, date: d, type: 'nightCall', half: null, note: TWO_PERSON_NOTE });
+    pins.push({ person: day.name, date: d, type: 'dayCall', half: null, note: TWO_PERSON_NOTE });
+  }
+  return pins;
+}
+
 export function onService(person, date) {
   return date >= person.serviceStart && date <= person.serviceEnd;   // ISO strings compare lexically
 }
@@ -91,7 +121,7 @@ export function afternoonsOffDates(scenario, schedule, name) {
 // solve() stamps every schedule it produces with this. A saved solution carrying a different stamp
 // is not used to anchor re-solve stability, so a scenario file built under older rules re-solves to
 // the NEW optimum without being cleared and re-typed first.
-export const RULES_VERSION = '1.5.0';   // v1.5.0: singleDays now FORCES exactly 1 or 2 working (surplus offs are free); v1.4.0: soft options.seniorPagerLimit; v1.3.0: per-date one-person-is-enough staffing exception (singleDays); v1.2.0: Transitional didactics dates
+export const RULES_VERSION = '1.6.0';   // v1.6.0: a person the chief pinned (nightCall) on two consecutive call days is exempt from the no-back-to-back-nights rule; v1.5.0: singleDays now FORCES exactly 1 or 2 working (surplus offs are free); v1.4.0: soft options.seniorPagerLimit; v1.3.0: per-date one-person-is-enough staffing exception (singleDays); v1.2.0: Transitional didactics dates
 
 export function parseScenario(json) {
   for (const k of ['team', 'month', 'anchorType', 'residents'])
@@ -101,7 +131,7 @@ export function parseScenario(json) {
     alternatives: [], activeSolution: 0, alternativesReason: null,
     ...json,
     options: {
-      offQuota: 4, goldenWeekend: false, seniorsOffShortCall: false, seniorFirstDay: true, seniorPagerLimit: null, allowExtraOffs: false,
+      offQuota: 4, goldenWeekend: false, seniorsOffShortCall: false, seniorFirstDay: true, seniorPagerLimit: null, allowExtraOffs: false, twoPersonNights: null,
       ...(json.options ?? {}),
     },
     residents: json.residents.map(r => ({ didactics: null, commitments: [], pto: [], ...r })),
@@ -122,6 +152,8 @@ function normalize(s) {
   const rawSpl = s.options.seniorPagerLimit;
   const spl = rawSpl === null || rawSpl === undefined || rawSpl === '' ? NaN : Number(rawSpl);
   s.options = { ...s.options, seniorPagerLimit: Number.isInteger(spl) && spl >= 0 && spl <= 4 ? spl : null };
+  // How the chief chose to run a two-person team (v1.14.0): null = not asked yet.
+  if (!TWO_PERSON_MODES.includes(s.options.twoPersonNights)) s.options = { ...s.options, twoPersonNights: null };
   // Days the chief FORCES to exactly N people working (v1.5.0; before it, 1 was only allowed, never forced):
   // { date, count: 1|2, person } - person '' lets the solver choose who works alone (count 1 only).
   const seenSingle = new Set();

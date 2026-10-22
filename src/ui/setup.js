@@ -1,4 +1,4 @@
-import { CYCLE } from '../model.js';
+import { CYCLE, twoPersonCallDays } from '../model.js';
 
 const CYCLE_LABELS = {
   precall: 'Pre-call', call: 'Call', postcall: 'Post-call',
@@ -60,7 +60,7 @@ function selectEl(name, options, value, labelFor, onSet, title) {
   return sel;
 }
 
-export function render(container, scenario, onChange) {
+export function render(container, scenario, onChange, onTwoPerson) {
   container.innerHTML = '';
   const h = document.createElement('h2');
   h.textContent = 'Setup';
@@ -189,6 +189,30 @@ export function render(container, scenario, onChange) {
   }
   pagerRow.append(spacer, pagerText, seg);
   prefs.appendChild(pagerRow);
+
+  // Two-person days (v1.14.0): re-open the pop-up that fills in who takes the nights.
+  if (onTwoPerson && twoPersonCallDays(scenario).length) {
+    const row = document.createElement('div');
+    row.className = 'pref pref-choice';
+    const text = document.createElement('span');
+    text.className = 'pref-text';
+    const name = document.createElement('span');
+    name.className = 'pref-name';
+    name.textContent = 'Two-person team';
+    const note = document.createElement('span');
+    note.className = 'pref-hint';
+    const labels = { intern: 'the intern takes every night', senior: 'the senior takes every night',
+      alternate: 'sharing the nights', manual: 'you pin it yourself' };
+    note.textContent = 'Some days have only one senior and one intern. ' +
+      (labels[scenario.options.twoPersonNights] ? `Now: ${labels[scenario.options.twoPersonNights]}.` : 'Not chosen yet; Solve will ask.');
+    text.append(name, note);
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.id = 'two-person-open'; btn.className = 'btn-secondary';
+    btn.textContent = 'Choose how…';
+    btn.addEventListener('click', onTwoPerson);
+    row.append(text, btn);
+    prefs.appendChild(row);
+  }
 
   // carryIn required only when the month anchors on a post-call day (Solve gate: validate.js CARRYIN_REQUIRED)
   if (scenario.anchorType === 'postcall') {
