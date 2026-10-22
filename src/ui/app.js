@@ -16,7 +16,8 @@ import { initFeedback, openFeedback } from './feedback.js';
 import { CHANGELOG } from '../changelog.js';
 import { CRITERIA, ACGME } from './info.js';
 import guideRaw from './guide.html?raw';
-import feb from '../../fixtures/feb-2026.json';
+import exampleWhole from '../../fixtures/example-3-person.json';
+import exampleSwap from '../../fixtures/example-3-then-2.json';
 
 let scenario;
 let root;
@@ -34,18 +35,21 @@ let solveSeq = 0;           // bumped by any input edit, so a solve that outlive
 let exportPick = null;    // which solution Export covers: null = the one on screen, else an index into scenario.alternatives
 let saveHintPending = false; // set by the first successful Solve; the "save my month" hint shows until dismissed
 let compareOpen = true;
-// "Revise this plan" (v1.10.0): wide screens only. Inputs on the left, results on the right, each scrolling on
-// its own. Not persisted: a reload always opens the one-column page.
+// Two-column view (v1.10.0; the default on wide screens since v1.13.0): inputs on the left, results on the right,
+// each scrolling on its own. A screen narrower than WIDE_PX is always single-column. On a wide screen the page opens
+// two-column; the button in the results panel switches either way (not persisted: a reload re-opens two-column).
 let reviseMode = false;
-let autoSplitDone = false;       // the first good Solve on a wide screen opens the side-by-side view once
-const WIDE_PX = 1100;           // same breakpoint as the CSS that shows Revise this plan
+let wantSingle = false;          // the user chose single-column on a wide screen; kept until the screen goes narrow
+const WIDE_PX = 1100;           // same breakpoint as the CSS that hides the view buttons
 let staleSnap = null;       // the scenario as last solved, shown greyed on the right once an input is edited
 let autoResolve = false;    // re-solve ~0.7 s after each edit (a per-viewer preference, see AUTO_KEY)
 let autoTimer = null;
 let flashBase = null;       // the schedule a re-solve replaced; its changed cells are outlined for a few seconds
 let flashTimer = null;
+let resizeInstalled = false;
 const AUTO_KEY = 'med-scheduler-auto-resolve';
-try { autoResolve = storage.get(AUTO_KEY) === true; } catch { /* per-viewer convenience only */ }
+// On unless the viewer switched it off.
+try { autoResolve = storage.get(AUTO_KEY) !== false; } catch { /* per-viewer convenience only */ }
 // The schedule a pin / attending-day re-solve stays close to (stability). A pin edit
 // clears every displayed and exportable solution — none of them honours the new pin — but the re-solve
 // still anchors on the schedule the chief was looking at. Never rendered, exported or saved; cleared by
@@ -67,6 +71,16 @@ export function mount(container) {
   compareOpen = true;
   try { compareOpen = localStorage.getItem(COMPARE_KEY) !== 'false'; } catch { /* viewer storage may be unavailable */ }
   try { collapsed = new Set(JSON.parse(localStorage.getItem(COLLAPSE_KEY) || '[]')); } catch { /* viewer storage may be unavailable */ }
+  reviseMode = window.innerWidth >= WIDE_PX;
+  wantSingle = false;
+  if (!resizeInstalled) {
+    window.addEventListener('resize', () => {
+      const want = window.innerWidth >= WIDE_PX && !wantSingle;
+      if (window.innerWidth < WIDE_PX) wantSingle = false;      // narrow forces single; coming back wide re-opens two-column
+      if (want !== reviseMode) setRevise(want);
+    });
+    resizeInstalled = true;
+  }
   ensureGuideDialog();
   initFeedback({ getScenarioJSON: () => exportScenarioJSON(scenario) });
   initHighs().catch(() => {});   // warm the wasm at page load so the first Solve is fast
@@ -383,16 +397,27 @@ function onboardingHint() {
   box.className = 'onboarding-hint';
   const p = document.createElement('p');
   p.textContent = 'Set up a team, month, and roster, then Solve to build the schedule. ' +
-    'Not sure where to start? Press “Load the example month” below, or open the Quick How-to.';
+    'Not sure where to start? Press “Load the example month” below (there are two to choose from), or open the Quick How-to.';
   box.appendChild(p);
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'btn-primary';
-  btn.id = 'load-example-button';
-  btn.textContent = 'Load the example month (Medicine F · Feb 2026)';
-  btn.title = 'Fills the app with a sample month (Medicine F, February 2026) so you can see how it works. This replaces the setup on the page and clears any schedule. It is meant for a first look; use Clear scenario to start your own month afterwards.';
-  btn.addEventListener('click', () => onChange(parseScenario(feb)));
-  box.appendChild(btn);
+  const row = document.createElement('div');
+  row.className = 'example-row';
+  const examples = [
+    ['load-example-button', exampleWhole, 'Load the example month: 3-person team all month (Medicine B · Feb 2026)',
+      'Fills the app with a sample month: Medicine B, February 2026, one senior and two interns for the whole month, with a senior PTO week and clinics. This replaces the setup on the page and clears any schedule. Use Clear scenario to start your own month afterwards.'],
+    ['load-example-button-2', exampleSwap, 'Load the example month: 3-person team, then 2-person from the 16th (Medicine A · Oct 2026)',
+      'Fills the app with a sample month: Medicine A, October 2026. One senior and two interns run the first half; on the 16th the senior and one intern rotate off and a new senior joins the remaining intern, so the team shrinks to two people. Includes a one-person day, clinics, an ITE half-day and a retreat. This replaces the setup on the page and clears any schedule. Use Clear scenario to start your own month afterwards.'],
+  ];
+  examples.forEach(([id, fixture, label, title], i) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = i === 0 ? 'btn-primary' : 'btn-secondary';
+    btn.id = id;
+    btn.textContent = label;
+    btn.title = title;
+    btn.addEventListener('click', () => onChange(parseScenario(fixture)));
+    row.appendChild(btn);
+  });
+  box.appendChild(row);
   return box;
 }
 
@@ -473,8 +498,9 @@ function render() {
 
 // ---- Revise this plan: slide the results to the right, fade the inputs in on the left (and back) ----
 const SLIDE = { duration: 480, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' };
-function setRevise(on) {
+function setRevise(on, byUser = false) {
   if (on === reviseMode) return;
+  if (byUser) wantSingle = !on;
   const before = document.getElementById('results-section')?.getBoundingClientRect();
   reviseMode = on;
   if (!on) { staleSnap = null; clearTimeout(autoTimer); }
@@ -502,14 +528,13 @@ function startFlash(base) {
 
 function reviseBar() {
   if (!reviseMode) {
-    if (!scenario.lastSolution) return null;
     const bar = document.createElement('div');
     bar.className = 'revise-bar';
     const btn = document.createElement('button');
     btn.type = 'button'; btn.id = 'revise-button'; btn.className = 'btn-primary revise-btn';
-    btn.textContent = autoSplitDone ? 'Return to two-column view' : 'Revise this plan';
-    btn.title = 'Splits the screen into two columns: your inputs on the left and this schedule on the right, each scrolling on its own, so you can change something and re-solve side by side. Your schedule and inputs are unchanged by switching views. Needs a wide screen to be useful. Use Return to single-column view to go back.';
-    btn.addEventListener('click', () => setRevise(true));
+    btn.textContent = 'Return to two-column view';
+    btn.title = 'Splits the screen into two columns: your inputs on the left and this schedule on the right, each scrolling on its own, so you can change something and re-solve side by side. Your schedule and inputs are unchanged by switching views. Only shown on a wide screen. Use Return to single-column view to go back.';
+    btn.addEventListener('click', () => setRevise(true, true));
     bar.appendChild(btn);
     return bar;
   }
@@ -519,7 +544,7 @@ function reviseBar() {
   done.type = 'button'; done.id = 'revise-done'; done.className = 'btn-ghost';
   done.textContent = 'Return to single-column view';
   done.title = 'Goes back to the single-column page: inputs first, with the schedule below. Your inputs are kept. Gotcha: if you changed something and have not pressed Solve, the greyed old schedule is dropped and the results stay empty until you Solve again.';
-  done.addEventListener('click', () => setRevise(false));
+  done.addEventListener('click', () => setRevise(false, true));
   const label = document.createElement('label');
   label.className = 'switch';
   label.title = 'When on, the schedule rebuilds by itself about a second after each change you make. When off, the old schedule stays greyed out until you press Solve. Automatic solving replaces the schedule each time, so turn it off if you are making several edits. This setting is remembered on this computer only.';
@@ -803,10 +828,7 @@ async function runSolve() {
     render();
     if (resultsReady) {
       resultsReady = false;
-      // A wide screen goes straight to the side-by-side view on the FIRST good Solve (results slide right, inputs
-      // stay left). After that it is the user's choice: 'Done revising' is never undone automatically.
-      if (!autoSplitDone && !reviseMode && window.innerWidth >= WIDE_PX) { autoSplitDone = true; setRevise(true); }
-      else announceResults();
+      announceResults();                                  // does nothing in two-column view
     }
   }
 }

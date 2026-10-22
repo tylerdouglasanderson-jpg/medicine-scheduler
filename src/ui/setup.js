@@ -139,7 +139,7 @@ export function render(container, scenario, onChange) {
   prefs.appendChild(prefRow(opt('seniorsOffShortCall', !!scenario.options.seniorsOffShortCall,
       'When unticked (the default), seniors are steered to keep working on weekday short-call days. Tick it for months when interns admit on their own, so seniors can take a day off on those days. Weekend short call is never protected either way.'),
     'Allow seniors off on short-call days',
-    'For months when interns admit on their own. Weekend short call takes no admissions, so it is never protected.'));
+    'For months later in the year, when interns are more independent and you are confident that they can admit on their own. Weekend short call still takes no admissions, so it is never protected either way.'));
 
   prefs.appendChild(prefRow(opt('seniorFirstDay', scenario.options.seniorFirstDay !== false,
       'On by default. Steers seniors away from a day off on the 1st of the month, so a senior is there at the team changeover. It is a soft goal and can be broken if the month cannot be staffed otherwise.'),
@@ -151,20 +151,44 @@ export function render(container, scenario, onChange) {
     'Allow more than the quota of days off',
     'Not advised. Add bonus days afterwards instead. This only lets the solver give extra days off if the month cannot be staffed any other way, and it avoids them whenever it can.'));
 
-  const pgLimit = document.createElement('select');
-  pgLimit.name = 'seniorPagerLimit';
-  pgLimit.title = 'Optional cap on how many days each senior holds the pager this month (0 to 4). Choose 0 to keep seniors off the pager if at all possible. It is a soft goal: the scheduler breaks it when the month needs it, and still keeps the count as low as it can. No limit means no cap.';
+  const pagerTitle = 'Optional cap on how many days each senior holds the pager this month (0 to 4). Choose 0 to keep seniors off the pager if at all possible. It is a soft goal: the scheduler breaks it when the month needs it, and still keeps the count as low as it can. No limit means no cap.';
+  const pagerNow = scenario.options.seniorPagerLimit != null ? String(scenario.options.seniorPagerLimit) : '';
+  const pagerRow = document.createElement('div');
+  pagerRow.className = 'pref pref-choice';
+  const spacer = document.createElement('span');
+  spacer.className = 'pref-spacer';
+  spacer.setAttribute('aria-hidden', 'true');
+  const pagerText = document.createElement('span');
+  pagerText.className = 'pref-text';
+  const pagerName = document.createElement('span');
+  pagerName.className = 'pref-name';
+  pagerName.id = 'pager-limit-label';
+  pagerName.textContent = 'Limit senior pager days to';
+  const pagerHint = document.createElement('span');
+  pagerHint.className = 'pref-hint';
+  pagerHint.textContent = '0 to 4 per senior (0 = keep seniors off the pager if at all possible). A soft goal: it is broken if the month needs it, and then still kept as low as possible.';
+  pagerText.append(pagerName, pagerHint);
+  const seg = document.createElement('div');
+  seg.className = 'seg';
+  seg.setAttribute('role', 'radiogroup');
+  seg.setAttribute('aria-labelledby', pagerName.id);
+  seg.title = pagerTitle;
   for (const v of ['', '0', '1', '2', '3', '4']) {
-    const o = document.createElement('option');
-    o.value = v; o.textContent = v === '' ? 'No limit' : v;
-    pgLimit.appendChild(o);
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.name = 'seniorPagerLimit';
+    btn.value = v;
+    btn.setAttribute('role', 'radio');
+    btn.setAttribute('aria-checked', String(v === pagerNow));
+    btn.className = v === pagerNow ? 'seg-btn on' : 'seg-btn';
+    btn.textContent = v === '' ? 'No limit' : v;
+    btn.addEventListener('click', () => onChange({
+      ...scenario, options: { ...scenario.options, seniorPagerLimit: v !== '' ? Number(v) : null },
+    }));
+    seg.appendChild(btn);
   }
-  pgLimit.value = scenario.options.seniorPagerLimit != null ? String(scenario.options.seniorPagerLimit) : '';
-  pgLimit.addEventListener('change', () => onChange({
-    ...scenario, options: { ...scenario.options, seniorPagerLimit: pgLimit.value !== '' ? Number(pgLimit.value) : null },
-  }));
-  prefs.appendChild(prefRow(pgLimit, 'Limit senior pager days to',
-    '0 to 4 per senior (0 = keep seniors off the pager if at all possible). A soft goal: it is broken if the month needs it, and then still kept as low as possible.'));
+  pagerRow.append(spacer, pagerText, seg);
+  prefs.appendChild(pagerRow);
 
   // carryIn required only when the month anchors on a post-call day (Solve gate: validate.js CARRYIN_REQUIRED)
   if (scenario.anchorType === 'postcall') {

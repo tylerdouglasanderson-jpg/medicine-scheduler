@@ -1,7 +1,7 @@
 // Smoke / stress harness: run every scenario through the REAL solver (solveAlternatives — the same
 // call every Solve in the app makes) + the independent auditor, then report accuracy.
 //
-//   node scripts/smoketest.mjs              # fixtures/{feb-2026,oct-2026-didactics,comp-*} + scenarios/*.json
+//   node scripts/smoketest.mjs              # fixtures/{feb-2026,oct-2026-didactics,comp-*,example-*} + scenarios/*.json
 //   node scripts/smoketest.mjs 05           # only files whose path contains "05"
 //   node scripts/smoketest.mjs --private    # ...plus scenarios/private/*.json (gitignored real months)
 //   node scripts/smoketest.mjs --verbose    # also print Solution 1's per-person calendar for each file
@@ -47,7 +47,7 @@ const addDir = (dir, label, pick) => {
   for (const f of readdirSync(dir).filter(f => f.endsWith('.json') && pick(f)).sort())
     sources.push({ path: join(dir, f), file: f, label: label + f, out: label.replace('/', '-') + f.replace(/\.json$/, '') });
 };
-addDir(join(root, 'fixtures'), 'fixtures/', f => f === 'feb-2026.json' || f === 'oct-2026-didactics.json' || f.startsWith('comp-'));
+addDir(join(root, 'fixtures'), 'fixtures/', f => f === 'feb-2026.json' || f === 'oct-2026-didactics.json' || f.startsWith('comp-') || f.startsWith('example-'));
 addDir(scenDir, '', () => true);
 if (PRIVATE) addDir(join(scenDir, 'private'), 'private/', () => true);
 const files = sources.filter(s => !filter || s.label.includes(filter));
@@ -133,6 +133,7 @@ function inputHonored(s, schedule) {
     const { svc, quota } = expectedQuota(r, s);
     if (!svc) continue;
     const free = new Set(pins.filter(p => p.person === r.name && p.type === 'offFree').map(p => p.date));
+    for (const x of s.singleDays ?? []) free.add(x.date);   // offs on a forced-staffing day are free (bonus)
     // halfOff pins are freebies (program rule, 2026-10): they never count toward the quota.
     const counted = dates.filter(d => inWindow(r, d) && schedule.days[d].off.includes(r.name) && !free.has(d)).length;
     if (counted !== quota) problems.push(`off quota: ${r.name} has ${counted} counted off, expected ${quota} (${svc} service days)`);

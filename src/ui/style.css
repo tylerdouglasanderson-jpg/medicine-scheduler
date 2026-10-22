@@ -147,7 +147,17 @@ button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focu
 }
 label.pref { display: flex; align-items: flex-start; gap: 0.6rem; cursor: pointer; max-width: 60ch; }
 label.pref > input[type="checkbox"] { margin: 0.15rem 0 0; width: 1rem; height: 1rem; flex: none; cursor: pointer; }
-label.pref > select { flex: none; min-width: 6rem; }
+div.pref { display: flex; align-items: flex-start; gap: 0.6rem; max-width: 60ch; }
+.pref-spacer { width: 1rem; flex: none; }
+.pref-choice .pref-text { flex: 1 1 auto; }
+.seg { display: inline-flex; flex: none; margin-top: 0.1rem; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.seg-btn {
+  border: 0; border-right: 1px solid var(--border); background: var(--surface); color: var(--ink);
+  font: inherit; font-size: var(--fs-small); padding: 0.3rem 0.6rem; cursor: pointer; white-space: nowrap;
+}
+.seg-btn:last-child { border-right: 0; }
+.seg-btn.on { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+@media (max-width: 640px) { div.pref { flex-wrap: wrap; } .pref-choice .seg { margin-left: 1.6rem; } }
 .pref-text { display: flex; flex-direction: column; gap: 0.1rem; }
 .pref-name { font-size: var(--fs-body); color: var(--ink); line-height: 1.3; }
 .pref-hint { font-size: var(--fs-small); color: var(--muted); line-height: 1.35; }
@@ -373,6 +383,10 @@ body.revise-on { overflow: hidden; }
   .pane { overflow: visible; }
 }
 
+/* Short page (every section collapsed): the bar still sits at the bottom of the screen, not under the content. */
+#app { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
+#app > .main { flex: 1 0 auto; width: 100%; box-sizing: border-box; }
+#app > .action-bar { margin-top: auto; }
 .action-bar {
   position: sticky; bottom: 0; z-index: 10;
   background: var(--panel); border-top: 1px solid var(--border);
@@ -742,3 +756,5 @@ label.switch input[type="checkbox"]:checked::before { transform: translateX(0.8r
   .totals-table th, .totals-table td { padding: 0.15rem 0.25rem; white-space: normal; overflow-wrap: anywhere; }
 }
 .export-note { margin: 0; font-size: var(--fs-micro); color: var(--ink-2); line-height: 1.35; }
+
+.example-row { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.5rem; }

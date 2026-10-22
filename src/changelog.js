@@ -4,6 +4,16 @@
 // The first entry's version must equal package.json's version.
 export const CHANGELOG = [
   {
+    version: '1.13.0', date: '2026-10-22',
+    items: [
+      'On a wide screen the page now opens in two-column view, with your inputs on the left and the results on the right. A narrow screen stays single-column. The results panel always has a button to switch: Return to single-column view, or Return to two-column view',
+      'Re-solve automatically is now on by default. You can still switch it off in the two-column view',
+      'Setup tidy-up: the note under Allow seniors off on short-call days is reworded, and Limit senior pager days to now lines up with the other preferences, with No limit, 0, 1, 2, 3 and 4 as buttons on its right',
+      'The bottom bar (Solve, Freeze through, Save my month, Export, Clear scenario) now always stays at the bottom of the screen, even when every section is collapsed and the page is short',
+      'The empty page now offers two example months to load: a 3-person team all month (Medicine B, Feb 2026) and a 3-person team that becomes a 2-person team on the 16th (Medicine A, Oct 2026)',
+    ],
+  },
+  {
     version: '1.12.0', date: '2026-10-22',
     items: [
       'New Force One Person Only and Force Two People Only buttons make a day run with exactly one or exactly two people. Everyone else who is free that day gets a bonus day off that does not count against the quota. Click dates one after another with no dialog; click the same mode again to remove a date. Old 1 person OK days load as Force One Person Only',
