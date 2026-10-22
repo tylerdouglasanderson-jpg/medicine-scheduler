@@ -453,7 +453,7 @@ export function buildModel(scenario, freezeDate = null,
   // S15 optional senior pager limit (v1.9.0): over[p] >= (pager days) - L, priced per day over. Soft: it can be
   // exceeded when nothing else works, and past the cap every extra day still costs, so it keeps minimizing.
   const pagerLimit = scenario.options.seniorPagerLimit;
-  if (pagerLimit) people.forEach((p, pi) => {
+  if (pagerLimit != null) people.forEach((p, pi) => {
     if (p.role !== 'senior') return;
     const pvs = dates.map(d => pagerName.get(p.name + '|' + d)).filter(Boolean);
     if (pvs.length <= pagerLimit) return;

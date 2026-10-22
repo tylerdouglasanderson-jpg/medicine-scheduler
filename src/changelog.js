@@ -4,6 +4,12 @@
 // The first entry's version must equal package.json's version.
 export const CHANGELOG = [
   {
+    version: '1.9.1', date: '2026-10-21',
+    items: [
+      'The Limit senior pager days to setting now also accepts 0, which asks the solver to keep seniors off the pager when it can',
+    ],
+  },
+  {
     version: '1.9.0', date: '2026-10-21',
     items: [
       'A new optional Limit senior pager days to setting (1 to 4, under Preferences) asks the solver to keep each senior at or under that many pager days. It is a soft goal: if the month cannot work that way it goes over, and still keeps senior pager days as low as it can. A warning lists any senior who ends up over the limit. Also, the “results are here” pop-up now says you can click a day in the results calendar to change its pin while you review',

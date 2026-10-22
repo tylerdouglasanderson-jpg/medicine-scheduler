@@ -11,8 +11,8 @@ const mk = (j, L) => { const s = parseScenario({ ...j, options: { ...j.options, 
 
 describe('senior pager limit (v1.9.0)', () => {
   it('RULES_VERSION bumped', () => expect(RULES_VERSION).toBe('1.4.0'));
-  it('normalize keeps only whole numbers 1-4, else null', () => {
-    for (const [v, want] of [[2, 2], ['3', 3], [0, null], [5, null], [2.5, null], ['', null], [null, null], ['x', null]])
+  it('normalize keeps only whole numbers 0-4, else null', () => {
+    for (const [v, want] of [[2, 2], ['3', 3], [0, 0], ['0', 0], [-1, null], [5, null], [2.5, null], ['', null], [null, null], ['x', null]])
       expect(mk(feb, v).options.seniorPagerLimit, String(v)).toBe(want);
     expect(parseScenario(feb).options.seniorPagerLimit).toBeNull();
   });
@@ -36,6 +36,14 @@ describe('senior pager limit (v1.9.0)', () => {
     const a = audit(s, capped.schedule);
     expect(a.violations).toEqual([]);
     expect(a.warnings.map(w => w.code)).toContain('W_SENIOR_PAGER_OVER');
+  });
+  it('a limit of 0 keeps seniors off the pager when the month allows it', async () => {
+    const s = mk(feb, 0);
+    const senior = s.residents.find(r => r.role === 'senior').name;
+    const free = await solve(mk(feb, null));
+    const capped = await solve(s);
+    expect(held(capped, senior)).toBeLessThan(held(free, senior));
+    expect(audit(s, capped.schedule).violations).toEqual([]);
   });
   it('applies per senior on a two-senior team', async () => {
     const s = mk(two, 1);

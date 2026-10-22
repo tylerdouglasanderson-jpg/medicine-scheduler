@@ -118,9 +118,10 @@ function normalize(s) {
   s.pins = (s.pins ?? []).filter(p => p && names.has(p.person) && inMonth(p.date));
   s.notes = (s.notes ?? []).filter(n => n && inMonth(n.date));
   s.attendingPagerDays = [...new Set((s.attendingPagerDays ?? []).filter(inMonth))].sort();
-  // Optional soft cap on pager days per senior: null (none) or a whole number 1-4.
-  const spl = Number(s.options.seniorPagerLimit);
-  s.options = { ...s.options, seniorPagerLimit: Number.isInteger(spl) && spl >= 1 && spl <= 4 ? spl : null };
+  // Optional soft cap on pager days per senior: null (none) or a whole number 0-4.
+  const rawSpl = s.options.seniorPagerLimit;
+  const spl = rawSpl === null || rawSpl === undefined || rawSpl === '' ? NaN : Number(rawSpl);
+  s.options = { ...s.options, seniorPagerLimit: Number.isInteger(spl) && spl >= 0 && spl <= 4 ? spl : null };
   // Days the chief says one person is enough: { date, person } - person '' lets the solver choose who.
   const seenSingle = new Set();
   s.singleDays = (s.singleDays ?? [])

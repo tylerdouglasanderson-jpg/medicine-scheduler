@@ -252,7 +252,7 @@ export function audit(scenario, schedule) {
 
     // optional senior pager limit (soft): informational when a senior holds the pager on more days than the limit
     const pagerLimit = scenario.options?.seniorPagerLimit;
-    if (pagerLimit && r.role === 'senior') {
+    if (pagerLimit != null && r.role === 'senior') {
       const held = svc.filter(d => day(d)?.pager === r.name).length;
       if (held > pagerLimit)
         W('W_SENIOR_PAGER_OVER', `${r.name} holds the pager ${held} days, over your limit of ${pagerLimit}`, r.name);

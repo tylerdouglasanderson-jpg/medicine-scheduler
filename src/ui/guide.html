@@ -474,7 +474,7 @@
             </tr>
             <tr>
               <td><strong>Limit senior pager days to</strong></td>
-              <td>Optional, 1 to 4. A soft goal: the solver tries to keep each senior from holding the pager more than
+              <td>Optional, 0 to 4 (0 means keep seniors off the pager if at all possible). A soft goal: the solver tries to keep each senior from holding the pager more than
                 this many days. If the month cannot meet it, it goes over and keeps the senior's pager days as low as it
                 can, and Potential Issues lists who is over. Leave it on "No limit" to turn it off.</td>
             </tr>
@@ -1034,6 +1034,10 @@
     <section id="whatsnew">
       <h2><span class="num-badge">15</span>What's new</h2>
       <p>Newest first. The same list opens when you click the version number at the top of the app.</p>
+      <h3>1.9.1 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">&middot; 2026-10-21</span></h3>
+      <ul>
+        <li>The Limit senior pager days to setting now also accepts 0, which asks the solver to keep seniors off the pager when it can</li>
+      </ul>
       <h3>1.9.0 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">&middot; 2026-10-21</span></h3>
       <ul>
         <li>A new optional Limit senior pager days to setting (1 to 4, under Preferences) asks the solver to keep each senior at or under that many pager days. It is a soft goal: if the month cannot work that way it goes over, and still keeps senior pager days as low as it can. A warning lists any senior who ends up over the limit. Also, the “results are here” pop-up now says you can click a day in the results calendar to change its pin while you review</li>
