@@ -4,6 +4,12 @@
 // The first entry's version must equal package.json's version.
 export const CHANGELOG = [
   {
+    version: '1.9.0', date: '2026-10-21',
+    items: [
+      'A new optional Limit senior pager days to setting (1 to 4, under Preferences) asks the solver to keep each senior at or under that many pager days. It is a soft goal: if the month cannot work that way it goes over, and still keeps senior pager days as low as it can. A warning lists any senior who ends up over the limit. Also, the “results are here” pop-up now says you can click a day in the results calendar to change its pin while you review',
+    ],
+  },
+  {
     version: '1.8.0', date: '2026-10-21',
     items: [
       'A new 1 person OK mode in the Commitments calendar lets you mark any date where the schedule may have just one person working (normally at least 2 are needed). Click the date, then optionally name who works alone, or leave it on Solver chooses and it prefers a senior. It only allows it; the solver still uses two or more when it can. The results say “Only X is scheduled on D, as you allowed.” and nothing changes in the Excel file. Days that already drop to one person on their own (Med C, two-person teams, heavy PTO) need no marking',

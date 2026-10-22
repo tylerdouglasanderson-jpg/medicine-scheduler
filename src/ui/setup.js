@@ -147,6 +147,22 @@ export function render(container, scenario, onChange) {
   }));
   prefs.appendChild(checkLabel('Have a senior present on the 1st', firstDay));
 
+  const pgLimit = document.createElement('select');
+  pgLimit.name = 'seniorPagerLimit';
+  pgLimit.title = 'Optional. Limit the number of days the seniors are holding a pager to this. The model tries to stay '
+    + 'under it, but it is breakable: if the month cannot work that way it goes over, and still keeps senior pager days as low as it can.';
+  for (const v of ['', '1', '2', '3', '4']) {
+    const o = document.createElement('option');
+    o.value = v; o.textContent = v === '' ? 'No limit' : v;
+    pgLimit.appendChild(o);
+  }
+  pgLimit.value = scenario.options.seniorPagerLimit ? String(scenario.options.seniorPagerLimit) : '';
+  pgLimit.addEventListener('change', () => onChange({
+    ...scenario, options: { ...scenario.options, seniorPagerLimit: pgLimit.value ? Number(pgLimit.value) : null },
+  }));
+  prefs.appendChild(labeled('Limit senior pager days to', pgLimit,
+    'Optional, 1 to 4 per senior. A soft goal: it can be broken if the month needs it, and then it still minimizes.'));
+
   // carryIn required only when the month anchors on a post-call day (Solve gate: validate.js CARRYIN_REQUIRED)
   if (scenario.anchorType === 'postcall') {
     const ci = scenario.carryIn || { nightPerson: '', dayCallIntern: '', dayCallSenior: '' };

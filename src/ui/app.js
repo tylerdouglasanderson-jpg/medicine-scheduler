@@ -97,7 +97,7 @@ function announceResults() {
     p.textContent = 'The schedule is ready. Closing this takes you down to it.';
     const tip = document.createElement('p');
     tip.className = 'dialog-note';
-    tip.textContent = 'To change a single day: go back up to Commitments / PTO / Pins, pick a pin mode, click that day on the person’s calendar to add a pin, then press Solve again. The rest of the month stays as close to this schedule as it can.';
+    tip.textContent = 'To change a single day while you review: click that day’s OFF, PAGER or ROUNDERS cell in the results calendar below, add or change a pin there, and it re-solves. The rest of the month stays as close to this schedule as it can.';
     const label = document.createElement('label');
     label.className = 'dialog-note';
     const cb = document.createElement('input');
@@ -1132,6 +1132,7 @@ const ISSUE_GROUPS = [
   ['duty', 'Fewer than 1 rest day in 7', ['W_DUTY_HOUR']],
   ['senior-sc', 'Senior off on a short-call day', ['W_SENIOR_OFF_SC']],
   ['single', 'One person scheduled (you allowed it)', ['W_SINGLE_COVER']],
+  ['senior-pager', 'Senior pager days over your limit', ['W_SENIOR_PAGER_OVER']],
   ['mr', 'Morning Report coverage', ['W_MR_THIN', 'W_MR_NO_SENIOR', 'W_MR_NO_INTERN']],
   ['pager', 'Pager / didactics', ['W_ATTENDING_PAGER', 'W_DIDACTICS_MISS', 'W_DIDACTICS_PAGER',
     'W_DIDACTICS_PAGER_INTERN', 'W_DIDACTICS_NO_SENIOR_COVER', 'W_DIDACTICS_OFF', 'W_DIDACTICS_NO_DATES']],

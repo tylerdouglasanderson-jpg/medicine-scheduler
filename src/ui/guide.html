@@ -473,6 +473,12 @@
                 month, when the team changes over. Untick it to let a senior's day off fall there.</td>
             </tr>
             <tr>
+              <td><strong>Limit senior pager days to</strong></td>
+              <td>Optional, 1 to 4. A soft goal: the solver tries to keep each senior from holding the pager more than
+                this many days. If the month cannot meet it, it goes over and keeps the senior's pager days as low as it
+                can, and Potential Issues lists who is over. Leave it on "No limit" to turn it off.</td>
+            </tr>
+            <tr>
               <td><strong>Carry-in</strong></td>
               <td>Appears only when the anchor is post-call. Records who was <strong>night</strong>,
                 <strong>day-call intern</strong>, and <strong>day-call senior</strong> on the last
@@ -945,6 +951,7 @@
             <tr><td class="code-cell">W_DIDACTICS_OFF</td><td>A day off landed on that resident's own didactics day — a missed session <em>and</em> a day off spent on a half-day.</td></tr>
             <tr><td class="code-cell">W_DIDACTICS_PAGER</td><td>A senior makes didactics but carries the pager through it — the normal, acceptable case. When nobody else is free either, the row offers <strong>Attending covers the pager</strong>.</td></tr>
             <tr><td class="code-cell">W_DIDACTICS_PAGER_INTERN</td><td>An <em>intern</em> carries the pager through their own didactics, which is close to not attending at all. The row names the senior who was free that afternoon (pin the pager to them and re-solve), or offers <strong>Attending covers the pager</strong> when no senior was.</td></tr>
+            <tr><td class="code-cell">W_SENIOR_PAGER_OVER</td><td>A senior holds the pager on more days than the Limit senior pager days setting. It is a soft goal, so this is informational: the month could not stay under the limit.</td></tr>
             <tr><td class="code-cell">W_SINGLE_COVER</td><td>Only one person is scheduled on a day you marked 1 person OK. Informational: you allowed it.</td></tr>
             <tr><td class="code-cell">W_DIDACTICS_NO_DATES</td><td>A Transitional intern has no didactics Wednesdays picked this month. Pick them with the Didactics (PM) mode in their calendar, or ignore this if they have none this month.</td></tr>
             <tr><td class="code-cell">W_DIDACTICS_NO_SENIOR_COVER</td><td>A senior has a PM commitment on <em>every one</em> of an intern's didactics afternoons this month, so no schedule can ever put a senior on that pager. Moving one of those clinics is the real fix.</td></tr>
@@ -1027,6 +1034,10 @@
     <section id="whatsnew">
       <h2><span class="num-badge">15</span>What's new</h2>
       <p>Newest first. The same list opens when you click the version number at the top of the app.</p>
+      <h3>1.9.0 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">&middot; 2026-10-21</span></h3>
+      <ul>
+        <li>A new optional Limit senior pager days to setting (1 to 4, under Preferences) asks the solver to keep each senior at or under that many pager days. It is a soft goal: if the month cannot work that way it goes over, and still keeps senior pager days as low as it can. A warning lists any senior who ends up over the limit. Also, the “results are here” pop-up now says you can click a day in the results calendar to change its pin while you review</li>
+      </ul>
       <h3>1.8.0 <span style="font-weight:400; font-size:.85em; color:var(--text-dim);">&middot; 2026-10-21</span></h3>
       <ul>
         <li>A new 1 person OK mode in the Commitments calendar lets you mark any date where the schedule may have just one person working (normally at least 2 are needed). Click the date, then optionally name who works alone, or leave it on Solver chooses and it prefers a senior. It only allows it; the solver still uses two or more when it can. The results say “Only X is scheduled on D, as you allowed.” and nothing changes in the Excel file. Days that already drop to one person on their own (Med C, two-person teams, heavy PTO) need no marking</li>

@@ -33,6 +33,7 @@ export const WEIGHTS = {
   goldenWeekend: 15,       // S10 reward (applied negative) per Sat+Sun off pair
   offPrecall: 6,           // S12 reward per off on a non-Morning-Report pre-call day (lightest day)
   offSc2: 3,               // S12 reward per off on a short-call-2 day (next lightest)
+  seniorPagerOver: 150,    // S15 per pager day above options.seniorPagerLimit, per senior (soft; still minimizes past the cap)
   singleSenior: 40,        // S14 a chief-allowed one-person day with the person left open: prefer a senior working it
   mrThin: 60,              // S13 fewer than 2 people present on a Morning-Report day
   mrNoSenior: 30,          // S13 no senior present on a Morning-Report day
@@ -448,6 +449,18 @@ export function buildModel(scenario, freezeDate = null,
   ratePattern('dc', internNight.map(m => ({
     pi: m.pi, denom: m.denom, constant: m.denom, terms: m.terms.map(t => T(-1, t.name)),
   })), WEIGHTS.dayCallSplit);
+
+  // S15 optional senior pager limit (v1.9.0): over[p] >= (pager days) - L, priced per day over. Soft: it can be
+  // exceeded when nothing else works, and past the cap every extra day still costs, so it keeps minimizing.
+  const pagerLimit = scenario.options.seniorPagerLimit;
+  if (pagerLimit) people.forEach((p, pi) => {
+    if (p.role !== 'senior') return;
+    const pvs = dates.map(d => pagerName.get(p.name + '|' + d)).filter(Boolean);
+    if (pvs.length <= pagerLimit) return;
+    const o = cont(`pgover_${pi}`, { kind: 'pgover', person: p.name }, 0, pvs.length);
+    cons.push(`pgover_${pi}_r: ` + lin([...pvs.map(v => T(1, v)), T(-1, o)]) + ' <= ' + pagerLimit);
+    addObj(WEIGHTS.seniorPagerOver, o);
+  });
 
   // S6 committed-afternoon equity (program rule, 2026-08): pager + clinic PM + didactics afternoons should
   // come out roughly even across the team, pro-rated by service days. A senior with a heavy clinic

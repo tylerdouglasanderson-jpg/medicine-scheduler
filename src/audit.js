@@ -250,6 +250,14 @@ export function audit(scenario, schedule) {
     if (counted < quota)
       V('A_QUOTA_SHORT', `${r.name} has ${counted} counted offs; the quota is ${quota} (${svc.length} service days)`, r.name);
 
+    // optional senior pager limit (soft): informational when a senior holds the pager on more days than the limit
+    const pagerLimit = scenario.options?.seniorPagerLimit;
+    if (pagerLimit && r.role === 'senior') {
+      const held = svc.filter(d => day(d)?.pager === r.name).length;
+      if (held > pagerLimit)
+        W('W_SENIOR_PAGER_OVER', `${r.name} holds the pager ${held} days, over your limit of ${pagerLimit}`, r.name);
+    }
+
     // duty-hour (1 day in 7, program rule, 2026-10): whole days off actually given (bonus included; PTO and half
     // days are not) must reach floor(serviceDays / 7) — 4 for a 28-31 day month, 2 for a 14-day half seat.
     // The leftover days average out into next month's rotation, so 31 days still needs only 4.

@@ -91,7 +91,7 @@ export function afternoonsOffDates(scenario, schedule, name) {
 // solve() stamps every schedule it produces with this. A saved solution carrying a different stamp
 // is not used to anchor re-solve stability, so a scenario file built under older rules re-solves to
 // the NEW optimum without being cleared and re-typed first.
-export const RULES_VERSION = '1.3.0';   // v1.3.0: per-date one-person-is-enough staffing exception (singleDays); v1.2.0: Transitional didactics dates
+export const RULES_VERSION = '1.4.0';   // v1.4.0: soft options.seniorPagerLimit; v1.3.0: per-date one-person-is-enough staffing exception (singleDays); v1.2.0: Transitional didactics dates
 
 export function parseScenario(json) {
   for (const k of ['team', 'month', 'anchorType', 'residents'])
@@ -101,7 +101,7 @@ export function parseScenario(json) {
     alternatives: [], activeSolution: 0, alternativesReason: null,
     ...json,
     options: {
-      offQuota: 4, goldenWeekend: false, seniorsOffShortCall: false, seniorFirstDay: true,
+      offQuota: 4, goldenWeekend: false, seniorsOffShortCall: false, seniorFirstDay: true, seniorPagerLimit: null,
       ...(json.options ?? {}),
     },
     residents: json.residents.map(r => ({ didactics: null, commitments: [], pto: [], ...r })),
@@ -118,6 +118,9 @@ function normalize(s) {
   s.pins = (s.pins ?? []).filter(p => p && names.has(p.person) && inMonth(p.date));
   s.notes = (s.notes ?? []).filter(n => n && inMonth(n.date));
   s.attendingPagerDays = [...new Set((s.attendingPagerDays ?? []).filter(inMonth))].sort();
+  // Optional soft cap on pager days per senior: null (none) or a whole number 1-4.
+  const spl = Number(s.options.seniorPagerLimit);
+  s.options = { ...s.options, seniorPagerLimit: Number.isInteger(spl) && spl >= 1 && spl <= 4 ? spl : null };
   // Days the chief says one person is enough: { date, person } - person '' lets the solver choose who.
   const seenSingle = new Set();
   s.singleDays = (s.singleDays ?? [])

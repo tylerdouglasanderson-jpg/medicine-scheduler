@@ -25,7 +25,7 @@ async function setup() {
 const pinOff = (s, date, who) => ({ ...s, pins: [...s.pins, ...who.map(person => ({ person, date, type: 'offCounted', half: null, note: '' }))] });
 
 describe('1 person OK days', () => {
-  it('RULES_VERSION was bumped for the new semantics', () => expect(RULES_VERSION).toBe('1.3.0'));
+  it('RULES_VERSION was bumped for the new semantics', () => expect(RULES_VERSION >= '1.3.0').toBe(true));
 
   it('normalize keeps singleDays sorted, unique, in-month, with unknown people blanked', () => {
     const s = parseScenario({ ...feb, singleDays: [
@@ -130,6 +130,7 @@ describe('results-ready pop-up', () => {
     await vi.waitFor(() => expect($('#results-dialog')?.hasAttribute('open')).toBe(true), { timeout: 60000 });
     expect($('#results-dialog').textContent).toContain('Your results are here');
     expect($('#results-dialog').textContent).toContain('click that day');
+    expect($('#results-dialog').textContent).toContain('results calendar');
     expect(scrolled).toBe(0);
     $('#results-note-off').checked = true;
     $('#results-dialog').querySelector('.dialog-link').click();
