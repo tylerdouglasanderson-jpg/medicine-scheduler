@@ -88,9 +88,9 @@ function openQuickHowTo() {
     const steps = document.createElement('ol');
     steps.className = 'dialog-steps';
     for (const text of [
-      'At the very top, pick your team, the month, and the day of the week the month starts on (and whether that first day is a call day), so the app can lay the month out correctly.',
+      'At the very top, pick your team, the month, and the Anchor type: the kind of day the 1st of the month falls on in the 6-day call cycle (Pre-call, Call, Post-call, Post-post-call, Short Call 1 or Short Call 2). If it is Post-call, also say who covered night call and day call at the end of last month. This is how the app lays out the rest of the month.',
       'Under Roster, add the members of your team.',
-      'Didactics are filled in for you, except for Transitional interns and other non-Family interns (like Psych). Use the Didactics (PM) mode to pick a Transitional intern’s Wednesdays, and check everyone else’s didactics.',
+      'Didactics are filled in for you when you add someone: seniors and Psych interns on Tuesday PM, Family interns on Thursday PM. Transitional interns get Wednesday PM, but it is every other week, so click their Wednesdays with the Didactics (PM) mode. OB/GYN and Other interns get none, so set their didactics day in the Roster if they have one. Check that everyone’s is right.',
       'Under Commitments / PTO / Pins, add everybody’s clinic schedule as a Commitment (PM).',
       'Add any PTO that is already approved.',
       'When the clinic days, PTO, and didactics are in, press Solve (bottom left), then check the results at the very bottom of the page.',
