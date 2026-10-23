@@ -196,7 +196,7 @@ function openQuickHowTo() {
     if (cloudAvailable()) {
       const team = document.createElement('p');
       team.className = 'dialog-note';
-      team.textContent = 'When the schedule is final and approved by the chiefs and admin: Save online, then Export, Publish team link. Your team gets a read-only phone calendar at a short link. It expires after 90 days unopened.';
+      team.textContent = 'When the schedule is final and approved by the chiefs and admin: Save online, then Export, Publish team link. Your team gets a read-only phone calendar at a short link. It stays up for a year after it was last opened.';
       teamNote = team;
     }
     const note = document.createElement('p');
@@ -1463,6 +1463,7 @@ function tidyIssueText(text, date) {
   return t.replace(/\b\d{4}-\d{2}-\d{2}\b/g, shortDate);
 }
 
+let issuesCollapsed = false;   // remembered across re-renders within this page load
 function groupIssues(panel, auditResult) {
   const items = [...auditResult.violations.map(v => ({ ...v, violation: true })), ...auditResult.warnings];
   const list = panel.querySelector('ul');
@@ -1510,6 +1511,17 @@ function groupIssues(panel, auditResult) {
     groups.appendChild(det);
   }
   list.replaceWith(groups);
+  // One button, top right, hides or shows the whole list; each group keeps its own open/close.
+  groups.hidden = issuesCollapsed;
+  const all = document.createElement('button');
+  all.type = 'button';
+  all.id = 'issues-collapse-button';
+  all.className = 'btn-ghost issues-collapse';
+  const label = () => { all.textContent = groups.hidden ? 'Show all' : 'Collapse all'; all.setAttribute('aria-expanded', String(!groups.hidden)); };
+  all.title = 'Hides or shows the whole Potential Issues list. The groups inside keep their own open and close arrows.';
+  all.addEventListener('click', () => { groups.hidden = !groups.hidden; issuesCollapsed = groups.hidden; label(); });
+  label();
+  panel.appendChild(all);
 }
 
 function resultsEmptyState() {
@@ -1959,8 +1971,15 @@ function exportButtons() {
     scopeSelect.addEventListener('change', () => {
       exportPick = Number(scopeSelect.value) === onScreen ? null : Number(scopeSelect.value);
     });
-    wrap.appendChild(menuField('Which solution', scopeSelect));
+    const scopeRow = menuField('Which solution', scopeSelect);
+    scopeRow.classList.add('export-scope-row');
+    wrap.appendChild(scopeRow);
   }
+  // Three columns so the whole menu fits without scrolling (one column on a phone).
+  const colFiles = exportColumn('Spreadsheet & print', 'Files to work from or send to the chief.');
+  const colCal = exportColumn('Calendar files', 'For Outlook, Google Calendar or Apple Calendar.');
+  const colTeam = exportColumn('Phone team link', null);
+  wrap.append(colFiles, colCal, colTeam);
 
   const calendarSelect = document.createElement('select');
   calendarSelect.id = 'calendar-export-person';
@@ -1976,11 +1995,7 @@ function exportButtons() {
     calendarSelect.appendChild(option);
   }
   calendarSelect.disabled = !allowed || solving;
-  wrap.appendChild(menuField('Whose calendar (.ics file)', calendarSelect));
-  const calNote = document.createElement('p');
-  calNote.className = 'export-note';
-  calNote.textContent = 'Makes .ics calendar files to import into Outlook, Google Calendar or Apple Calendar. This is not the spreadsheet.';
-  wrap.appendChild(calNote);
+  colCal.appendChild(menuField('Whose calendar (.ics file)', calendarSelect));
 
   const calendarBtn = document.createElement('button');
   calendarBtn.id = 'calendar-export-button';
@@ -2007,8 +2022,7 @@ function exportButtons() {
       calendarSelect.disabled = !canExport();
     }
   });
-  wrap.appendChild(calendarBtn);
-  wrap.appendChild(menuDivider());
+  colCal.appendChild(calendarBtn);
 
   const xlsxBtn = document.createElement('button');
   xlsxBtn.id = 'xlsx-export-button';
@@ -2018,11 +2032,7 @@ function exportButtons() {
   xlsxBtn.title = blockedTip ?? 'Downloads the solution named above as an Excel spreadsheet (.xlsx): the calendar, each person’s totals and the checks. Keep it as your reference through the month, or send it to the chief for approval. It opens in Excel or Google Sheets. Nothing on the schedule changes.';
   xlsxBtn.disabled = !allowed || solving;
   xlsxBtn.addEventListener('click', xlsx);
-  wrap.appendChild(xlsxBtn);
-  const xNote = document.createElement('p');
-  xNote.className = 'export-note';
-  xNote.textContent = 'An Excel file to work from through the month, or to send to the chief for approval. Print makes a PDF instead.';
-  wrap.appendChild(xNote);
+  colFiles.appendChild(xlsxBtn);
 
   const sheetsBtn = document.createElement('button');
   sheetsBtn.id = 'google-sheets-button';
@@ -2035,8 +2045,7 @@ function exportButtons() {
     if (!canExport()) return;
     openSheetsGuide(xlsx);
   });
-  wrap.appendChild(sheetsBtn);
-  wrap.appendChild(menuDivider());
+  colFiles.appendChild(sheetsBtn);
 
   const printBtn = document.createElement('button');
   printBtn.id = 'print-button';
@@ -2049,9 +2058,8 @@ function exportButtons() {
     if (solving || !exportableSchedule()) return;
     setExportMenu(false); window.print();
   });
-  wrap.appendChild(printBtn);
-  wrap.appendChild(menuDivider());
-  wrap.appendChild(teamSection({ gate: publishGate, hasSchedule: allowed && !solving, downloadPhone: () => { const payload = phonePayload(); if (payload) downloadPhoneView(payload); } }));
+  colFiles.appendChild(printBtn);
+  colTeam.appendChild(teamSection({ gate: publishGate, hasSchedule: allowed && !solving, downloadPhone: () => { const payload = phonePayload(); if (payload) downloadPhoneView(payload); } }));
 
   return wrap;
 }
@@ -2074,6 +2082,17 @@ function menuField(text, control) {
   label.textContent = text;
   field.append(label, control);
   return field;
+}
+
+function exportColumn(title, note) {
+  const col = document.createElement('section');
+  col.className = 'export-col';
+  const h = document.createElement('h3');
+  h.className = 'export-col-title';
+  h.textContent = title;
+  col.appendChild(h);
+  if (note) { const p = document.createElement('p'); p.className = 'export-note'; p.textContent = note; col.appendChild(p); }
+  return col;
 }
 
 function menuDivider() {

@@ -111,16 +111,16 @@ describe('totals table', () => {
 describe('action bar', () => {
   beforeEach(() => localStorage.clear());
 
-  it('Export menu selects have visible labels, and dividers split calendar / workbook / print', () => {
+  it('Export menu selects have visible labels, and three titled columns split files / calendar / team link', () => {
     saveScenario(solved);
     mountApp();
     const menu = $('#export-menu');
     expect(menu.querySelector('label[for="export-scope"]').textContent).toBe('Which solution');
     expect(menu.querySelector('label[for="calendar-export-person"]').textContent).toBe('Whose calendar (.ics file)');
-    expect(menu.querySelectorAll('hr.export-divider').length).toBe(3);
-    const order = [...menu.querySelectorAll('button, hr')].map(el => el.id || el.className);
-    expect(order).toEqual(['calendar-export-button', 'export-divider', 'xlsx-export-button',
-      'google-sheets-button', 'export-divider', 'print-button', 'export-divider', 'team-publish-button', 'phone-download-button']);
+    expect([...menu.querySelectorAll('.export-col-title')].map(h => h.textContent)).toEqual(['Spreadsheet & print', 'Calendar files', 'Phone team link']);
+    const order = [...menu.querySelectorAll('button')].map(el => el.id);
+    expect(order).toEqual(['xlsx-export-button', 'google-sheets-button', 'print-button',
+      'calendar-export-button', 'team-publish-button', 'phone-download-button']);
   });
 
   it('with a single solution the scope select and its label are absent', () => {

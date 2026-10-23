@@ -55,7 +55,14 @@ describe('phone cards match the xlsx calendar', () => {
         const x = cells[d.date];
         const mr = payload.morningReportDays.includes(d.date) ? '\nMORNING REPORT' : '';
         expect(d.type + mr, `${d.date} TYPE`).toBe(x.TYPE);
-        for (const row of PHONE_ROWS) expect(d.rows[row], `${d.date} ${row}`).toBe(x[row]);
+        for (const row of PHONE_ROWS.filter(r => r !== 'CLINIC')) {
+          // the phone spells call shifts out: "Day call - X", "Night call - X"
+          const want = row === 'ROUNDERS' ? x[row].replace(/^Day - /gm, 'Day call - ').replace(/^Night - /gm, 'Night call - ') : x[row];
+          expect(d.rows[row], `${d.date} ${row}`).toBe(want);
+        }
+        // CLINIC: the phone adds each commitment's label; stripping it must leave the xlsx's name list
+        const bare = d.rows.CLINIC.replace(/ \([^)]*\)/g, '');
+        expect(bare.split(', ').filter(Boolean).sort(), `${d.date} CLINIC names`).toEqual(x.CLINIC.replace(/ \([^)]*\)/g, '').split(', ').filter(Boolean).sort());
       }
     }, 120000);
   }
@@ -84,5 +91,21 @@ describe('phone page', () => {
 
   it('defines __name before the client runs (a bundler that keeps names injects calls to it)', () => {
     expect(phoneHtml(data)).toMatch(/<script>var __name=function\(f\)\{return f\};\(/);
+  });
+});
+
+describe('phone commitments carry their labels', () => {
+  it('names what each commitment is next to the resident, one entry per resident', async () => {
+    const scenario = parseScenario(JSON.parse(readFileSync(here('fixtures/feb-2026.json'), 'utf8')));
+    scenario.lastSolution = null;
+    const { schedule } = await solve(scenario);
+    const r = scenario.residents[0];
+    const date = monthDates(scenario.month)[8];
+    r.commitments = [{ date, half: 'PM', label: 'Clinic FHC' }, { date, half: 'AM', label: 'ITE' }];
+    scenario.residents[1].commitments = [{ date, half: 'PM', label: '  ' }];
+    for (const o of scenario.residents.slice(2)) o.commitments = [];
+    const p = buildPhonePayload(scenario, schedule, 1);
+    const row = p.days.find(d => d.date === date).rows.CLINIC;
+    expect(row).toBe(`${r.name} (Clinic FHC + ITE), ${scenario.residents[1].name} (other commitment)`);
   });
 });

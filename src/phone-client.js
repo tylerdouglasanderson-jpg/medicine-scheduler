@@ -11,7 +11,7 @@ export function phoneClient(DATA) {
   const days = DATA.days;
   const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const KINDS = {
-    ROUNDERS: { label: 'Working', dot: '#d9534f' }, PAGER: { label: 'Pager', dot: '#3c9d4e' },
+    ROUNDERS: { label: 'Rounders', dot: '#d9534f' }, PAGER: { label: 'Pager', dot: '#3c9d4e' },
     CLINIC: { label: 'Commitments', dot: '#e0a800' }, DIDACTICS: { label: 'Didactics', dot: '#e8803a' },
     PTO: { label: 'PTO', dot: '#c47f00' }, OFF: { label: 'Off', dot: '#d6609a' },
   };

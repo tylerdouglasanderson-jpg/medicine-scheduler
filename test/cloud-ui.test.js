@@ -123,6 +123,7 @@ describe('saved sessions (website only)', () => {
     await mountApp();
     $('#cloud-open-button').click();
     $('#cloud-pin-input').value = '123456';
+    $('#cloud-pin-input').dispatchEvent(new Event('input'));
     $('#cloud-open-dialog .btn-primary').click();
     await vi.advanceTimersByTimeAsync(10);
     expect($('#cloud-bar').textContent).toContain('123456');
@@ -153,9 +154,12 @@ describe('phone team link', () => {
     expect($('.team-url').textContent).toBe('team.tylerdouglasanderson.com/pineapple-mango-dog');
     expect($('#team-update-button')).toBeTruthy();
     expect($('#team-new-button')).toBeTruthy();
-    expect($('.team-qr svg')).toBeTruthy();                 // the QR opens for the link just published
-    $('.team-link button:nth-of-type(3)').click();          // QR toggle hides it
-    expect($('.team-qr')).toBeNull();
+    expect($('.team-qr')).toBeNull();                       // no inline QR any more
+    $('.team-link button:nth-of-type(3)').click();          // QR opens its own pop-up
+    expect($('#team-qr-dialog .team-qr svg')).toBeTruthy();
+    expect($('#team-qr-dialog .team-qr-url').textContent).toBe('team.tylerdouglasanderson.com/pineapple-mango-dog');
+    $('#team-qr-dialog .btn-primary').click();              // Close
+    expect($('#team-qr-dialog')).toBeNull();
   });
 
   it('Update team link reuses the same words', async () => {

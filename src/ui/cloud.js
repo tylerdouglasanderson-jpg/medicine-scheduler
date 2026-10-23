@@ -204,21 +204,30 @@ export function openSaveDialog({ asNew = false } = {}) {
 }
 
 export function openOpenDialog() {
-  const input = el('input', { type: 'text', id: 'cloud-pin-input', inputMode: 'numeric', maxLength: 6, placeholder: '6-digit PIN', autocomplete: 'off' });
-  const status = el('p', { className: 'dialog-note', textContent: '' });
-  const go = btn('Open', async () => {
+  const input = el('input', { type: 'text', id: 'cloud-pin-input', className: 'cloud-pin-input', inputMode: 'numeric', maxLength: 6, placeholder: '000000', autocomplete: 'off', title: '6-digit PIN' });
+  const status = el('p', { className: 'dialog-note cloud-status', textContent: '' });
+  const go = btn('Open session', async () => {
     const pin = input.value.trim();
     if (!/^\d{6}$/.test(pin)) { status.textContent = 'A PIN is 6 digits.'; return; }
-    go.disabled = true; status.textContent = 'Opening…';
+    go.disabled = true; status.classList.remove('cloud-status-error'); status.textContent = 'Opening…';
     try {
       const scenario = await openSavedSession(pin);
       ctx.apply(ctx.parse(JSON.stringify(scenario)));
       dlg.close(); refreshBar();
-    } catch (e) { status.textContent = e.message; go.disabled = false; }
+    } catch (e) { status.textContent = e.message; status.classList.add('cloud-status-error'); go.disabled = !/^\d{6}$/.test(input.value); }
   }, 'btn-primary dialog-link');
-  input.addEventListener('keydown', e => { if (e.key === 'Enter') go.click(); });
+  go.disabled = true;                                  // enabled once there are 6 digits
+  input.addEventListener('input', () => {
+    input.value = input.value.replace(/\D/g, '').slice(0, 6);
+    go.disabled = input.value.length !== 6;
+    status.textContent = ''; status.classList.remove('cloud-status-error');
+  });
+  input.addEventListener('keydown', e => { if (e.key === 'Enter' && !go.disabled) go.click(); });
   const dlg = dialog('cloud-open-dialog', 'Open a saved session',
-    el('p', { textContent: 'Enter the PIN. This replaces the month on screen, so save it first if you want to keep it.' }), input, go, status);
+    el('p', { textContent: 'Type the 6-digit PIN you were given when you saved.' }),
+    el('label', { className: 'cloud-pin-label', htmlFor: 'cloud-pin-input', textContent: 'PIN' }), input,
+    go, status,
+    el('p', { className: 'dialog-note', textContent: 'This replaces the month on screen, so save it first if you want to keep it.' }));
   input.focus();
 }
 
@@ -236,7 +245,15 @@ export function sessionButtons() {
 
 // ---------- team link section (inside the Export panel) ----------
 function qrSvg(text) {
-  return new QRCode({ content: text, padding: 1, width: 160, height: 160, ecl: 'M', join: true, container: 'svg-viewbox' }).svg();
+  return new QRCode({ content: text, padding: 1, width: 320, height: 320, ecl: 'M', join: true, container: 'svg-viewbox' }).svg();
+}
+
+// The QR code gets its own pop-up over a dimmed page: scan it, then close it.
+function showQr(url) {
+  const qr = el('div', { className: 'team-qr' }); qr.innerHTML = qrSvg(url);
+  const dlg = dialog('team-qr-dialog', 'Scan to open the schedule', qr,
+    el('p', { className: 'team-qr-url', textContent: url.replace(/^https:\/\//, '') }),
+    btn('Close', () => dlg.close(), 'btn-primary dialog-link'));
 }
 
 function choose(title, text, options) {
@@ -278,8 +295,7 @@ export function teamSection({ gate, hasSchedule, downloadPhone }) {
 
   function draw() {
     wrap.replaceChildren();
-    wrap.append(el('div', { className: 'team-title', textContent: 'Phone team link' }),
-      el('p', { className: 'export-note', textContent: 'A read-only calendar the team opens on their phones. Publish it when the schedule is final and approved. It disappears 90 days after it was last opened.' }));
+    wrap.append(el('p', { className: 'export-note', textContent: 'A read-only calendar for the team’s phones. Publish it once the schedule is final. It stays up for a year after it was last opened.' }));
     const canPublish = hasSchedule && !!state.pin;
     const newest = state.links[state.links.length - 1];
     if (!state.links.length) {
@@ -297,15 +313,11 @@ export function teamSection({ gate, hasSchedule, downloadPhone }) {
         el('div', { className: 'team-meta', textContent: `${l.title || ''}${l.updated ? ` · updated ${clock(l.updated)}` : ''}` }),
         btn('Copy', async () => { try { await navigator.clipboard.writeText(url); say('Link copied.'); } catch { say(url); } }, 'btn-ghost'),
         btn('Update', () => publish(l.words), 'btn-ghost', { disabled: !canPublish }),
-        btn('QR', () => { state.last = state.last === l.words ? null : l.words; draw(); }, 'btn-ghost'),
+        btn('QR', () => showQr(url), 'btn-ghost', { title: 'Shows a QR code to scan with a phone camera.' }),
         btn('Stop sharing', () => {
           if (confirm('Stop sharing this link? Anyone who opens it will see that it is no longer active.')) run('Stopping…', () => stopSharing(l.words));
         }, 'btn-ghost'));
       wrap.append(row);
-      if (state.last === l.words) {
-        const qr = el('div', { className: 'team-qr' }); qr.innerHTML = qrSvg(url);
-        wrap.append(qr);
-      }
     }
     wrap.append(btn('Download phone view (.html)', downloadPhone, 'btn-secondary', { id: 'phone-download-button', disabled: !hasSchedule,
       title: 'A single file with the same read-only calendar, to send or open offline. It shows the schedule as of today and does not update.' }), msg);

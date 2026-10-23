@@ -4,12 +4,24 @@
 // The first entry's version must equal package.json's version.
 export const CHANGELOG = [
   {
+    version: '1.15.1', date: '2026-10-22',
+    items: [
+      'The phone calendar now says what each commitment is next to the name, using the label you typed: Smith (Clinic FHC), Jones (ITE). Several on one day read Smith (Clinic FHC + ITE)',
+      'The phone calendar spells out roles: the first section is headed Rounders instead of Working, and call days read Day call - Smith and Night call - Jones instead of Day and Night',
+      'The Export menu is laid out in three tidy columns (spreadsheet and print, calendar files, phone team link) so it no longer scrolls, and the QR code for a team link opens in its own pop-up with the link underneath, over a dimmed page',
+      'Phone team links now stay up for a year after they were last opened (saved sessions still go after 90 days)',
+      'A Collapse all button at the top right of Potential Issues hides or shows the whole list; the groups inside keep their own arrows',
+      'Print / Save as PDF leaves out the green saved-session bar with the PIN',
+      'The Open by PIN pop-up is tidier: a large centred PIN box that accepts digits only, a full-width Open session button that switches on at 6 digits, and a note that opening replaces the month on screen',
+    ],
+  },
+  {
     version: '1.15.0', date: '2026-10-22',
     items: [
       'A saved session on the website: Save online makes a 6-digit PIN (write it down), and from then on every change saves by itself. Open a saved session with that PIN from any computer. Sessions are deleted 90 days after they were last opened, and anyone with the PIN can open one',
       'The green bar at the top shows the session PIN. If a newer version was saved from another computer, the bar turns amber with Not saved and offers Load that version or Keep mine (replace it)',
       'Export now has a Phone team link: Publish team link (after Save online) gives a short three-word link to a read-only phone calendar with a week strip, a day card you can swipe, a Me or Everyone switch, and a month grid in landscape. It can be added to the home screen and works offline after the first open',
-      'Update team link replaces the schedule behind the same link, Publish as a new link makes another, and each link in the list has Copy, Update and Stop sharing. A link expires 90 days after it was last opened. Download phone view (.html) saves the same calendar as a single file',
+      'Update team link replaces the schedule behind the same link, Publish as a new link makes another, and each link in the list has Copy, Update and Stop sharing. A link stays up for a year after it was last opened. Download phone view (.html) saves the same calendar as a single file',
       'The phone calendar is built from the same text as the Excel export, and a test compares every cell of 43 scenarios, so the two never disagree',
     ],
   },
