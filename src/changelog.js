@@ -17,6 +17,7 @@ export const CHANGELOG = [
       'The phone page now shows its Updated time in US Central time (Fort Worth), with CDT or CST, instead of the server clock',
       'Clear scenario no longer endangers a saved session: it now says the saved session (PIN) is left alone, and the page stops saving into it, so a blank month can never overwrite it. Open by PIN brings the session back',
       'Each team link now has a Revert draft to this button: it puts your working draft back to exactly what that link was last published from (the full schedule is kept privately, never on the phone page). A confirm comes first and Undo revert brings your previous draft back until you reload. Links published before this show it greyed out; click Update once to enable it',
+      'The browser tab now shows a small calendar icon (a blue month with one amber day) instead of the blank default',
     ],
   },
   {

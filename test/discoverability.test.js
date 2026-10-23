@@ -68,6 +68,9 @@ describe('index.html', () => {
     expect(html).not.toContain('dl-modal');
     expect(html).not.toContain('cloudflareinsights');
   });
+  it('has an inline tab icon (the build is one file, so it cannot be a separate asset)', () => {
+    expect(html).toMatch(/<link rel="icon" type="image\/svg\+xml" href="data:image\/svg\+xml,/);
+  });
   it('the hosted page gets the beacon from scripts/add-site-beacon.mjs, exactly once', async () => {
     const { addSiteBeacon } = await import('../scripts/add-site-beacon.mjs');
     const page = addSiteBeacon('<html><body><div id="app"></div></body></html>');
