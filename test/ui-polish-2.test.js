@@ -117,10 +117,10 @@ describe('action bar', () => {
     const menu = $('#export-menu');
     expect(menu.querySelector('label[for="export-scope"]').textContent).toBe('Which solution');
     expect(menu.querySelector('label[for="calendar-export-person"]').textContent).toBe('Whose calendar (.ics file)');
-    expect(menu.querySelectorAll('hr.export-divider').length).toBe(2);
+    expect(menu.querySelectorAll('hr.export-divider').length).toBe(3);
     const order = [...menu.querySelectorAll('button, hr')].map(el => el.id || el.className);
     expect(order).toEqual(['calendar-export-button', 'export-divider', 'xlsx-export-button',
-      'google-sheets-button', 'export-divider', 'print-button']);
+      'google-sheets-button', 'export-divider', 'print-button', 'export-divider', 'team-publish-button', 'phone-download-button']);
   });
 
   it('with a single solution the scope select and its label are absent', () => {

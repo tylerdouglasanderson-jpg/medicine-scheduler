@@ -4,6 +4,16 @@
 // The first entry's version must equal package.json's version.
 export const CHANGELOG = [
   {
+    version: '1.15.0', date: '2026-10-22',
+    items: [
+      'A saved session on the website: Save online makes a 6-digit PIN (write it down), and from then on every change saves by itself. Open a saved session with that PIN from any computer. Sessions are deleted 90 days after they were last opened, and anyone with the PIN can open one',
+      'The green bar at the top shows the session PIN. If a newer version was saved from another computer, the bar turns amber with Not saved and offers Load that version or Keep mine (replace it)',
+      'Export now has a Phone team link: Publish team link (after Save online) gives a short three-word link to a read-only phone calendar with a week strip, a day card you can swipe, a Me or Everyone switch, and a month grid in landscape. It can be added to the home screen and works offline after the first open',
+      'Update team link replaces the schedule behind the same link, Publish as a new link makes another, and each link in the list has Copy, Update and Stop sharing. A link expires 90 days after it was last opened. Download phone view (.html) saves the same calendar as a single file',
+      'The phone calendar is built from the same text as the Excel export, and a test compares every cell of 43 scenarios, so the two never disagree',
+    ],
+  },
+  {
     version: '1.14.1', date: '2026-10-22',
     items: [
       'The two-person team pop-up now has exactly three choices: The intern takes nights, the senior takes days; Both work every day, cross-cover has the nights; or I’ll pin it myself. The earlier senior-takes-every-night and share-the-nights choices are gone',

@@ -14,6 +14,9 @@ import * as setup from './setup.js';
 import * as roster from './roster.js';
 import * as chips from './chips.js';
 import { initFeedback, openFeedback } from './feedback.js';
+import { cloudAvailable, initCloud, cloudBar, scheduleAutosave, sessionButtons, teamSection } from './cloud.js';
+import { buildPhonePayload } from '../phone.js';
+import { phoneHtml } from '../phone-page.js';
 import { CHANGELOG } from '../changelog.js';
 import { CRITERIA, ACGME } from './info.js';
 import guideRaw from './guide.html?raw';
@@ -23,6 +26,7 @@ import exampleSwap from '../../fixtures/example-3-then-2.json';
 let scenario;
 let root;
 let saveTimer = null;
+let cloudQuiet = false;     // true while a month just opened from the server is being applied (nothing to autosave)
 let dialogEl = null;
 let dismissInstalled = false;
 
@@ -85,6 +89,15 @@ export function mount(container) {
   }
   ensureGuideDialog();
   initFeedback({ getScenarioJSON: () => exportScenarioJSON(scenario) });
+  initCloud({
+    serialize: monthJSON,
+    parse: importScenarioJSON,
+    apply: next => {                       // a month opened from the server replaces the one on screen
+      solveSeq++; anchor = null; freezeDate = '';
+      cloudQuiet = true;
+      try { onChange(next, { preserveSolution: true }); } finally { cloudQuiet = false; }
+    },
+  });
   initHighs().catch(() => {});   // warm the wasm at page load so the first Solve is fast
   if (!dismissInstalled) { installExportMenuDismiss(); dismissInstalled = true; }
   render();
@@ -179,6 +192,13 @@ function openQuickHowTo() {
       'Add any PTO that is already approved.',
       'When the clinic days, PTO, and didactics are in, press Solve (bottom left), then check the results at the very bottom of the page.',
     ]) { const li = document.createElement('li'); li.textContent = text; steps.appendChild(li); }
+    let teamNote = null;
+    if (cloudAvailable()) {
+      const team = document.createElement('p');
+      team.className = 'dialog-note';
+      team.textContent = 'When the schedule is final and approved by the chiefs and admin: Save online, then Export, Publish team link. Your team gets a read-only phone calendar at a short link. It expires after 90 days unopened.';
+      teamNote = team;
+    }
     const note = document.createElement('p');
     note.className = 'dialog-note';
     note.textContent = 'Need more? Open the Comprehensive Guide in the header any time.';
@@ -186,7 +206,7 @@ function openQuickHowTo() {
     ok.type = 'button'; ok.className = 'btn-primary dialog-link'; ok.textContent = 'Got it';
     ok.title = 'Closes the quick how-to. You can reopen it any time from the Quick How-to button at the top; nothing you entered is affected.';
     ok.addEventListener('click', () => dlg.close());
-    body.append(p, steps, note, ok);
+    body.append(p, steps, ...(teamNote ? [teamNote] : []), note, ok);
     dlg.append(header, body);
     dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
     document.body.appendChild(dlg);
@@ -244,6 +264,7 @@ function onChange(next, { preserveSolution = false } = {}) {
   scenario = preserveSolution ? next : { ...next, ...NO_SOLUTION };
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => saveScenario(scenario), 300);
+  if (!cloudQuiet) scheduleAutosave();
   render();
   if (reviseMode && autoResolve && !preserveSolution) scheduleAutoSolve();
 }
@@ -435,6 +456,7 @@ function render() {
   root.innerHTML = '';
 
   root.appendChild(topBar());
+  if (cloudAvailable()) root.appendChild(cloudBar());
 
   const main = document.createElement('main');
   main.className = 'main';
@@ -496,6 +518,7 @@ function render() {
     right.scrollTop = keepRight;
   }
   revealActiveTab();
+  placeExportMenu();
 }
 
 // ---- Revise this plan: slide the results to the right, fade the inputs in on the left (and back) ----
@@ -695,11 +718,21 @@ function exportMenu() {
   return wrap;
 }
 
+// The panel opens up-and-left of the Export button. When the action bar wraps and the button sits near the left
+// edge, that would push it off-screen, so open it up-and-right instead.
+function placeExportMenu() {
+  const panel = document.getElementById('export-menu');
+  if (!panel || panel.hidden) return;
+  panel.style.left = ''; panel.style.right = '';
+  if (panel.getBoundingClientRect().left < 8) { panel.style.left = '0'; panel.style.right = 'auto'; }
+}
+
 function setExportMenu(open, { focusFirst = false, returnFocus = false } = {}) {
   exportMenuOpen = open;
   const panel = document.getElementById('export-menu');
   const toggle = document.getElementById('export-toggle');
   if (panel) panel.hidden = !open;
+  placeExportMenu();
   if (toggle) toggle.setAttribute('aria-expanded', String(open));
   if (open && focusFirst) panel?.querySelector('select:not(:disabled), button:not(:disabled)')?.focus();
   if (!open && returnFocus) toggle?.focus();
@@ -1611,15 +1644,20 @@ function removePins(person, date) {
   editKeepingAnchor({ ...scenario, pins: scenario.pins.filter(p => !(p.person === person && p.date === date)) });
 }
 
-// Download the whole month — setup, pins, every solution and which tab is chosen — as one .json.
-function saveMonth() {
-  if (solving) return;                   // mid-build the file would hold only some of the solutions
+// The month as JSON text: solutions are kept only if every one still passes the export gate.
+function monthJSON() {
   let saved = scenario;
   if (!exportableSchedule() || !(scenario.alternatives ?? []).every(sch => exportableSchedule(sch))) {
     const { lastSolution, alternatives, activeSolution, alternativesReason, ...inputs } = scenario;
     saved = inputs;
   }
-  const blob = new Blob([exportScenarioJSON(saved)], { type: 'application/json' });
+  return exportScenarioJSON(saved);
+}
+
+// Download the whole month — setup, pins, every solution and which tab is chosen — as one .json.
+function saveMonth() {
+  if (solving) return;                   // mid-build the file would hold only some of the solutions
+  const blob = new Blob([monthJSON()], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -1676,6 +1714,7 @@ function ioButtons() {
   openBtn.title = 'Opens a month file you saved earlier and replaces the month on screen with it, without asking first. Save the current month first if you want to keep it. Solutions saved inside the file come back too. A file that cannot be read shows an error and changes nothing.';
   openBtn.addEventListener('click', () => loadInput.click());
   wrap.append(openBtn, loadInput);
+  if (cloudAvailable()) wrap.append(sessionButtons());
 
   return wrap;
 }
@@ -1896,6 +1935,14 @@ function exportButtons() {
   const allowed = !!exportableSchedule();
   const blockedTip = validate(scenario).length || (schedule && !allowed) ? FIX_EXPORT_TIP : null;
   const canExport = () => !solving && !!exportableSchedule(pickedSchedule());
+  // The phone view is built from the SAME schedule and the SAME cell-text functions as the xlsx.
+  const phonePayload = () => (canExport() ? buildPhonePayload(scenario, pickedSchedule(), appVersion()) : null);
+  const publishGate = () => {
+    if (!canExport()) return null;
+    if (audit(scenario, pickedSchedule()).violations.some(v => v.code === 'A_CONSECUTIVE_NIGHTS')
+      && !confirm('This schedule has back-to-back nights. Publish anyway?')) return null;
+    return phonePayload();
+  };
   const xlsx = () => {
     if (!canExport()) return;
     const sch = pickedSchedule();
@@ -2003,11 +2050,22 @@ function exportButtons() {
     setExportMenu(false); window.print();
   });
   wrap.appendChild(printBtn);
+  wrap.appendChild(menuDivider());
+  wrap.appendChild(teamSection({ gate: publishGate, hasSchedule: allowed && !solving, downloadPhone: () => { const payload = phonePayload(); if (payload) downloadPhoneView(payload); } }));
 
   return wrap;
 }
 
 // A small visible caption over a select in the Export menu.
+function downloadPhoneView(payload) {
+  const url = URL.createObjectURL(new Blob([phoneHtml(payload)], { type: 'text/html' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${scenario.team || 'team'}-${scenario.month || 'month'}-phone.html`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function menuField(text, control) {
   const field = document.createElement('div');
   field.className = 'export-field';

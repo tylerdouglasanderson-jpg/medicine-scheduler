@@ -762,3 +762,25 @@ label.switch input[type="checkbox"]:checked::before { transform: translateX(0.8r
 /* two-person team pop-up (v1.14.0): one full-width card per choice */
 .two-person-choice { display: block; width: 100%; text-align: left; margin: 8px 0; padding: 10px 12px; }
 .two-person-choice .pref-hint { display: block; font-weight: 400; margin-top: 2px; }
+
+/* ---- saved session bar + phone team link (v1.15.0, website only) ---- */
+.cloud-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.9rem; padding: 0.4rem 1rem; font-size: var(--fs-small); border-bottom: 1px solid var(--border); }
+.cloud-bar[hidden] { display: none; }
+.cloud-green { background: oklch(0.95 0.05 150); color: oklch(0.32 0.08 150); border-color: oklch(0.82 0.08 150); }
+.cloud-amber { background: var(--warn-bg); color: var(--warn); border-color: var(--warn-border); }
+.cloud-pin strong { font-size: 1rem; letter-spacing: 0.12em; }
+.cloud-msg { flex: 1 1 14rem; }
+.cloud-buttons { display: contents; }
+.cloud-bigpin { font-size: 2.2rem; font-weight: 700; letter-spacing: 0.25em; text-align: center; margin: 0.2rem 0 0.8rem; }
+.export-menu { max-height: calc(100vh - 7rem); overflow-y: auto; width: min(24rem, calc(100vw - 1.5rem)); }
+.team-section { width: 21rem; max-width: 100%; display: flex; flex-direction: column; gap: 0.4rem; }
+.team-title { font-weight: 600; }
+.team-link { display: flex; flex-wrap: wrap; gap: 0.3rem 0.5rem; align-items: center; padding: 0.4rem 0; border-top: 1px solid var(--border); }
+.team-url { flex: 1 1 100%; font-weight: 600; word-break: break-all; }
+.team-meta { flex: 1 1 100%; color: var(--muted); font-size: var(--fs-micro); }
+.team-qr { width: 10rem; background: #fff; padding: 0.3rem; align-self: flex-start; }
+.team-qr svg { display: block; width: 100%; height: auto; }
+@media (prefers-color-scheme: dark) {
+  .cloud-green { background: oklch(0.3 0.05 150); color: oklch(0.9 0.06 150); border-color: oklch(0.45 0.08 150); }
+}
+.cloud-label { font-size: var(--fs-small); color: var(--muted); align-self: center; }

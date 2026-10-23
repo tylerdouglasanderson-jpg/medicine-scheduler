@@ -1,6 +1,6 @@
 {
   "name": "med-scheduler",
-  "version": "1.14.1",
+  "version": "1.15.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,7 +12,8 @@
   "dependencies": {
     "exceljs": "^4.4.0",
     "highs": "^1.0.0",
-    "jszip": "^3.10.1"
+    "jszip": "^3.10.1",
+    "qrcode-svg": "^1.1.0"
   },
   "devDependencies": {
     "hyperformula": "^2.7.1",
