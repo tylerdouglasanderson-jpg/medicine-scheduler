@@ -37,6 +37,14 @@ export function initCloud(c) {
   if (cloudAvailable() && state.pin) refreshLinks().then(() => redrawTeam?.(), () => {});
 }
 export const cloudState = () => state;
+// Clear scenario: let go of the saved session WITHOUT touching it on the server (it stays openable by its PIN,
+// and its team links stay up). Without this the next edit would autosave the blank month over it.
+export function detachSession() {
+  clearTimeout(timer);
+  Object.assign(state, { pin: null, version: null, updatedAt: null, links: [], last: null, status: 'saved', conflict: null, error: null, saved: 0 });
+  dirty = false;
+  persist(); refreshBar();
+}
 
 async function call(method, path, body) {
   let res;

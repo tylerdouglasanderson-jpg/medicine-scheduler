@@ -14,7 +14,7 @@ import * as setup from './setup.js';
 import * as roster from './roster.js';
 import * as chips from './chips.js';
 import { initFeedback, openFeedback } from './feedback.js';
-import { cloudAvailable, initCloud, cloudBar, scheduleAutosave, sessionButtons, teamSection } from './cloud.js';
+import { cloudAvailable, cloudState, detachSession, initCloud, cloudBar, scheduleAutosave, sessionButtons, teamSection } from './cloud.js';
 import { buildPhonePayload } from '../phone.js';
 import { phoneHtml } from '../phone-page.js';
 import { CHANGELOG } from '../changelog.js';
@@ -757,11 +757,17 @@ function clearButton() {
   btn.type = 'button';
   btn.className = 'btn-ghost btn-danger';
   btn.textContent = 'Clear scenario';
-  btn.title = 'Erases this whole month: setup, roster, clinic days, time off, pins and the solved schedule, and starts a blank one. It asks you to confirm first, but it cannot be undone afterwards unless you saved a copy with Save my month. Files you saved earlier are not touched.';
+  btn.title = 'Erases this whole month: setup, roster, clinic days, time off, pins and the solved schedule, and starts a blank one. It asks you to confirm first, but it cannot be undone afterwards unless you saved a copy with Save my month. Files you saved earlier are not touched, and neither is a saved online session: this page just stops saving into it (Open by PIN brings it back).';
   btn.disabled = solving;
   // ponytail: native confirm() — no styled dialog until someone asks for one.
   btn.addEventListener('click', () => {
-    if (!confirm('Are you sure you want to clear this scenario?')) return;
+    const pin = cloudState().pin;
+    if (!confirm(pin
+      ? `Clear this scenario and start a blank month?
+
+Your saved session (PIN ${pin}) is NOT changed or deleted: it stays on the server, and its team link stays up. This page just stops saving into it. Get it back any time with Open by PIN.`
+      : 'Are you sure you want to clear this scenario?')) return;
+    if (pin) detachSession();
     freezeDate = '';
     anchor = null;
     diagnosis = null;

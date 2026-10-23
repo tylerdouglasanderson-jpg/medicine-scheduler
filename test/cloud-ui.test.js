@@ -176,6 +176,23 @@ describe('phone team link', () => {
     expect(payloadSig({ ...a, days: [{ rows: { ROUNDERS: 'B' } }] })).not.toBe(payloadSig(a));
   });
 
+  it('Clear scenario lets go of the saved session and never writes the blank month over it', async () => {
+    const server = fakeServer();
+    await mountApp();
+    $('#cloud-save-button').click(); $('#cloud-save-dialog .btn-primary').click();
+    await vi.advanceTimersByTimeAsync(10);
+    expect($('#cloud-bar').hidden).toBe(false);
+    const spy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    server.calls.length = 0;
+    try {
+      $('#clear-button').click();
+      expect(spy.mock.calls[0][0]).toContain('123456');           // says what happens to the saved session
+      expect($('#cloud-bar').hidden).toBe(true);                  // no longer attached
+      await vi.advanceTimersByTimeAsync(5000);
+      expect(server.calls.some(c => c.method === 'PUT')).toBe(false);
+    } finally { spy.mockRestore(); }
+  });
+
   it('Update team link reuses the same words', async () => {
     const server = fakeServer();
     await mountApp();
