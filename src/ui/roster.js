@@ -159,10 +159,11 @@ export function render(container, scenario, onChange) {
       const alt = !!r.didactics?.alt;   // Transitional: Wed PM is fixed, the dates are picked in the calendar
       const dowValue = r.didactics ? String(r.didactics.dow) : 'none';
       tr.appendChild(selectCell(dowOptions, dowValue, o => (o === 'none' ? 'None' : DOW_LABELS[Number(o)]), v => {
-        const didactics = v === 'none' ? null : { dow: Number(v), half: r.didactics?.half ?? 'PM', hard: r.didactics?.hard ?? (r.role !== 'senior') };
+        const didactics = v === 'none' ? null : { dow: Number(v), half: r.didactics?.half ?? 'PM', hard: r.didactics?.hard ?? (r.role !== 'senior'),
+          ...(r.didactics?.extra?.length ? { extra: r.didactics.extra } : {}) };
         onChange(patchResident(scenario, i, { didactics }));
       }, alt, alt ? 'Locked: this Transitional intern has didactics on every other Wednesday PM. Pick those Wednesdays in this intern’s calendar with the Didactics (PM) mode.'
-        : 'The weekday this resident has weekly didactics, or None. It is filled in from role and background, and you can override it here. On that day the scheduler tries to keep them off the pager and off days off (strictly if Hard is ticked), and the totals count the sessions attended.'));
+        : 'The weekday this resident has weekly didactics, or None. It is filled in from role and background where the program day is known (OB/G and other residents start at None, so pick their day here), and you can override it here. To skip a single session, strike it out on their calendar. On that day the scheduler tries to keep them off the pager and off days off (strictly if Hard is ticked), and the totals count the sessions attended.'));
 
       tr.appendChild(selectCell(['AM', 'PM'], r.didactics?.half ?? 'PM', null, v => {
         if (!r.didactics) return;

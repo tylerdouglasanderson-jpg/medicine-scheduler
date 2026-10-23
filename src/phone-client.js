@@ -126,8 +126,9 @@ export function phoneClient(DATA) {
     if (sx == null) return;
     const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
     sx = null;
-    if (Math.abs(dx) > 50 && Math.abs(dx) > 1.5 * Math.abs(dy)) go(idx + (dx < 0 ? 1 : -1));
+    if (Math.abs(dx) > 40 && Math.abs(dx) > 0.8 * Math.abs(dy)) go(idx + (dx < 0 ? 1 : -1));
   }, { passive: true });
+  swipe.addEventListener('touchcancel', () => { sx = null; }, { passive: true });
   document.addEventListener('keydown', e => { if (e.key === 'ArrowLeft') go(idx - 1); if (e.key === 'ArrowRight') go(idx + 1); });
 
   render();

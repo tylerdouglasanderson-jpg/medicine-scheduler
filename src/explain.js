@@ -28,8 +28,9 @@ export function explainCell(scenario, schedule, { date, slot } = {}) {
   const isPto = (r, d) => (r.pto ?? []).includes(d);
   const commits = (r, d) => (r.commitments ?? []).filter(c => c.date === d);
   const pinsOf = (name, d, t) => pins.filter(p => p.person === name && p.date === d && (!t || p.type === t));
-  const didOn = (r, d) => !r.didactics ? false
-    : r.didactics.alt ? (r.didactics.dates ?? []).includes(d) : dow(d) === r.didactics.dow;
+  const didOn = (r, d) => !r.didactics || (r.didactics.skip ?? []).includes(d) ? false
+    : (r.didactics.extra ?? []).includes(d) ? true
+    : r.didactics.alt ? (r.didactics.dates ?? []).includes(d) : r.didactics.weekly !== false && dow(d) === r.didactics.dow;
   const allDates = Object.keys(schedule.days).sort();
   const svcDays = r => allDates.filter(d => onSvc(r, d)).length;
   const active = residents.filter(r => svcDays(r) > 0);

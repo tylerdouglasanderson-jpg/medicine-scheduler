@@ -215,7 +215,7 @@ function openQuickHowTo() {
     tips.textContent = 'Senior tips: enter all clinics and PTO before the first Solve; save online before you close the tab; use Freeze through to lock the days already worked when you re-solve mid-month.';
     const note = document.createElement('p');
     note.className = 'dialog-note';
-    note.textContent = 'Didactics: seniors and Psych interns Tuesday PM, Family interns Thursday PM. More detail is in the Comprehensive Guide (Help menu).';
+    note.textContent = 'Didactics: seniors and Psych interns Tuesday PM, Family interns Thursday PM. OB/G and others start with none: pick their day in the roster. To skip one session, strike it out in their calendar (Didactics (PM) mode). More detail is in the Comprehensive Guide (Help menu).';
     const ok = document.createElement('button');
     ok.type = 'button'; ok.className = 'btn-primary dialog-link'; ok.textContent = 'Got it';
     ok.title = 'Closes the Quick How-To. You can reopen it any time from the Quick How-To button at the top; nothing you entered is affected.';

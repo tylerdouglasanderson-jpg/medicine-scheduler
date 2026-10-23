@@ -27,8 +27,9 @@ export function audit(scenario, schedule) {
   const day = d => schedule.days[d];
   // Re-stated, not imported from model.js (the auditor stays independent): weekly rule = that weekday,
   // `alt` (Transitional every-other-Wednesday) = only the dates the chief picked.
-  const didOn = (r, d) => !r.didactics ? false
-    : r.didactics.alt ? (r.didactics.dates ?? []).includes(d) : dow(d) === r.didactics.dow;
+  const didOn = (r, d) => !r.didactics || (r.didactics.skip ?? []).includes(d) ? false
+    : (r.didactics.extra ?? []).includes(d) ? true
+    : r.didactics.alt ? (r.didactics.dates ?? []).includes(d) : r.didactics.weekly !== false && dow(d) === r.didactics.dow;
   const dow = d => { const [y, m, dd] = d.split('-').map(Number); return new Date(y, m - 1, dd).getDay(); };
 
   // ---------- per-day checks ----------

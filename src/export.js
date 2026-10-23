@@ -209,7 +209,7 @@ function writeTotals(ws, scenario, schedule, dates, top, cal, geo) {
       styleBox(cell);
     }
     const day = ws.getCell(row, DAY_HELPER_COL);
-    day.value = r?.didactics ? DOW3[r.didactics.dow] + (r.didactics.alt ? ' (alt)' : '') : '';
+    day.value = r?.didactics ? (r.didactics.weekly === false ? 'ad hoc' : DOW3[r.didactics.dow] + (r.didactics.alt ? ' (alt)' : '')) : '';
     styleBox(day, { argb: INPUT_FILL });
   });
 }
@@ -310,7 +310,8 @@ function writeNotes(ws, scenario, auditResult, startRow, overlaps = []) {
   for (const r of scenario.residents) {
     if (!r.didactics) continue;
     const stop = r.didactics.hard ? 'hard stop' : 'soft stop';
-    line(r.didactics.alt ? `${r.name}: Wednesday didactics, every other week (${(r.didactics.dates ?? []).length} picked, ${stop})` : `${r.name}: ${DOW_NAMES[r.didactics.dow]} didactics (${stop})`);
+    if (r.didactics.weekly === false) { line(`${r.name}: didactics on ${(r.didactics.extra ?? []).length} chosen dates (${stop})`); continue; }
+    line(r.didactics.alt ? `${r.name}: Wednesday didactics, every other week (${(r.didactics.dates ?? []).length} picked, ${stop})` : `${r.name}: ${DOW_NAMES[r.didactics.dow]} didactics (${stop}${(r.didactics.skip ?? []).length ? `, ${r.didactics.skip.length} struck out` : ''})`);
   }
   if (overlaps.length) line(`Name overlap (the live totals match names as text and will double count): ${overlaps.join('; ')}`);
   // Potential Issues stay on the solution page only (program rule, 2026-10); the spreadsheet carries no flags.

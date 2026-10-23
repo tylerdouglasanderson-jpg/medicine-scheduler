@@ -96,7 +96,10 @@ export function defaultDidactics(role, kind) {
 export function didacticsOn(r, date) {
   const dd = r?.didactics;
   if (!dd) return false;
+  if ((dd.skip ?? []).includes(date)) return false;   // the chief struck this session out (v1.16.0)
+  if ((dd.extra ?? []).includes(date)) return true;    // a one-off session the chief added (v1.16.0)
   if (dd.alt) return (dd.dates ?? []).includes(date);
+  if (dd.weekly === false) return false;                // ad hoc only: no weekly day
   const [y, m, d] = date.split('-').map(Number);
   return new Date(y, m - 1, d).getDay() === dd.dow;
 }
@@ -127,7 +130,7 @@ export function afternoonsOffDates(scenario, schedule, name) {
 // solve() stamps every schedule it produces with this. A saved solution carrying a different stamp
 // is not used to anchor re-solve stability, so a scenario file built under older rules re-solves to
 // the NEW optimum without being cleared and re-typed first.
-export const RULES_VERSION = '1.7.0';   // v1.6.0: a person the chief pinned (nightCall) on two consecutive call days is exempt from the no-back-to-back-nights rule; v1.5.0: singleDays now FORCES exactly 1 or 2 working (surplus offs are free); v1.4.0: soft options.seniorPagerLimit; v1.3.0: per-date one-person-is-enough staffing exception (singleDays); v1.2.0: Transitional didactics dates
+export const RULES_VERSION = '1.8.0';   // v1.8.0: a didactics session the chief struck out (didactics.skip) is not a didactics day anywhere; v1.6.0: a person the chief pinned (nightCall) on two consecutive call days is exempt from the no-back-to-back-nights rule; v1.5.0: singleDays now FORCES exactly 1 or 2 working (surplus offs are free); v1.4.0: soft options.seniorPagerLimit; v1.3.0: per-date one-person-is-enough staffing exception (singleDays); v1.2.0: Transitional didactics dates
 
 export function parseScenario(json) {
   for (const k of ['team', 'month', 'anchorType', 'residents'])

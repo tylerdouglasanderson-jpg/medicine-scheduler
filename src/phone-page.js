@@ -23,7 +23,7 @@ body{font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background
 .sc span{font-size:12px;color:var(--mute)}.sc b{font-size:18px}.sc em{display:flex;gap:2px;height:8px;margin-top:2px}
 .sc.blank{border:0;background:none}.sc.sel{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc)}.sc.today b{text-decoration:underline}
 i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}.sc em i{margin:0}
-#swipe{padding:10px 12px 90px;touch-action:pan-y}
+#swipe{padding:10px 12px 90px;touch-action:pan-x;overscroll-behavior:contain}
 #card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
 #card header{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px}
 #card h2{margin:0;font-size:22px}.type{background:var(--acc);color:var(--accink);border-radius:8px;padding:2px 10px;font-weight:600}

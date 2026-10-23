@@ -859,3 +859,6 @@ dialog#team-qr-dialog { max-width: 22rem; }
 #publish-status-chip { margin-left: 0.5rem; cursor: pointer; }
 .app-bar-left .btn-secondary { align-self: center; }
 @media (max-width: 700px) { .menu-up .menu-panel { left: 0; } .menu-panel { right: 0; } }
+
+/* v1.16.0: a struck-out weekly didactics session */
+.chip-didactics.struck { text-decoration: line-through; opacity: 0.6; }

@@ -10,7 +10,7 @@ const TYPE_TAG = {
 const MODES = [
   ['commitment-AM', 'Commitment AM', 'A clinic or other obligation (ITE, conference) that takes this resident’s MORNING. Click a day, type a label (it remembers your last one, starting with “clinic”), and click the same day again to remove it. A day with a commitment can never be given as a day off, and a PM commitment also keeps them off the afternoon pager.'],
   ['commitment-PM', 'Commitment PM', 'A clinic or other obligation that takes this resident’s AFTERNOON. Click a day, type a label (it remembers your last one, starting with “clinic”), and click the same day again to remove it. They will not be given that day off or the afternoon pager.'],
-  ['didactics', 'Didactics (PM)', 'Transitional interns only: click each Wednesday they have didactics (it is every other week, and the weeks change each month). Clicks on other residents or other weekdays do nothing. Click a picked day again to remove it.'],
+  ['didactics', 'Didactics (PM)', 'Add or remove didactics sessions on a resident calendar. Transitional interns: click each Wednesday they have didactics. Anyone else: clicking a day with no didactics ADDS a one-off session there (it shows in the Didactics row everywhere); clicking one of their regular weekly days STRIKES that session out. Click again to undo.'],
   ['single', 'Force One Person Only', 'Click a date to make EXACTLY ONE resident work that day (it is a whole-team setting, so any resident’s calendar works). Everyone else who is free gets a bonus day off that does NOT count toward their 4. Name who works alone in the list below, or leave it to the solver. Not allowed on call days; impossible if two or more people have clinic or must-work pins that day. Click again to remove, or switch it to Two People.'],
   ['double', 'Force Two People Only', 'Click a date to make EXACTLY TWO residents work that day (a whole-team setting). Anyone beyond two who is free gets a bonus day off that does NOT count toward their 4. Not allowed on call days; impossible if three or more people have clinic or must-work pins that day. Click again to remove, or switch it to One Person.'],
   ['pto', 'PTO Day', 'Vacation for this resident. They are not scheduled that day and it does not count as one of their days off. Click again to remove. PTO on a call or post-call day is flagged as an error.'],
@@ -63,11 +63,25 @@ function applyMode(scenario, onChange, i, date) {
     return;
   }
   if (currentMode === 'didactics') {
-    // Only a Transitional (every-other-Wednesday) intern has picked dates, and only Wednesdays can be picked.
-    if (!r.didactics?.alt || dowOf(date) !== r.didactics.dow) return;
-    const dates = r.didactics.dates ?? [];
-    const next = dates.includes(date) ? dates.filter(d => d !== date) : [...dates, date].sort();
-    onChange(patchResident(scenario, i, { didactics: { ...r.didactics, dates: next } }));
+    const d0 = r.didactics;
+    const toggle = (list, x) => (list.includes(x) ? list.filter(y => y !== x) : [...list, x].sort());
+    if (!d0) {
+      // Nobody gave this resident a didactics day: the click adds a one-off session (no weekly day).
+      onChange(patchResident(scenario, i, { didactics: { dow: dowOf(date), half: 'PM', hard: false, weekly: false, extra: [date] } }));
+      return;
+    }
+    if (d0.alt) {                       // Transitional: the picked dates ARE the sessions
+      onChange(patchResident(scenario, i, { didactics: { ...d0, dates: toggle(d0.dates ?? [], date) } }));
+      return;
+    }
+    if (d0.weekly !== false && dowOf(date) === d0.dow) {
+      // Their regular day: strike that one session out (or restore it).
+      onChange(patchResident(scenario, i, { didactics: { ...d0, skip: toggle(d0.skip ?? [], date) } }));
+      return;
+    }
+    // Any other day: add or remove a one-off session.
+    const extra = toggle(d0.extra ?? [], date);
+    onChange(patchResident(scenario, i, { didactics: d0.weekly === false && !extra.length ? null : { ...d0, extra } }));
     return;
   }
   if (currentMode === 'commitment-AM' || currentMode === 'commitment-PM') {
@@ -266,16 +280,27 @@ export function render(container, scenario, onChange) {
           onChange({ ...scenario, pins: scenario.pins.filter(x => x !== p) }),
           'A pinned assignment the solver must honor for this resident on this day. The × removes the pin.'));
 
-      if (r.didactics?.alt) {
-        if ((r.didactics.dates ?? []).includes(date))
-          cell.appendChild(chip(`didactics ${r.didactics.half}`, 'chip-didactics', () =>
-            onChange(patchResident(scenario, i, { didactics: { ...r.didactics,
-              dates: r.didactics.dates.filter(d => d !== date) } })),
-            'A Wednesday this Transitional intern has didactics. The × removes it.'));
-      } else if (r.didactics && dowOf(date) === r.didactics.dow)
-        cell.appendChild(staticTag(`didactics ${r.didactics.half}`, 'chip-didactics',
-          `Weekly didactics: ${DOW_LABELS[r.didactics.dow]} ${r.didactics.half}` +
-          `${r.didactics.hard ? ' — protected (they skip pager here when free)' : ' — soft preference'}`));
+      const dx = r.didactics;
+      const addedHere = dx && ((dx.extra ?? []).includes(date) || (dx.alt && (dx.dates ?? []).includes(date)));
+      if (addedHere) {
+        cell.appendChild(chip(`didactics ${dx.half}`, 'didactics', () =>
+          onChange(patchResident(scenario, i, { didactics: { ...dx,
+            ...(dx.alt && (dx.dates ?? []).includes(date) ? { dates: dx.dates.filter(d => d !== date) } : {}),
+            extra: (dx.extra ?? []).filter(d => d !== date) } })),
+          'A didactics session for this resident on this day (chosen by you). It shows in the Didactics row of the calendar, the spreadsheet and the phone page. The × removes it.'));
+      } else if (dx && dx.weekly !== false && !dx.alt && dowOf(date) === dx.dow) {
+        const skip = r.didactics.skip ?? [];
+        if (skip.includes(date))
+          cell.appendChild(chip(`didactics ${r.didactics.half} struck out`, 'didactics struck', () =>
+            onChange(patchResident(scenario, i, { didactics: { ...r.didactics, skip: skip.filter(d => d !== date) } })),
+            'You struck this didactics session out (no session this day), so it is not counted, not protected and not on their calendar. The × puts it back.'));
+        else
+          cell.appendChild(chip(`didactics ${r.didactics.half}`, 'didactics', () =>
+            onChange(patchResident(scenario, i, { didactics: { ...r.didactics, skip: [...skip, date].sort() } })),
+            `Weekly didactics: ${DOW_LABELS[r.didactics.dow]} ${r.didactics.half}` +
+            `${r.didactics.hard ? ' — protected (they skip pager here when free)' : ' — soft preference'}. ` +
+            'The × strikes out just this session (no didactics this day) so it stops counting everywhere.'));
+      }
 
       cell.title = `Click to apply the selected mode (${MODES.find(m => m[0] === currentMode)?.[1] ?? ''}) to ${r.name} on this day. Click again to undo.`;
       cell.addEventListener('click', () => applyMode(scenario, onChange, i, date));
