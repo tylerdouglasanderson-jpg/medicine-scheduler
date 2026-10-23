@@ -7,6 +7,8 @@ const CSS = `
 :root{--bg:#f4f6f8;--card:#fff;--ink:#16202a;--mute:#5d6b78;--line:#d8dee4;--acc:#1f6fb2;--accink:#fff;--me:#e6f1fb}
 @media (prefers-color-scheme:dark){:root{--bg:#10161c;--card:#1a232c;--ink:#e8eef3;--mute:#9aa8b5;--line:#2b3742;--acc:#4a9ee0;--accink:#08121a;--me:#17324a}}
 *{box-sizing:border-box}html,body{margin:0}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--line);border-radius:999px;border:2px solid transparent;background-clip:content-box}::-webkit-scrollbar-thumb:hover{background:var(--mute);background-clip:content-box}
+@supports not selector(::-webkit-scrollbar){*{scrollbar-width:thin;scrollbar-color:var(--line) transparent}}
 body{font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;
   padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
 .top{padding:12px 16px 4px}.top h1{margin:0;font-size:19px}.top small{color:var(--mute)}

@@ -159,7 +159,7 @@ describe('phone team link', () => {
     expect($('#team-update-button')).toBeTruthy();
     expect($('#team-new-button')).toBeTruthy();
     expect($('.team-qr')).toBeNull();                       // no inline QR any more
-    $('.team-link button:nth-of-type(4)').click();          // QR opens its own pop-up
+    [...document.querySelectorAll('.team-link button')].find(b => b.textContent === 'QR').click();   // QR opens its own pop-up
     expect($('#team-qr-dialog .team-qr svg')).toBeTruthy();
     expect($('#team-qr-dialog .team-qr-url').textContent).toBe('team.tylerdouglasanderson.com/pineapple-mango-dog');
     $('#team-qr-dialog .btn-primary').click();              // Close
@@ -231,7 +231,68 @@ describe('phone team link', () => {
     expect(revert?.disabled).toBe(true);
   });
 
-  it('Update team link reuses the same words', async () => {
+  it('the button reads Publish, then Update team schedule once a link exists', async () => {
+    fakeServer();
+    await mountApp();
+    $('#cloud-save-button').click(); $('#cloud-save-dialog .btn-primary').click();
+    await vi.advanceTimersByTimeAsync(10);
+    expect($('#team-publish-button').textContent).toBe('Publish');
+    $('#team-publish-button').click(); await vi.advanceTimersByTimeAsync(20);
+    expect($('#team-update-button').textContent).toBe('Update team schedule');
+  });
+
+  it('Compare is disabled without a snapshot', async () => {
+    const server = fakeServer();
+    server.noSnap = true;
+    await mountApp();
+    $('#cloud-save-button').click(); $('#cloud-save-dialog .btn-primary').click();
+    await vi.advanceTimersByTimeAsync(10);
+    $('#team-publish-button').click(); await vi.advanceTimersByTimeAsync(20);
+    expect($('.team-compare').disabled).toBe(true);
+  });
+
+  it('Compare opens the diff dialog: no differences, then a banner once the published copy differs', async () => {
+    const server = fakeServer();
+    await mountApp();
+    $('#cloud-save-button').click(); $('#cloud-save-dialog .btn-primary').click();
+    await vi.advanceTimersByTimeAsync(10);
+    $('#team-publish-button').click(); await vi.advanceTimersByTimeAsync(20);
+    const sent = JSON.parse(server.snapshot);
+    expect($('#team-compare-pineapple-mango-dog').disabled).toBe(false);
+    $('#team-compare-pineapple-mango-dog').click(); await vi.advanceTimersByTimeAsync(20);
+    expect($('#compare-dialog #compare-banner').textContent).toMatch(/No differences/);
+    $('#compare-close').click();
+    expect($('#compare-dialog')).toBeNull();
+    const date = Object.keys(sent.lastSolution.days)[3];
+    sent.lastSolution.days[date].night = 'Ghost1';             // the team link was published with someone else on night
+    server.snapshot = JSON.stringify(sent);
+    $('#team-compare-pineapple-mango-dog').click(); await vi.advanceTimersByTimeAsync(20);
+    expect($('#compare-banner').textContent).toMatch(/^1 day differs · \d+ (person|people) affected$/);
+    expect($('#compare-days').textContent).toContain('Ghost1');
+    expect($('#compare-update')).toBeTruthy();
+    expect($('#compare-revert')).toBeTruthy();
+    $('#compare-close').click();
+  });
+
+  it('the status chip shows not published, then in sync, then amber once the published copy differs', async () => {
+    fakeServer();
+    await mountApp();
+    const { publishStatusChip, cloudState } = await import('../src/ui/cloud.js');
+    const chip = publishStatusChip();
+    document.body.append(chip);
+    expect(chip.id).toBe('publish-status-chip');
+    expect(chip.textContent).toBe('Not published yet');
+    $('#cloud-save-button').click(); $('#cloud-save-dialog .btn-primary').click();
+    await vi.advanceTimersByTimeAsync(10);
+    $('#team-publish-button').click(); await vi.advanceTimersByTimeAsync(20);
+    expect(chip.textContent).toMatch(/^Team sees .* · in sync$/);
+    cloudState().links[0].sig = 'different';                    // as if the draft had moved on since publishing
+    $('#cloud-save-button').click(); $('#cloud-save-dialog .btn-primary').click();   // any state change refreshes live chips
+    await vi.advanceTimersByTimeAsync(20);
+    expect(chip.textContent).toBe('Draft has changes since publish — see what changed');
+  });
+
+  it('Update team schedule reuses the same words', async () => {
     const server = fakeServer();
     await mountApp();
     $('#cloud-save-button').click(); $('#cloud-save-dialog .btn-primary').click();

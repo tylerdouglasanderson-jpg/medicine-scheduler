@@ -4,6 +4,19 @@
 // The first entry's version must equal package.json's version.
 export const CHANGELOG = [
   {
+    version: '1.16.0', date: '2026-10-23',
+    items: [
+      'Publish to team is now easy to find: the Export menu is now called Share, and its team section reads Publish to team with a Publish button (Update team schedule once a link is live)',
+      'A status chip beside Share always shows whether the team sees your latest draft: green Team sees vN in sync, or amber Draft has changes since publish. Click the amber chip to see what changed',
+      'Compare shows your draft against what the team sees: how many days differ, who is affected, and each person\'s before and after counts, with Update and Revert right there. Each team link has a Compare button too',
+      'Click a calendar cell and the box now starts with Why?: who else could have had that slot, one line on why each blocked person could not, and how the person\'s counts compare with the team',
+      'Buttons are grouped by what you are doing: Save holds save as a file, save online (PIN), open and Clear scenario; Share holds Publish to team and the export files; Help holds the Comprehensive Guide, How it solves, ACGME rules and What\'s new',
+      'Quick How-To has moved next to the title and is rewritten in three short phases (Set up, Solve and review, Share), with senior tips and the step to send an Excel or PDF to the chiefs for approval before publishing. New visitors also see a New here? 6 steps tip above Setup',
+      'Scrollbars now match the app (slim, rounded and themed) on both the app and the phone calendar',
+      'In Revise this plan the last lines of each column can no longer hide behind the bottom bar',
+    ],
+  },
+  {
     version: '1.15.1', date: '2026-10-22',
     items: [
       'The phone calendar now says what each commitment is next to the name, using the label you typed: Smith (Clinic FHC), Jones (ITE). Several on one day read Smith (Clinic FHC + ITE)',

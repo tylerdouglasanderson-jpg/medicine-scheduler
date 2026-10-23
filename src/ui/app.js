@@ -14,7 +14,8 @@ import * as setup from './setup.js';
 import * as roster from './roster.js';
 import * as chips from './chips.js';
 import { initFeedback, openFeedback } from './feedback.js';
-import { cloudAvailable, cloudState, detachSession, initCloud, cloudBar, scheduleAutosave, sessionButtons, teamSection } from './cloud.js';
+import { cloudAvailable, cloudState, detachSession, initCloud, cloudBar, scheduleAutosave, sessionButtons, teamSection, publishStatusChip } from './cloud.js';
+import { explainCell } from '../explain.js';
 import { buildPhonePayload } from '../phone.js';
 import { phoneHtml } from '../phone-page.js';
 import { CHANGELOG } from '../changelog.js';
@@ -65,6 +66,9 @@ const RELEASES = 'https://github.com/tylerdouglasanderson-jpg/medicine-scheduler
 const HINT_KEY = 'med-scheduler-save-hint-dismissed';
 const COMPARE_KEY = 'med-scheduler-compare-open';
 const HOWTO_KEY = 'med-scheduler-howto-seen';
+const NEWHERE_KEY = 'med-scheduler-newhere-dismissed';
+function newHereDismissed() { try { return localStorage.getItem(NEWHERE_KEY) === '1'; } catch { return false; } }
+function dismissNewHere() { try { localStorage.setItem(NEWHERE_KEY, '1'); } catch { /* storage unavailable */ } document.getElementById('newhere-strip')?.remove(); }
 const COLLAPSE_KEY = 'med-scheduler-collapsed';
 // Panels the user minimized; survives re-render (which rebuilds every panel) and reloads.
 let collapsed = new Set();
@@ -99,7 +103,7 @@ export function mount(container) {
     },
   });
   initHighs().catch(() => {});   // warm the wasm at page load so the first Solve is fast
-  if (!dismissInstalled) { installExportMenuDismiss(); dismissInstalled = true; }
+  if (!dismissInstalled) { installExportMenuDismiss(); installMenuDismiss(); dismissInstalled = true; }
   render();
   let seen = false;
   try { seen = localStorage.getItem(HOWTO_KEY) === '1'; } catch { /* treat as unseen */ }
@@ -162,7 +166,7 @@ function announceResults() {
   if (!dlg.open) dlg.showModal();
 }
 
-// Quick How-to: shown once on a first visit, and from the header button any time.
+// Quick How-To: shown once on a first visit, and from the header button any time.
 function openQuickHowTo() {
   try { localStorage.setItem(HOWTO_KEY, '1'); } catch { /* viewer storage may be unavailable */ }
   let dlg = document.getElementById('howto-dialog');
@@ -173,40 +177,50 @@ function openQuickHowTo() {
     const header = document.createElement('div');
     header.className = 'guide-dialog-header';
     const h = document.createElement('h2');
-    h.textContent = 'Quick how-to';
+    h.textContent = 'Quick How-To';
     const x = document.createElement('button');
-    x.type = 'button'; x.className = 'btn-ghost'; x.textContent = '×'; x.title = 'Closes the quick how-to without changing anything. You can reopen it any time from the Quick How-to button at the top.';
+    x.type = 'button'; x.className = 'btn-ghost'; x.textContent = '×'; x.title = 'Closes the Quick How-To without changing anything. You can reopen it any time from the Quick How-To button at the top.';
     x.addEventListener('click', () => dlg.close());
     header.append(h, x);
     const body = document.createElement('div');
     body.className = 'app-dialog-body';
-    const p = document.createElement('p');
-    p.textContent = 'Hey, here’s a real quick guide:';
-    const steps = document.createElement('ol');
-    steps.className = 'dialog-steps';
-    for (const text of [
-      'At the very top, pick your team, the month, and the Anchor type: the kind of day the 1st of the month falls on in the 6-day call cycle (Pre-call, Call, Post-call, Post-post-call, Short Call 1 or Short Call 2). This is how the app lays out the rest of the month.',
-      'Under Roster, add the members of your team.',
-      'Didactics are filled in for you when you add someone: seniors and Psych interns on Tuesday PM, Family interns on Thursday PM. Transitional interns get Wednesday PM, but it is every other week, so click their Wednesdays with the Didactics (PM) mode. OB/GYN and Other interns get none, so set their didactics day in the Roster if they have one. Check that everyone’s is right.',
-      'Under Commitments / PTO / Pins, add everybody’s clinic schedule as a Commitment (PM).',
-      'Add any PTO that is already approved.',
-      'When the clinic days, PTO, and didactics are in, press Solve (bottom left), then check the results at the very bottom of the page.',
-    ]) { const li = document.createElement('li'); li.textContent = text; steps.appendChild(li); }
-    let teamNote = null;
-    if (cloudAvailable()) {
-      const team = document.createElement('p');
-      team.className = 'dialog-note';
-      team.textContent = 'When the schedule is final and approved by the chiefs and admin: Save online, then Export, Publish team link. Your team gets a read-only phone calendar at a short link. It stays up for a year after it was last opened.';
-      teamNote = team;
+    const phases = [
+      ['1. Set up', [
+        'At the top, pick the team, the month and the Anchor type: what kind of day the 1st falls on in the 6-day call cycle.',
+        'Under Roster, add everyone on the team. Didactics fill in for you; Transitional interns need their every-other-week Wednesdays clicked in the Didactics (PM) mode.',
+        'Under Commitments / PTO / Pins, add each person’s clinic days as a Commitment (PM), and any approved PTO.',
+      ]],
+      ['2. Solve and review', [
+        'Press Solve (bottom left) and read the results at the bottom. Fix anything under Potential Issues, then Solve again.',
+        'Click any calendar cell to pin a person to it or change it; click Why? there to see who else could have had it. Use Revise to re-solve only the rest of the month.',
+        'Press Save, then Save online to keep the month under a PIN, or save it as a file.',
+      ]],
+      ['3. Share', [
+        'When the draft is nearly final, open Share and Export Excel or PDF, and send it to the chiefs for formal approval.',
+        'Once approved, open Share and press Publish to give your team a read-only phone calendar at a short link. If the schedule changes later, press Update team schedule.',
+      ]],
+    ];
+    const box = document.createElement('div');
+    box.className = 'howto-phases';
+    for (const [title, items] of phases) {
+      const h3 = document.createElement('h3');
+      h3.textContent = title;
+      const ul = document.createElement('ul');
+      ul.className = 'dialog-steps';
+      for (const text of items) { const li = document.createElement('li'); li.textContent = text; ul.appendChild(li); }
+      box.append(h3, ul);
     }
+    const tips = document.createElement('p');
+    tips.className = 'dialog-note';
+    tips.textContent = 'Senior tips: enter all clinics and PTO before the first Solve; save online before you close the tab; use Freeze through to lock the days already worked when you re-solve mid-month.';
     const note = document.createElement('p');
     note.className = 'dialog-note';
-    note.textContent = 'Need more? Open the Comprehensive Guide in the header any time.';
+    note.textContent = 'Didactics: seniors and Psych interns Tuesday PM, Family interns Thursday PM. More detail is in the Comprehensive Guide (Help menu).';
     const ok = document.createElement('button');
     ok.type = 'button'; ok.className = 'btn-primary dialog-link'; ok.textContent = 'Got it';
-    ok.title = 'Closes the quick how-to. You can reopen it any time from the Quick How-to button at the top; nothing you entered is affected.';
+    ok.title = 'Closes the Quick How-To. You can reopen it any time from the Quick How-To button at the top; nothing you entered is affected.';
     ok.addEventListener('click', () => dlg.close());
-    body.append(p, steps, ...(teamNote ? [teamNote] : []), note, ok);
+    body.append(box, tips, note, ok);
     dlg.append(header, body);
     dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
     document.body.appendChild(dlg);
@@ -327,6 +341,38 @@ function ensureGuideDialog() {
   document.body.appendChild(dialogEl);
 }
 
+// A small dropdown built on <details>: its items stay in the DOM when closed. Outside click, Escape, or picking an item closes it.
+function menuDetails(id, label, title, { up = false } = {}) {
+  const wrap = document.createElement('details');
+  wrap.id = id;
+  wrap.className = `menu${up ? ' menu-up' : ''}`;
+  const sum = document.createElement('summary');
+  sum.className = 'btn-secondary menu-summary';
+  sum.textContent = label;
+  sum.title = title;
+  const panel = document.createElement('div');
+  panel.className = 'menu-panel';
+  wrap.append(sum, panel);
+  return { wrap, panel };
+}
+
+let menusInstalled = false;
+function installMenuDismiss() {
+  if (menusInstalled) return;
+  menusInstalled = true;
+  document.addEventListener('click', e => {
+    for (const d of document.querySelectorAll('details.menu[open]')) {
+      const t = e.target instanceof Element ? e.target : null;
+      // outside click closes; so does picking an action button inside (not a field, not the summary)
+      if (!d.contains(t) || (t.closest('.menu-panel button') && !t.closest('[data-keep-open]'))) d.open = false;
+    }
+  }, true);
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    for (const d of document.querySelectorAll('details.menu[open]')) d.open = false;
+  });
+}
+
 function topBar() {
   const bar = document.createElement('header');
   bar.className = 'app-bar';
@@ -345,7 +391,7 @@ function topBar() {
   chip.title = `You are running version ${appVersion()}${buildDate ? ` (built ${buildDate})` : ''}. Click to see what changed in each version, newest first. It is read-only and does not change your schedule.`;
   chip.addEventListener('click', openWhatsNew);
   left.appendChild(chip);
-  bar.appendChild(left);
+  bar.appendChild(left);   // Quick How-To joins it below
 
   const right = document.createElement('div');
   right.className = 'app-bar-right';
@@ -359,10 +405,10 @@ function topBar() {
   howtoBtn.id = 'howto-button';
   howtoBtn.type = 'button';
   howtoBtn.className = 'btn-secondary';
-  howtoBtn.textContent = 'Quick How-to';
+  howtoBtn.textContent = 'Quick How-To';
   howtoBtn.title = 'Opens a short six-step guide to setting up a month and pressing Solve. It is read-only and does not change anything you have entered. Use the Comprehensive Guide for the full detail.';
-  howtoBtn.addEventListener('click', openQuickHowTo);
-  right.append(howtoBtn, guideBtn);
+  howtoBtn.addEventListener('click', () => { dismissNewHere(); openQuickHowTo(); });
+  left.appendChild(howtoBtn);
 
   const critBtn = document.createElement('button');
   critBtn.id = 'criteria-button';
@@ -371,7 +417,6 @@ function topBar() {
   critBtn.textContent = 'How it solves';
   critBtn.title = 'Opens a plain-language list of the rules the scheduler always follows and the preferences it works toward, in priority order. Read-only: nothing on your schedule changes.';
   critBtn.addEventListener('click', openCriteria);
-  right.appendChild(critBtn);
 
   const acgmeBtn = document.createElement('button');
   acgmeBtn.id = 'acgme-button';
@@ -380,7 +425,18 @@ function topBar() {
   acgmeBtn.textContent = ACGME.title;
   acgmeBtn.title = 'Opens the ACGME duty-hour rules, with a link to the exact page of each rule in the official document. It also explains which of them the scheduler checks. Read-only: nothing on your schedule changes.';
   acgmeBtn.addEventListener('click', openAcgme);
-  right.appendChild(acgmeBtn);
+
+  const whatsBtn = document.createElement('button');
+  whatsBtn.id = 'whatsnew-button';
+  whatsBtn.type = 'button';
+  whatsBtn.className = 'btn-ghost';
+  whatsBtn.textContent = 'What’s new';
+  whatsBtn.title = 'Lists what changed in each version, newest first. Read-only: nothing on your schedule changes.';
+  whatsBtn.addEventListener('click', openWhatsNew);
+  const help = menuDetails('help-menu', 'Help ▾', 'Opens a short list: the Comprehensive Guide, how the scheduler solves, the ACGME duty-hour rules, and what is new. All are read-only.');
+  for (const b of [guideBtn, critBtn, acgmeBtn, whatsBtn]) { b.classList.remove('btn-secondary'); b.classList.add('menu-item'); }
+  help.panel.append(guideBtn, critBtn, acgmeBtn, whatsBtn);
+  right.appendChild(help.wrap);
 
   const dlBtn = document.createElement('button');
   dlBtn.id = 'download-button';
@@ -415,12 +471,34 @@ function topBar() {
   return bar;
 }
 
+// A one-line nudge above Setup until it is used or dismissed: the Quick How-To is the fastest way in.
+function newHereStrip() {
+  const strip = document.createElement('div');
+  strip.id = 'newhere-strip';
+  strip.className = 'newhere-strip';
+  const go = document.createElement('button');
+  go.type = 'button';
+  go.className = 'btn-link newhere-go';
+  go.textContent = 'New here? See the 6 steps';
+  go.title = 'Opens the Quick How-To: set up, solve and review, then share. It is read-only.';
+  go.addEventListener('click', () => { dismissNewHere(); openQuickHowTo(); });
+  const x = document.createElement('button');
+  x.type = 'button';
+  x.className = 'btn-ghost newhere-x';
+  x.textContent = '×';
+  x.setAttribute('aria-label', 'Hide this tip');
+  x.title = 'Hides this tip. The Quick How-To stays at the top of the page.';
+  x.addEventListener('click', dismissNewHere);
+  strip.append(go, x);
+  return strip;
+}
+
 function onboardingHint() {
   const box = document.createElement('div');
   box.className = 'onboarding-hint';
   const p = document.createElement('p');
   p.textContent = 'Set up a team, month, and roster, then Solve to build the schedule. ' +
-    'Not sure where to start? Press “Load the example month” below (there are two to choose from), or open the Quick How-to.';
+    'Not sure where to start? Press “Load the example month” below (there are two to choose from), or open the Quick How-To.';
   box.appendChild(p);
   const row = document.createElement('div');
   row.className = 'example-row';
@@ -457,6 +535,8 @@ function render() {
 
   root.appendChild(topBar());
   if (cloudAvailable()) root.appendChild(cloudBar());
+
+  if (!newHereDismissed()) root.appendChild(newHereStrip());
 
   const main = document.createElement('main');
   main.className = 'main';
@@ -512,8 +592,6 @@ function render() {
   root.appendChild(actionBar(errors));
   document.documentElement.style.setProperty('--appbar-h', `${root.querySelector('.app-bar')?.offsetHeight ?? 56}px`);
   if (reviseMode) {
-    const h = sel => root.querySelector(sel)?.offsetHeight ?? 0;
-    main.style.height = `calc(100dvh - ${h('.app-bar') + h('.action-bar')}px)`;
     left.scrollTop = keepLeft;
     right.scrollTop = keepRight;
   }
@@ -644,7 +722,7 @@ function renderErrors(panel, errors) {
 }
 
 // ---- sticky bottom action bar: one compact row —
-// [Solve][Freeze through] | [Save my month][Open a saved month] | [Export ▾] ......... Clear scenario
+// [Solve][Freeze through] | [Save ▾] | [Share ▾] [publish status chip]
 // The export controls live in a small menu that opens above the bar.
 let exportMenuOpen = false;   // survives re-renders; closed by outside click / Escape / no schedule
 
@@ -660,20 +738,30 @@ function actionBar(errors) {
 
   bar.appendChild(divider());
 
-  // The user's own file, kept visually together and apart from the exports.
-  const work = document.createElement('div');
-  work.className = 'action-group action-group-work';
-  work.setAttribute('role', 'group');
-  work.setAttribute('aria-label', 'Your work');
-  work.appendChild(ioButtons());
-  bar.appendChild(work);
+  // Keep: one Save menu holds the file, the online PIN session, and Clear scenario.
+  const keep = document.createElement('div');
+  keep.className = 'action-group action-group-work';
+  keep.setAttribute('role', 'group');
+  keep.setAttribute('aria-label', 'Your work');
+  const save = menuDetails('save-menu', 'Save ▾', 'Opens the list for keeping this month: save it as a file, save it online under a PIN, open one you saved earlier, or clear the scenario.', { up: true });
+  save.panel.append(ioButtons());
+  const clear = clearButton();
+  save.panel.append(clear);
+  keep.appendChild(save.wrap);
+  const pin = cloudAvailable() ? cloudState().pin : '';
+  if (pin) {
+    const chip = document.createElement('span');
+    chip.className = 'saved-chip';
+    chip.id = 'saved-chip';
+    chip.textContent = `Saved online · PIN ${pin}`;
+    keep.appendChild(chip);
+  }
+  bar.appendChild(keep);
 
   bar.appendChild(divider());
   bar.appendChild(exportMenu());
-
-  const clear = clearButton();
-  clear.classList.add('action-bar-clear');
-  bar.appendChild(clear);
+  const pubChip = publishStatusChip();
+  if (pubChip) bar.appendChild(pubChip);
 
   return bar;
 }
@@ -696,7 +784,7 @@ function exportMenu() {
   toggle.id = 'export-toggle';
   toggle.type = 'button';
   toggle.className = 'btn-secondary export-toggle';
-  toggle.textContent = 'Export ▾';
+  toggle.textContent = 'Share ▾';
   toggle.setAttribute('aria-haspopup', 'true');
   toggle.setAttribute('aria-controls', 'export-menu');
   toggle.setAttribute('aria-expanded', String(exportMenuOpen));
@@ -711,7 +799,7 @@ function exportMenu() {
   panel.id = 'export-menu';
   panel.className = 'export-menu';
   panel.setAttribute('role', 'group');
-  panel.setAttribute('aria-label', 'Share & export');
+  panel.setAttribute('aria-label', 'Publish to team and export files');
   panel.hidden = !exportMenuOpen;
   panel.appendChild(exportButtons());
   wrap.appendChild(panel);
@@ -1588,6 +1676,8 @@ function openPinPopover(rect, date, row) {
   title.className = 'pin-popover-title';
   title.textContent = `Pin — ${date}`;
   pop.appendChild(title);
+  const why = whyBlock(date, row);
+  if (why) pop.appendChild(why);
 
   const personSel = mkSelect(people.map(n => [n, n]),
     'The resident this pin applies to. Only people on service that day are listed, and the one currently in the clicked cell is pre-selected.');
@@ -1619,6 +1709,35 @@ function openPinPopover(rect, date, row) {
   popoverEl = pop;
   outsideHandler = ev => { if (popoverEl && !popoverEl.contains(ev.target)) closePopover(); };
   setTimeout(() => document.addEventListener('click', outsideHandler), 0);
+}
+
+// "Why?": the instant facts for this cell (who was eligible, who was blocked and why, counts vs the team). Read-only.
+const WHY_SLOT = { OFF: 'off', PAGER: 'pager', ROUNDERS: 'night' };
+function whyBlock(date, row) {
+  if (!scenario.lastSolution) return null;
+  let r;
+  try { r = explainCell(scenario, scenario.lastSolution, { date, slot: WHY_SLOT[row] }); } catch { return null; }
+  if (!r?.summary) return null;
+  const box = document.createElement('div');
+  box.className = 'why-box';
+  const head = document.createElement('strong');
+  head.textContent = 'Why?';
+  const sum = document.createElement('span');
+  sum.textContent = ` ${r.summary}`;
+  box.append(head, sum);
+  if (r.blocked.length) {
+    const ul = document.createElement('ul');
+    ul.className = 'why-list';
+    for (const b of r.blocked) { const li = document.createElement('li'); li.textContent = `${b.name}: ${b.reason}`; ul.appendChild(li); }
+    box.appendChild(ul);
+  }
+  if (r.counts.length) {
+    const c = document.createElement('div');
+    c.className = 'why-counts';
+    c.textContent = r.counts.map(x => `${x.name}: ${x.label}`).join(' · ');
+    box.appendChild(c);
+  }
+  return box;
 }
 
 function closePopover() {
@@ -1991,7 +2110,7 @@ function exportButtons() {
   // Three columns so the whole menu fits without scrolling (one column on a phone).
   const colFiles = exportColumn('Spreadsheet & print', 'Files to work from or send to the chief.');
   const colCal = exportColumn('Calendar files', 'For Outlook, Google Calendar or Apple Calendar.');
-  const colTeam = exportColumn('Phone team link', null);
+  const colTeam = exportColumn('Publish to team', null);
   wrap.append(colFiles, colCal, colTeam);
 
   const calendarSelect = document.createElement('select');

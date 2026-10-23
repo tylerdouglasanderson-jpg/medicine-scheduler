@@ -117,7 +117,7 @@ describe('action bar', () => {
     const menu = $('#export-menu');
     expect(menu.querySelector('label[for="export-scope"]').textContent).toBe('Which solution');
     expect(menu.querySelector('label[for="calendar-export-person"]').textContent).toBe('Whose calendar (.ics file)');
-    expect([...menu.querySelectorAll('.export-col-title')].map(h => h.textContent)).toEqual(['Spreadsheet & print', 'Calendar files', 'Phone team link']);
+    expect([...menu.querySelectorAll('.export-col-title')].map(h => h.textContent)).toEqual(['Spreadsheet & print', 'Calendar files', 'Publish to team']);
     const order = [...menu.querySelectorAll('button')].map(el => el.id);
     expect(order).toEqual(['xlsx-export-button', 'google-sheets-button', 'print-button',
       'calendar-export-button', 'team-publish-button', 'phone-download-button']);

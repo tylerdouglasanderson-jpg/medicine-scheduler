@@ -3,6 +3,7 @@
 // is false there and no control is drawn. State lives at module level so render() can rebuild the page freely;
 // the PIN bar is updated in place (refreshBar) so autosave never forces a full re-render.
 import QRCode from 'qrcode-svg';
+import { showCompare, ensureCompareStyle } from './compare.js';
 
 export const API = 'https://team.tylerdouglasanderson.com';
 const KEY = 'med-scheduler-cloud';
@@ -91,6 +92,7 @@ export function scheduleAutosave() {
   if (!state.pin || !ctx) return;
   if (state.status === 'conflict') return;                  // paused until the user picks a side
   dirty = true;
+  notifyPublishStatus();                                    // the draft changed, so "in sync" may no longer hold
   if (state.status !== 'saving') { state.status = 'unsent'; refreshBar(); }
   clearTimeout(timer);
   timer = setTimeout(async () => {
@@ -137,6 +139,7 @@ export async function publishTeam(payload, words, snapshot) {
   const link = { words: r.words, updated: r.updated, title: payload.title, sig, hasSnapshot: r.hasSnapshot ?? !!snapshot };
   if (i >= 0) state.links[i] = link; else state.links.push(link);
   state.last = r.words;
+  notifyPublishStatus();
   return r;
 }
 // Revert the working draft to what a team link was last published from. The replaced draft is kept for Undo until reload.
@@ -147,6 +150,7 @@ export async function revertToPublished(words) {
   ctx.apply(ctx.parse(r.snapshot));
   undoDraft = before;
   scheduleAutosave();
+  notifyPublishStatus();
   return r;
 }
 export function undoRevert() {
@@ -154,11 +158,70 @@ export function undoRevert() {
   const text = undoDraft; undoDraft = null;
   ctx.apply(ctx.parse(text));
   scheduleAutosave();
+  notifyPublishStatus();
+}
+
+// ---------- publish status chip + Compare ----------
+// Set by teamSection(): the app's callbacks, so the chip and the Compare dialog use the same publish/revert paths.
+let teamCtx = null;     // { currentPayload, snapshot, publish(words), revert(words) }
+const statusChips = new Set();
+const statusListeners = new Set();
+// app.js can subscribe to re-render its bar; live chips also refresh themselves. Returns an unsubscribe function.
+export function onPublishStatusChange(cb) { statusListeners.add(cb); return () => statusListeners.delete(cb); }
+function notifyPublishStatus() {
+  for (const c of statusChips) {
+    if (c.isConnected) { c.dataset.seen = '1'; fillChip(c); } else if (c.dataset.seen) statusChips.delete(c);
+  }
+  for (const cb of statusListeners) { try { cb(); } catch { /* a bad listener must not break saving */ } }
+}
+function fillChip(chip) {
+  const l = state.links[state.links.length - 1];       // the newest link published for this session
+  let kind = 'none', text = 'Not published yet';
+  if (l) {
+    let cur = null;
+    try { cur = teamCtx?.currentPayload?.() ?? null; } catch { /* no schedule to compare */ }
+    if (!cur) text = 'Team link is up';
+    else if (l.sig && l.sig === payloadSig(cur)) { kind = 'ok'; text = `Team sees ${l.updated ? clock(l.updated) : 'the latest version'} · in sync`; }
+    else { kind = 'stale'; text = 'Draft has changes since publish — see what changed'; }
+  }
+  chip.className = `publish-chip publish-chip-${kind}`;
+  chip.dataset.state = kind;
+  chip.textContent = text;
+  chip.title = kind === 'stale' ? 'Shows exactly which days and people differ from what the team sees.'
+    : kind === 'ok' ? 'The team link shows the schedule on screen.' : 'Publish to team (Export menu) to share a read-only phone calendar.';
+}
+// publishStatusChip(): a <button id="publish-status-chip"> for the bottom bar, or null off the website. Three states from
+// the newest link: none/neutral ("Not published yet"), green (the link's stored signature equals the draft's phone-payload
+// signature, same test as the team-section tick), amber (they differ; clicking opens Compare). It keeps itself current
+// (notifyPublishStatus), and onPublishStatusChange(cb) lets app.js re-render if it prefers to rebuild the bar.
+export function publishStatusChip() {
+  if (!cloudAvailable()) return null;
+  ensureCompareStyle();
+  const chip = el('button', { type: 'button', id: 'publish-status-chip' });
+  chip.addEventListener('click', () => {
+    const l = state.links[state.links.length - 1];
+    if (chip.dataset.state === 'stale' && l) openCompare(l.words).catch(e => alert(e.message));
+    else document.querySelector('.team-section')?.scrollIntoView?.({ block: 'center' });
+  });
+  fillChip(chip);
+  statusChips.add(chip);
+  return chip;
+}
+// Fetch the link's private snapshot (same route and PIN auth as Revert) and show it against the current draft.
+export async function openCompare(words) {
+  const link = state.links.find(l => l.words === words);
+  if (!state.pin || !link?.hasSnapshot) throw new Error('This link was published before Compare existed. Click Update once and Compare will work.');
+  const r = await call('POST', `/api/team/${words}/snapshot`, { pin: state.pin });
+  const draft = teamCtx?.snapshot?.() ?? ctx.serialize();
+  showCompare({ published: r.snapshot, draft,
+    onUpdate: () => teamCtx?.publish(words),
+    onRevert: () => teamCtx?.revert(words) });
 }
 export async function stopSharing(words) {
   await call('DELETE', `/api/team/${words}`, { pin: state.pin });
   state.links = state.links.filter(l => l.words !== words);
   if (state.last === words) state.last = null;
+  notifyPublishStatus();
 }
 export const linkUrl = words => `${API}/${words}`;
 
@@ -193,6 +256,7 @@ export function refreshBar() {
   const bar = typeof document !== 'undefined' && document.getElementById('cloud-bar');
   if (bar) fillBar(bar);
   if (redrawTeam) redrawTeam();
+  notifyPublishStatus();
 }
 export function cloudBar() {
   const bar = el('div', { id: 'cloud-bar', role: 'status' });
@@ -326,6 +390,12 @@ export function teamSection({ gate, hasSchedule, downloadPhone, currentPayload =
     }
     return publish(undefined);
   }
+  async function revert(words) {
+    if (!confirm('Replace your current working draft with the schedule this link was last published from? Your current draft is kept so you can click Undo revert.')) return;
+    await run('Reverting…', () => revertToPublished(words));
+    say(undoDraft ? 'Draft reverted to the published schedule.' : '');
+  }
+  teamCtx = { currentPayload, snapshot, publish, revert };
 
   function draw() {
     wrap.replaceChildren();
@@ -333,9 +403,9 @@ export function teamSection({ gate, hasSchedule, downloadPhone, currentPayload =
     const canPublish = hasSchedule && !!state.pin;
     const newest = state.links[state.links.length - 1];
     if (!state.links.length) {
-      wrap.append(btn('Publish team link', publishNew, 'btn-secondary', { id: 'team-publish-button', disabled: !canPublish }));
+      wrap.append(btn('Publish', publishNew, 'btn-secondary', { id: 'team-publish-button', disabled: !canPublish }));
     } else {
-      wrap.append(btn('Update team link', () => publish(newest.words), 'btn-secondary', { id: 'team-update-button', disabled: !canPublish, title: 'Replaces the schedule behind the same link. Everyone who has the link sees the new version.' }),
+      wrap.append(btn('Update team schedule', () => publish(newest.words), 'btn-secondary', { id: 'team-update-button', disabled: !canPublish, title: 'Replaces the schedule behind the same link. Everyone who has the link sees the new version.' }),
         btn('Publish as a new link', publishNew, 'btn-ghost', { id: 'team-new-button', disabled: !canPublish }));
     }
     if (!state.pin) wrap.append(el('p', { className: 'export-note', textContent: 'Save the session first (Save online on the toolbar). The link belongs to a saved session.' }));
@@ -355,12 +425,10 @@ export function teamSection({ gate, hasSchedule, downloadPhone, currentPayload =
         el('div', { className: 'team-meta', textContent: `${l.title || ''}${l.updated ? ` · updated ${clock(l.updated)}` : ''}` }),
         btn('Copy', async () => { try { await navigator.clipboard.writeText(url); say('Link copied.'); } catch { say(url); } }, 'btn-ghost'),
         btn('Update', () => publish(l.words), 'btn-ghost', { disabled: !canPublish }),
-        btn('Revert draft to this', async () => {
-          if (!confirm('Replace your current working draft with the schedule this link was last published from? Your current draft is kept so you can click Undo revert.')) return;
-          await run('Reverting…', () => revertToPublished(l.words));
-          say(undoDraft ? 'Draft reverted to the published schedule.' : '');
-        }, 'btn-ghost', { disabled: !state.pin || !l.hasSnapshot,
+        btn('Revert draft to this', () => revert(l.words), 'btn-ghost', { disabled: !state.pin || !l.hasSnapshot,
           title: l.hasSnapshot ? 'Puts your working draft back to exactly what this link was last published from.' : 'This link was published before Revert existed. Click Update once and Revert will work.' }),
+        btn('Compare', () => openCompare(l.words).catch(e => say(e.message)), 'btn-ghost team-compare', { id: `team-compare-${l.words}`, disabled: !state.pin || !l.hasSnapshot,
+          title: l.hasSnapshot ? 'Shows which days and people differ between your draft and what this link was last published from.' : 'This link was published before Compare existed. Click Update once and Compare will work.' }),
         btn('QR', () => showQr(url), 'btn-ghost', { title: 'Shows a QR code to scan with a phone camera.' }),
         btn('Stop sharing', () => {
           if (confirm('Stop sharing this link? Anyone who opens it will see that it is no longer active.')) run('Stopping…', () => stopSharing(l.words));
