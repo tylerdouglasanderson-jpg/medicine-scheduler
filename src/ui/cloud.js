@@ -130,14 +130,30 @@ export function payloadSig(payload) {
   b = Math.imul(b ^ (b >>> 16), 2246822507) ^ Math.imul(a ^ (a >>> 13), 3266489909);
   return (4294967296 * (2097151 & b) + (a >>> 0)).toString(36);
 }
-export async function publishTeam(payload, words) {
+export async function publishTeam(payload, words, snapshot) {
   const sig = payloadSig(payload);
-  const r = await call('POST', '/api/team', { pin: state.pin, payload, words, sig });
+  const r = await call('POST', '/api/team', { pin: state.pin, payload, words, sig, snapshot });
   const i = state.links.findIndex(l => l.words === r.words);
-  const link = { words: r.words, updated: r.updated, title: payload.title, sig };
+  const link = { words: r.words, updated: r.updated, title: payload.title, sig, hasSnapshot: r.hasSnapshot ?? !!snapshot };
   if (i >= 0) state.links[i] = link; else state.links.push(link);
   state.last = r.words;
   return r;
+}
+// Revert the working draft to what a team link was last published from. The replaced draft is kept for Undo until reload.
+let undoDraft = null;
+export async function revertToPublished(words) {
+  const r = await call('POST', `/api/team/${words}/snapshot`, { pin: state.pin });
+  const before = ctx.serialize();
+  ctx.apply(ctx.parse(r.snapshot));
+  undoDraft = before;
+  scheduleAutosave();
+  return r;
+}
+export function undoRevert() {
+  if (!undoDraft) return;
+  const text = undoDraft; undoDraft = null;
+  ctx.apply(ctx.parse(text));
+  scheduleAutosave();
 }
 export async function stopSharing(words) {
   await call('DELETE', `/api/team/${words}`, { pin: state.pin });
@@ -284,7 +300,7 @@ function choose(title, text, options) {
 
 // gate(): returns the payload to publish, or null if it must not publish (it has already told the user why).
 // downloadPhone(): saves the self-contained phone view.
-export function teamSection({ gate, hasSchedule, downloadPhone, currentPayload = () => null }) {
+export function teamSection({ gate, hasSchedule, downloadPhone, currentPayload = () => null, snapshot = () => null }) {
   const wrap = el('div', { className: 'team-section' });
   const msg = el('p', { className: 'export-note', textContent: '' });
   const say = t => { msg.textContent = t; };
@@ -296,7 +312,7 @@ export function teamSection({ gate, hasSchedule, downloadPhone, currentPayload =
   async function publish(words) {
     const payload = gate();
     if (!payload) return;
-    await run('Publishing…', () => publishTeam(payload, words));
+    await run('Publishing…', () => publishTeam(payload, words, snapshot()));
   }
   async function publishNew() {
     if (!state.links.length) {
@@ -339,12 +355,19 @@ export function teamSection({ gate, hasSchedule, downloadPhone, currentPayload =
         el('div', { className: 'team-meta', textContent: `${l.title || ''}${l.updated ? ` · updated ${clock(l.updated)}` : ''}` }),
         btn('Copy', async () => { try { await navigator.clipboard.writeText(url); say('Link copied.'); } catch { say(url); } }, 'btn-ghost'),
         btn('Update', () => publish(l.words), 'btn-ghost', { disabled: !canPublish }),
+        btn('Revert draft to this', async () => {
+          if (!confirm('Replace your current working draft with the schedule this link was last published from? Your current draft is kept so you can click Undo revert.')) return;
+          await run('Reverting…', () => revertToPublished(l.words));
+          say(undoDraft ? 'Draft reverted to the published schedule.' : '');
+        }, 'btn-ghost', { disabled: !state.pin || !l.hasSnapshot,
+          title: l.hasSnapshot ? 'Puts your working draft back to exactly what this link was last published from.' : 'This link was published before Revert existed. Click Update once and Revert will work.' }),
         btn('QR', () => showQr(url), 'btn-ghost', { title: 'Shows a QR code to scan with a phone camera.' }),
         btn('Stop sharing', () => {
           if (confirm('Stop sharing this link? Anyone who opens it will see that it is no longer active.')) run('Stopping…', () => stopSharing(l.words));
         }, 'btn-ghost'));
       wrap.append(row);
     }
+    if (undoDraft) wrap.append(btn('Undo revert', () => { undoRevert(); draw(); say('Your previous draft is back.'); }, 'btn-secondary', { id: 'team-undo-revert' }));
     wrap.append(btn('Download phone view (.html)', downloadPhone, 'btn-secondary', { id: 'phone-download-button', disabled: !hasSchedule,
       title: 'A single file with the same read-only calendar, to send or open offline. It shows the schedule as of today and does not update.' }), msg);
   }

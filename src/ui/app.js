@@ -1954,6 +1954,13 @@ function exportButtons() {
   const blockedTip = validate(scenario).length || (schedule && !allowed) ? FIX_EXPORT_TIP : null;
   const canExport = () => !solving && !!exportableSchedule(pickedSchedule());
   // The phone view is built from the SAME schedule and the SAME cell-text functions as the xlsx.
+  // The exact month behind a published link (inputs + solutions, on the published solution), kept privately on the Worker for Revert.
+  const snapshotJSON = () => {
+    if (!canExport()) return null;
+    const s = JSON.parse(monthJSON());
+    if (Array.isArray(s.alternatives) && s.alternatives.length > 1) s.activeSolution = pickedIdx();
+    return JSON.stringify(s);
+  };
   const phonePayload = () => (canExport() ? buildPhonePayload(scenario, pickedSchedule(), appVersion()) : null);
   const publishGate = () => {
     if (!canExport()) return null;
@@ -2065,7 +2072,7 @@ function exportButtons() {
     setExportMenu(false); window.print();
   });
   colFiles.appendChild(printBtn);
-  colTeam.appendChild(teamSection({ gate: publishGate, hasSchedule: allowed && !solving, currentPayload: phonePayload, downloadPhone: () => { const payload = phonePayload(); if (payload) downloadPhoneView(payload); } }));
+  colTeam.appendChild(teamSection({ gate: publishGate, hasSchedule: allowed && !solving, currentPayload: phonePayload, snapshot: snapshotJSON, downloadPhone: () => { const payload = phonePayload(); if (payload) downloadPhoneView(payload); } }));
 
   return wrap;
 }

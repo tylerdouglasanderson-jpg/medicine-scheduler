@@ -47,9 +47,12 @@ function fakeServer() {
     if (path === '/api/session/123456') return ok({ scenario: { ...JSON.parse(JSON.stringify(feb)), team: 'FromServer' }, version: 5, updatedAt: '2026-10-22T11:00:00Z', links: s.links });
     if (path === '/api/team' && init.method === 'POST') {
       const words = body.words || 'pineapple-mango-dog';
-      if (!s.links.some(l => l.words === words)) s.links.push({ words, updated: body.payload.updated, title: body.payload.title });
-      return ok({ words, url: `https://team.tylerdouglasanderson.com/${words}`, updated: body.payload.updated });
+      s.links = s.links.filter(l => l.words !== words);
+      s.links.push({ words, updated: body.payload.updated, title: body.payload.title, hasSnapshot: !s.noSnap && !!body.snapshot });
+      s.snapshot = s.noSnap ? undefined : body.snapshot;
+      return ok({ words, url: `https://team.tylerdouglasanderson.com/${words}`, updated: body.payload.updated, hasSnapshot: !s.noSnap && !!body.snapshot });
     }
+    if (/^\/api\/team\/[a-z-]+\/snapshot$/.test(path)) return s.snapshot ? ok({ snapshot: s.snapshot, updated: 'x' }) : ok({ error: 'none' }, 404);
     return ok({ error: 'not found' }, 404);
   });
   return s;
@@ -156,7 +159,7 @@ describe('phone team link', () => {
     expect($('#team-update-button')).toBeTruthy();
     expect($('#team-new-button')).toBeTruthy();
     expect($('.team-qr')).toBeNull();                       // no inline QR any more
-    $('.team-link button:nth-of-type(3)').click();          // QR opens its own pop-up
+    $('.team-link button:nth-of-type(4)').click();          // QR opens its own pop-up
     expect($('#team-qr-dialog .team-qr svg')).toBeTruthy();
     expect($('#team-qr-dialog .team-qr-url').textContent).toBe('team.tylerdouglasanderson.com/pineapple-mango-dog');
     $('#team-qr-dialog .btn-primary').click();              // Close
@@ -191,6 +194,41 @@ describe('phone team link', () => {
       await vi.advanceTimersByTimeAsync(5000);
       expect(server.calls.some(c => c.method === 'PUT')).toBe(false);
     } finally { spy.mockRestore(); }
+  });
+
+  it('Revert draft to this link puts the published month back, and Undo revert returns the draft', async () => {
+    const server = fakeServer();
+    await mountApp();
+    $('#cloud-save-button').click(); $('#cloud-save-dialog .btn-primary').click();
+    await vi.advanceTimersByTimeAsync(10);
+    $('#team-publish-button').click(); await vi.advanceTimersByTimeAsync(20);
+    const sent = JSON.parse(server.snapshot);                   // the publish carried the full month, privately
+    expect(sent.residents.length).toBe(solved.residents.length);
+    expect(sent.lastSolution || sent.alternatives).toBeTruthy();
+    server.snapshot = JSON.stringify({ ...sent, team: 'Published' });   // pretend the link was published from a different draft
+    const stored = () => JSON.parse(localStorage.getItem('med-scheduler-scenario')).team;
+    const was = stored();
+    const spy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    try {
+      const revert = [...document.querySelectorAll('.team-link button')].find(b => b.textContent === 'Revert draft to this');
+      expect(revert.disabled).toBe(false);
+      revert.click(); await vi.advanceTimersByTimeAsync(500);
+      expect(stored()).toBe('Published');
+      $('#team-undo-revert').click(); await vi.advanceTimersByTimeAsync(500);
+      expect(stored()).toBe(was);
+      expect($('#team-undo-revert')).toBeNull();
+    } finally { spy.mockRestore(); }
+  });
+
+  it('Revert is disabled for a link published before snapshots existed', async () => {
+    const server = fakeServer();
+    server.noSnap = true;
+    await mountApp();
+    $('#cloud-save-button').click(); $('#cloud-save-dialog .btn-primary').click();
+    await vi.advanceTimersByTimeAsync(10);
+    $('#team-publish-button').click(); await vi.advanceTimersByTimeAsync(20);
+    const revert = [...document.querySelectorAll('.team-link button')].find(b => b.textContent === 'Revert draft to this');
+    expect(revert?.disabled).toBe(true);
   });
 
   it('Update team link reuses the same words', async () => {
