@@ -113,10 +113,20 @@ export async function refreshLinks() {
   state.links = r.links ?? [];
   return state.links;
 }
+// Fingerprint of a phone payload, ignoring the fields that change on every publish (time, app version).
+export function payloadSig(payload) {
+  const s = JSON.stringify({ ...payload, updated: 0, version: 0 });
+  let a = 0xdeadbeef, b = 0x41c6ce57;
+  for (let i = 0; i < s.length; i++) { const c = s.charCodeAt(i); a = Math.imul(a ^ c, 2654435761); b = Math.imul(b ^ c, 1597334677); }
+  a = Math.imul(a ^ (a >>> 16), 2246822507) ^ Math.imul(b ^ (b >>> 13), 3266489909);
+  b = Math.imul(b ^ (b >>> 16), 2246822507) ^ Math.imul(a ^ (a >>> 13), 3266489909);
+  return (4294967296 * (2097151 & b) + (a >>> 0)).toString(36);
+}
 export async function publishTeam(payload, words) {
-  const r = await call('POST', '/api/team', { pin: state.pin, payload, words });
+  const sig = payloadSig(payload);
+  const r = await call('POST', '/api/team', { pin: state.pin, payload, words, sig });
   const i = state.links.findIndex(l => l.words === r.words);
-  const link = { words: r.words, updated: r.updated, title: payload.title };
+  const link = { words: r.words, updated: r.updated, title: payload.title, sig };
   if (i >= 0) state.links[i] = link; else state.links.push(link);
   state.last = r.words;
   return r;
@@ -266,7 +276,7 @@ function choose(title, text, options) {
 
 // gate(): returns the payload to publish, or null if it must not publish (it has already told the user why).
 // downloadPhone(): saves the self-contained phone view.
-export function teamSection({ gate, hasSchedule, downloadPhone }) {
+export function teamSection({ gate, hasSchedule, downloadPhone, currentPayload = () => null }) {
   const wrap = el('div', { className: 'team-section' });
   const msg = el('p', { className: 'export-note', textContent: '' });
   const say = t => { msg.textContent = t; };
@@ -308,7 +318,15 @@ export function teamSection({ gate, hasSchedule, downloadPhone }) {
     if (!cloudAvailable()) wrap.lastChild.textContent = 'Team links need the website version. They are not available in the downloaded file.';
     for (const l of state.links) {
       const url = linkUrl(l.words);
+      const cur = currentPayload();
+      const mine = cur ? payloadSig(cur) : null;
+      const sync = !cur ? null : l.sig === mine
+        ? el('div', { className: 'team-sync team-sync-ok', textContent: '✓ Matches the schedule shown below. This is what the team sees.' })
+        : el('div', { className: 'team-sync team-sync-stale', textContent: l.sig
+          ? '✗ Out of date. The schedule shown below is not what the team sees. Click Update to send it.'
+          : '✗ Not confirmed. This link was published before sync checking, so click Update once to be sure it matches.' });
       const row = el('div', { className: 'team-link' },
+        sync,
         el('div', { className: 'team-url', textContent: url.replace(/^https:\/\//, '') }),
         el('div', { className: 'team-meta', textContent: `${l.title || ''}${l.updated ? ` · updated ${clock(l.updated)}` : ''}` }),
         btn('Copy', async () => { try { await navigator.clipboard.writeText(url); say('Link copied.'); } catch { say(url); } }, 'btn-ghost'),

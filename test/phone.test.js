@@ -109,3 +109,11 @@ describe('phone commitments carry their labels', () => {
     expect(row).toBe(`${r.name} (Clinic FHC + ITE), ${scenario.residents[1].name} (other commitment)`);
   });
 });
+
+describe('phone page timestamp', () => {
+  it('is shown in US Central time, not the server clock', async () => {
+    const { formatUpdated } = await import('../src/phone-page.js');
+    expect(formatUpdated('2026-10-23T01:07:00.000Z')).toBe('Oct 22, 8:07 PM CDT');
+    expect(formatUpdated('2026-01-15T18:00:00.000Z')).toBe('Jan 15, 12:00 PM CST');
+  });
+});

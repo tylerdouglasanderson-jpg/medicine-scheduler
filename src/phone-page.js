@@ -52,7 +52,8 @@ const escHtml = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&l
 export function formatUpdated(iso) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
-  return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  // Rendered on the Worker (UTC), so pin the zone: the team is in Fort Worth (US Central, CST/CDT).
+  return d.toLocaleString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
 }
 
 // words: the team link's three words when served by the Worker (turns on the manifest, icons and service worker).

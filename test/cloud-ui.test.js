@@ -6,6 +6,7 @@ import { saveScenario } from '../src/ui/state.js';
 import { solveAlternatives } from '../src/solve.js';
 import { parseScenario } from '../src/model.js';
 import feb from '../fixtures/feb-2026.json';
+import { payloadSig } from '../src/ui/cloud.js';
 
 const gate = vi.hoisted(() => ({ backToBack: false }));
 vi.mock('../src/audit.js', async orig => {
@@ -160,6 +161,19 @@ describe('phone team link', () => {
     expect($('#team-qr-dialog .team-qr-url').textContent).toBe('team.tylerdouglasanderson.com/pineapple-mango-dog');
     $('#team-qr-dialog .btn-primary').click();              // Close
     expect($('#team-qr-dialog')).toBeNull();
+  });
+
+  it('team link shows a green tick while the schedule matches and a red cross once it does not', async () => {
+    fakeServer();
+    await mountApp();
+    $('#cloud-save-button').click(); $('#cloud-save-dialog .btn-primary').click();
+    await vi.advanceTimersByTimeAsync(10);
+    $('#team-publish-button').click(); await vi.advanceTimersByTimeAsync(20);
+    expect($('.team-sync-ok')).toBeTruthy();
+    expect($('.team-sync-stale')).toBeNull();
+    const a = { v: 1, updated: 'x', version: '1', days: [{ rows: { ROUNDERS: 'A' } }] };
+    expect(payloadSig({ ...a, updated: 'y', version: '2' })).toBe(payloadSig(a));
+    expect(payloadSig({ ...a, days: [{ rows: { ROUNDERS: 'B' } }] })).not.toBe(payloadSig(a));
   });
 
   it('Update team link reuses the same words', async () => {

@@ -2059,7 +2059,7 @@ function exportButtons() {
     setExportMenu(false); window.print();
   });
   colFiles.appendChild(printBtn);
-  colTeam.appendChild(teamSection({ gate: publishGate, hasSchedule: allowed && !solving, downloadPhone: () => { const payload = phonePayload(); if (payload) downloadPhoneView(payload); } }));
+  colTeam.appendChild(teamSection({ gate: publishGate, hasSchedule: allowed && !solving, currentPayload: phonePayload, downloadPhone: () => { const payload = phonePayload(); if (payload) downloadPhoneView(payload); } }));
 
   return wrap;
 }

@@ -13,6 +13,8 @@ export const CHANGELOG = [
       'A Collapse all button at the top right of Potential Issues hides or shows the whole list; the groups inside keep their own arrows',
       'Print / Save as PDF leaves out the green saved-session bar with the PIN',
       'The Open by PIN pop-up is tidier: a large centred PIN box that accepts digits only, a full-width Open session button that switches on at 6 digits, and a note that opening replaces the month on screen',
+      'The Phone team link section now says at a glance whether the schedule shown matches the one the team sees: a green tick when they agree, a red cross when you have changed or re-solved since the last Update',
+      'The phone page now shows its Updated time in US Central time (Fort Worth), with CDT or CST, instead of the server clock',
     ],
   },
   {
